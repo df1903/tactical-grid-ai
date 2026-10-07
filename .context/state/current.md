@@ -15,5 +15,5 @@ Fase 0 — Setup **cerrada** (2026-10-07). Siguiente: Fase 1 — Modelo y escena
 |---|---|
 | Configuración de contexto (`.context/`) | completada |
 | Permisos en `.claude/settings.json` | aplicados (`ruff format --check*`) |
-| F0 Setup | completada (100 %) |
+| F0 Setup | completada (100 %); `README.md` creado, enunciado en `docs/enunciado.md` |
 | F1–F6 | sin iniciar |
