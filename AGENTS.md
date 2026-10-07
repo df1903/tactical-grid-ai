@@ -11,7 +11,6 @@ TacticalGrid: juego táctico 2D por turnos (cuadrícula, bandos A y B, un recurs
 - Ejecutar: `uv run python -m tactical_grid`
 - Tests: `uv run pytest`
 - Lint/format: `uv run ruff check .` · `uv run ruff format --check .` · tipos: `uv run mypy src`
-- *(propuestos, pendientes de crear el proyecto `uv` en F0)*
 
 ## Inicio de sesión (leer en este orden)
 1. `.context/state/current.md`

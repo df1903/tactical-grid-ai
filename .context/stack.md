@@ -7,7 +7,7 @@
 
 ## Frameworks y librerías
 - GUI: `<pendiente>` (el usuario aceptó librerías externas; no se eligió ninguna).
-- `pytest` `<versión pendiente>` — pruebas. *(delegado por el usuario; aprobado en la conversación del 2026-10-07)*
+- `pytest` 9.1.1 — pruebas. *(delegado por el usuario; aprobado en la conversación del 2026-10-07)*
 - Resto de librerías de ejecución: `<pendiente>`; por defecto, solo librería estándar (`json`, `time`, `dataclasses`).
 
 ## Infra y servicios
@@ -15,6 +15,6 @@
 
 ## Herramientas
 - `uv` — entorno virtual, dependencias y ejecución (`uv run`).
-- `ruff` — lint y formato (línea de 100 caracteres).
-- `mypy` — verificación de tipos (`--strict` sobre `src`).
+- `ruff` 0.16.10 — lint y formato (línea de 100 caracteres; reglas E, F, I, UP, B).
+- `mypy` 2.4.0 — verificación de tipos (`--strict` sobre `src`).
 - Git — control de versiones, con etiqueta de la versión entregada.

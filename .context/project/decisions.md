@@ -36,3 +36,13 @@
 - Contexto: evitar prompts repetidos al ejecutar tests, lint y la app.
 - Decisión: `permissions.allow` incluye `uv sync`, `uv run pytest*`, `ruff check*`, `ruff format*`, `mypy*` y `python -m tactical_grid*`; sin `bypassPermissions`.
 - Alternativas descartadas: `bypassPermissions` (prohibido por el usuario); `ruff format --check*` solo (pendiente de revisar).
+
+## 2026-10-07 — Permiso de formato limitado a `--check`
+- Contexto: `ruff format*` permitía reescribir archivos sin confirmación (pendiente de la decisión anterior).
+- Decisión: `permissions.allow` usa `uv run ruff format --check*`; el formato que modifica archivos pide confirmación.
+- Alternativas descartadas: mantener `ruff format*` abierto.
+
+## 2026-10-07 — Versiones de herramientas y proyecto `uv` como librería
+- Contexto: F0 exigía fijar versiones de `pytest`, `ruff` y `mypy` y crear el proyecto.
+- Decisión: `uv init --lib` (layout `src/`, build `uv_build`), Python 3.14, `pytest` 9.1.1, `ruff` 0.16.10 (reglas E, F, I, UP, B), `mypy` 2.4.0 en `--strict`; versiones fijadas por `uv.lock`.
+- Alternativas descartadas: layout plano sin `src/`.
