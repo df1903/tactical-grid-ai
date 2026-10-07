@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "ejemplo": {
+      "type": "http",
+      "url": "https://mcp.ejemplo.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${EJEMPLO_API_TOKEN}"
+      }
+    }
+  }
+}
