@@ -48,6 +48,49 @@ def bfs(problem: PathProblem) -> SearchResult:
     return _failed("BFS", generated, expanded, max_frontier, started)
 
 
+def dfs(problem: PathProblem) -> SearchResult:
+    """Depth-first graph search with a LIFO frontier.
+
+    Purpose: find some path by always going deepest first; it is neither shortest nor
+        cheapest. Reported cost is the accumulated cost of the path found.
+    Preconditions: `problem.initial` belongs to `problem.board`; the goal is a board cell.
+    Postconditions: same bookkeeping as `bfs` (goal tested on expansion, no state generated
+        twice, initial state counts as generated). Children are pushed in reverse domain
+        order so the first one in domain order (up, down, left, right) is expanded first.
+    Complexity: O(S) time and space over S reachable states.
+    AI usage: Claude Code (Sonnet 5.5) drafted the function.
+    AI intervention: none after the draft; successor order is a team convention.
+    Student validation: pending cross-review by the other team member.
+    """
+    started = time.perf_counter()
+    start = problem.initial
+    parents: dict[GameState, GameState | None] = {start: None}
+    g: dict[GameState, float] = {start: 0.0}
+    frontier: list[GameState] = [start]
+    explored: set[GameState] = set()
+    generated, expanded, max_frontier = 1, 0, 1
+
+    while frontier:
+        node = frontier.pop()
+        if problem.is_goal(node):
+            return _found(
+                "DFS", problem, parents, g, node, generated, expanded, max_frontier, started
+            )
+        expanded += 1
+        explored.add(node)
+        fresh: list[GameState] = []
+        for child, cost in problem.expand(node):
+            if child in explored or child in parents:
+                continue
+            parents[child] = node
+            g[child] = g[node] + cost
+            fresh.append(child)
+            generated += 1
+        frontier.extend(reversed(fresh))
+        max_frontier = max(max_frontier, len(frontier))
+    return _failed("DFS", generated, expanded, max_frontier, started)
+
+
 def _found(
     name: str,
     problem: PathProblem,
