@@ -3,9 +3,19 @@ from typing import Any
 
 from tactical_grid.algorithms.common import PathProblem, make_problem
 from tactical_grid.domain.model import Position
-from tactical_grid.scenario.loader import build_scenario
+from tactical_grid.scenario.loader import build_scenario, load_scenario
 
-APENDICE_A = Path(__file__).parent.parent / "scenarios" / "apendice_a.json"
+SCENARIOS = Path(__file__).parent.parent / "scenarios"
+APENDICE_A = SCENARIOS / "apendice_a.json"
+
+
+def problem_from_file(path: Path) -> PathProblem:
+    """Load a scenario file and build the path problem from its `prueba` section."""
+    scenario = load_scenario(path)
+    config = scenario.test_config
+    assert config.start_unit is not None and config.goal is not None
+    return make_problem(scenario.board, scenario.initial_state, config.start_unit, config.goal)
+
 
 _TERRAIN_CHARS = {".": "camino", "p": "pasto", "f": "bosque", "#": "muro"}
 
