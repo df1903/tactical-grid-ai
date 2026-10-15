@@ -56,3 +56,8 @@
 - Contexto: implementar `domain/` y `scenario/` exigió fijar detalles que `rules.md` no cubría.
 - Decisión: `Wait` cuesta 0; `juego.limite_turnos` es un campo propio opcional (default 100, definido en `scenario/`); en un mismo movimiento la entrega gana sobre la interceptación; recoger solo ocurre al llegar a la celda (`Wait` no recoge); `Wait` siempre es legal. No se exige el mínimo de 3 unidades por bando al cargar porque el Apéndice A trae 2; sí se rechaza que dos unidades compartan celda (validación extra a las 9).
 - Alternativas descartadas: costo de espera 1 (penaliza quedarse quieto en UCS sin necesidad); exigir 3 unidades (rechazaría el ejemplo oficial).
+
+## 2026-10-14 — Atribución de commits de F1 y saltos de línea fijos
+- Contexto: el usuario pidió que los commits de F1 figuren con su compañero Jorge; Git avisaba LF→CRLF en cada commit.
+- Decisión: los commits de F1 tienen a Jorge Iván Garcia Torres como autor y committer, sin trailers `Co-Authored-By` (ni de Claude); el uso de IA sigue declarado en docstrings e informe técnico. `.gitattributes` fija `* text=auto eol=lf`.
+- Alternativas descartadas: Jorge solo como coautor (primera petición, corregida por el usuario); dejar `core.autocrlf` por defecto.

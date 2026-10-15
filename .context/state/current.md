@@ -21,5 +21,6 @@ Fase 1 — Modelo y escenario **completada y fusionada a `main`** (2026-10-14). 
 | F1 `domain/` (`model.py`, `rules.py`) | completada; "Student validation" pendiente |
 | F1 `scenario/loader.py` | completada: 9 validaciones + celda compartida, carga atómica |
 | F1 tests | 38 pasan; `ruff` y `mypy --strict` en verde |
-| Commits en `main` | `4015fe5` (F1), `bbb861b` (handoff 004), pusheados |
+| `rules.md` y `.gitattributes` | sincronizado y añadido (`b1c4fac`) |
+| Commits en `main` | `4015fe5` (F1), `bbb861b` (handoff 004), `b1c4fac` (docs); pusheados; cierre 005 sin commit |
 | F2–F6 | sin iniciar |
