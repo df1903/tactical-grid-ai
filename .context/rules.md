@@ -5,12 +5,12 @@
 ## Reglas
 - Movimiento en 4 direcciones (arriba, abajo, izquierda, derecha). *(decisión 2026-10-07)*
 - El costo se paga al entrar a la celda destino; la celda inicial no cuesta. Costos y transitabilidad salen del catálogo `tipos_terreno` del JSON.
-- Una unidad por celda: no se comparte celda. Las bases y la celda del recurso pueden pisarse si están libres; la base rival `<pendiente>` confirmar si se puede pisar.
+- Una unidad por celda: no se comparte celda. Las bases y la celda del recurso pueden pisarse si están libres; la base rival **no** se puede pisar. *(decisión 2026-10-14)*
 - Juego por turnos: en cada turno el bando activo elige una unidad y ejecuta una acción válida. Acciones: mover y esperar.
 - Ambos bandos tienen las mismas reglas; MAX y MIN son roles del árbol, no agentes distintos.
 - Un solo tipo de unidad (`estandar`), mínimo 3 por bando.
 - Una unidad recoge el recurso al llegar a su celda; mientras lo lleva, debe alcanzar su propia base. Gana el bando que lleva el recurso a su base.
-- Pérdida del portador: si una unidad rival queda adyacente al portador (interceptación), el recurso cae en la celda del portador. *(propuesta aprobada; detalle del desempate y de quién intercepta `<pendiente>`)*
+- Pérdida del portador (interceptación): tras **cualquier** movimiento, de cualquier bando, que deje a una unidad rival adyacente al portador, el recurso cae en la celda del portador (no se transfiere al rival; por eso no hay desempate). El portador original no puede recogerlo mientras siga en esa celda; debe salir y volver. Cualquier otra unidad lo recoge al llegar a la celda. *(decisión 2026-10-14)*
 - Fin de partida: victoria al entregar el recurso; empate al alcanzar el límite de turnos configurable. Un bando sin movimientos pasa turno.
 - Estado compuesto: posición y bando de cada unidad, portador del recurso (o posición del recurso si nadie lo lleva) y turno. Dos estados con la misma posición pueden ser distintos (RF-11).
 - Una heurística es admisible solo si no sobreestima con los costos del escenario: se escala por el costo transitable mínimo leído del JSON.

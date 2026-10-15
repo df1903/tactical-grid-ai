@@ -42,7 +42,17 @@
 - Decisión: `permissions.allow` usa `uv run ruff format --check*`; el formato que modifica archivos pide confirmación.
 - Alternativas descartadas: mantener `ruff format*` abierto.
 
+## 2026-10-14 — Base rival no pisable e interceptación sin transferencia
+- Contexto: `rules.md` dejaba abiertos si se pisa la base rival y el detalle de la interceptación; bloqueaba F1.
+- Decisión: la base rival no se puede pisar. Interceptación: se evalúa tras cualquier movimiento que deje a un rival adyacente al portador; el recurso cae en la celda del portador (sin transferencia, sin desempate); el portador original no lo recoge mientras siga en esa celda; otra unidad lo recoge al llegar.
+- Alternativas descartadas: evaluar solo tras el movimiento del rival; transferir el recurso al interceptor (exigía desempate por ID).
+
 ## 2026-10-07 — Versiones de herramientas y proyecto `uv` como librería
 - Contexto: F0 exigía fijar versiones de `pytest`, `ruff` y `mypy` y crear el proyecto.
 - Decisión: `uv init --lib` (layout `src/`, build `uv_build`), Python 3.14, `pytest` 9.1.1, `ruff` 0.16.10 (reglas E, F, I, UP, B), `mypy` 2.4.0 en `--strict`; versiones fijadas por `uv.lock`.
 - Alternativas descartadas: layout plano sin `src/`.
+
+## 2026-10-14 — Supuestos de F1: costo de espera, límite de turnos y orden de resolución
+- Contexto: implementar `domain/` y `scenario/` exigió fijar detalles que `rules.md` no cubría.
+- Decisión: `Wait` cuesta 0; `juego.limite_turnos` es un campo propio opcional (default 100, definido en `scenario/`); en un mismo movimiento la entrega gana sobre la interceptación; recoger solo ocurre al llegar a la celda (`Wait` no recoge); `Wait` siempre es legal. No se exige el mínimo de 3 unidades por bando al cargar porque el Apéndice A trae 2; sí se rechaza que dos unidades compartan celda (validación extra a las 9).
+- Alternativas descartadas: costo de espera 1 (penaliza quedarse quieto en UCS sin necesidad); exigir 3 unidades (rechazaría el ejemplo oficial).

@@ -8,7 +8,7 @@ Fase 0 — Setup **cerrada** (2026-10-07). Siguiente: Fase 1 — Modelo y escena
 ## Tareas activas
 - [ ] F1: estado compuesto inmutable y sucesores en `domain/` (usar plan mode; leer `rules.md`)
 - [ ] F1: carga y validación atómica del JSON en `scenario/` (9 validaciones con test; caso 6)
-- [ ] **Primero**: resolver (ver `rules.md`, líneas 8 y 13): si se puede pisar la base rival; detalle de la interceptación (quién intercepta y desempate)
+- [x] Resuelto 2026-10-14: base rival no pisable; interceptación sin transferencia (ver `rules.md` y `decisions.md`)
 
 ## Avance
 | Bloque | Estado |
