@@ -61,3 +61,18 @@
 - Contexto: el usuario pidió que los commits de F1 figuren con su compañero Jorge; Git avisaba LF→CRLF en cada commit.
 - Decisión: los commits de F1 tienen a Jorge Iván Garcia Torres como autor y committer, sin trailers `Co-Authored-By` (ni de Claude); el uso de IA sigue declarado en docstrings e informe técnico. `.gitattributes` fija `* text=auto eol=lf`.
 - Alternativas descartadas: Jorge solo como coautor (primera petición, corregida por el usuario); dejar `core.autocrlf` por defecto.
+
+## 2026-10-14 — Modelo de la búsqueda de un solo agente (F2)
+- Contexto: RF-14 ignora al adversario; el Apéndice A pone a B1 sobre la celda objetivo, así que tratar a los rivales como obstáculos dejaba el ejemplo sin solución.
+- Decisión: el problema de búsqueda quita las unidades rivales (la base rival sigue sin poder pisarse), mueve solo la unidad de inicio (sus compañeros quedan quietos), no alterna turno, ignora el recurso y no usa `Wait`. El estado de búsqueda equivale a la posición de la unidad. Reglas y costos salen de `domain.successors`.
+- Alternativas descartadas: rivales quietos como obstáculos (ejemplo oficial sin solución); estado compuesto completo con recurso y turno (infla estados sin aportar a un problema de camino).
+
+## 2026-10-14 — Convenciones de BFS, DFS y UCS (F2)
+- Contexto: el enunciado define las métricas pero no cuándo se prueba la meta ni cómo se cuentan duplicados.
+- Decisión: búsqueda en grafo; meta probada al expandir; el estado inicial cuenta como generado; un estado no se genera dos veces (se omite si ya está en frontera o expandido); orden de sucesores arriba, abajo, izquierda, derecha; DFS empuja los hijos en orden inverso para expandir primero el primero. UCS: desempate por orden de entrada a la frontera, la actualización de costo conserva ese orden y no cuenta como generado; el máximo de frontera cuenta estados distintos en espera. El camino incluye la celda inicial y la longitud son los movimientos.
+- Alternativas descartadas: meta al generar (menos generados, pero UCS exige expandir); árbol sin lista de explorados (explosión en DFS).
+
+## 2026-10-14 — Atribución de commits de F2
+- Contexto: el usuario pidió commits pequeños de F2 con Jorge como autor.
+- Decisión: autor y committer Jorge Iván Garcia Torres, sin trailers `Co-Authored-By`, igual que en F1; el uso de IA sigue declarado en los docstrings y el informe técnico.
+- Alternativas descartadas: dejar a Daniel como committer.
