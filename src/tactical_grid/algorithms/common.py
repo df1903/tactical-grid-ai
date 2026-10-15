@@ -1,7 +1,8 @@
 """Shared pieces of the single-unit pathfinding searches (RF-14).
 
-The adversary is ignored: only the start unit moves, rivals stay put as obstacles, the
-turn does not alternate and the resource is ignored. Legality and cost come from
+The adversary is ignored: rival units are removed from the state, only the start unit
+moves (its teammates stay put as obstacles), the turn does not alternate and the resource
+is ignored. The rival base is still not enterable (domain rule). Legality and cost come from
 `domain.rules`; this module only restricts and normalizes what the domain produces.
 """
 
@@ -52,10 +53,14 @@ class PathProblem:
 
 
 def make_problem(board: Board, initial: GameState, unit_id: str, goal: Position) -> PathProblem:
-    """Build the problem: the turn is fixed to the unit's side and the resource is dropped."""
+    """Build the problem: rivals removed, turn fixed to the unit's side, resource dropped."""
+    side = board.unit_sides[unit_id]
     start = replace(
         initial,
-        turn=board.unit_sides[unit_id],
+        positions=tuple(
+            (uid, pos) for uid, pos in initial.positions if board.unit_sides[uid] is side
+        ),
+        turn=side,
         turn_number=0,
         carrier=None,
         resource=None,

@@ -30,7 +30,6 @@ def test_expand_moves_only_the_start_unit_in_domain_order() -> None:
     cells = [state.position_of("A1") for state, _ in problem.expand(problem.initial)]
     assert cells == [Position(1, 2), Position(3, 2), Position(2, 1), Position(2, 3)]
     for state, _ in problem.expand(problem.initial):
-        assert state.position_of("B1") == Position(4, 3)
         assert state.turn is problem.initial.turn
         assert state.turn_number == 0
 
@@ -66,3 +65,23 @@ def test_is_goal() -> None:
     nxt = next(s for s, _ in problem.expand(problem.initial) if s.position_of("A1") == problem.goal)
     assert problem.is_goal(nxt)
     assert replace(problem, goal=Position(0, 0)).is_goal(problem.initial)
+
+
+def test_rival_units_are_removed_but_rival_base_stays_blocked() -> None:
+    problem = ascii_problem(
+        [
+            "SX",
+            "G.",
+        ]
+    )
+    assert [uid for uid, _ in problem.initial.positions] == ["A1"]
+    cells = {state.position_of("A1") for state, _ in problem.expand(problem.initial)}
+    assert cells == {Position(1, 0)}
+
+
+def test_appendix_a_goal_is_reachable_once_rivals_are_ignored() -> None:
+    scenario = load_scenario(APENDICE_A)
+    # B1 stands on the goal cell (3,2) in the official example.
+    assert scenario.initial_state.unit_at(Position(3, 2)) == "B1"
+    problem = make_problem(scenario.board, scenario.initial_state, "A1", Position(3, 2))
+    assert problem.initial.unit_at(Position(3, 2)) is None
