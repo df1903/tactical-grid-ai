@@ -69,3 +69,66 @@ def a_star(problem: PathProblem, heuristic: Heuristic, name: str = "A_STAR") -> 
             heapq.heappush(heap, (new_cost + heuristic(child), order[child], new_cost))
         max_frontier = max(max_frontier, len(waiting))
     return failed(name, generated, expanded, max_frontier, started)
+
+
+def beam_search(
+    problem: PathProblem, heuristic: Heuristic, k: int, name: str = "BEAM"
+) -> SearchResult:
+    """Beam Search by levels: keep only the k most promising candidates of each level.
+
+    Purpose: bounded-memory informed search (RF-23); trades completeness and optimality for
+        a frontier that never holds more than k states between levels.
+    Preconditions: `k >= 1`; `heuristic` need not be admissible, but a poor one prunes badly.
+    Postconditions: level by level, every state in the beam is expanded in rank order (goal
+        tested on expansion) and its children form the next candidates; the k candidates with
+        the lowest f = g + h survive, ties broken by generation order. A state kept in some
+        beam is never generated again; a pruned one may be, through another route. A cheaper
+        route to a candidate of the same level updates it without counting as generated.
+        `max_frontier` is the largest candidate set before pruning. The result can be
+        suboptimal or fail although a solution exists, because pruned states are lost.
+    Complexity: O(L * k * b * log(k * b)) time for L levels and branching factor b (at most
+        4 here); O(S) space for the kept-state bookkeeping, O(k * b) for the live candidates.
+    AI usage: Claude Code (Sonnet 5.5) drafted the function.
+    AI intervention: none after the draft; ranking by f and by-level pruning are team
+        decisions (G9, 2026-10-16).
+    Student validation: pending cross-review by the other team member.
+    """
+    if k < 1:
+        raise ValueError(f"beam width k must be at least 1, got {k}")
+    started = time.perf_counter()
+    start = problem.initial
+    parents: dict[GameState, GameState | None] = {start: None}
+    g: dict[GameState, float] = {start: 0.0}
+    kept: set[GameState] = {start}
+    beam: list[GameState] = [start]
+    generated, expanded, max_frontier = 1, 0, 1
+
+    while beam:
+        pending: dict[GameState, tuple[float, GameState]] = {}  # child -> (g, parent)
+        for node in beam:
+            if problem.is_goal(node):
+                return found(
+                    name, problem, parents, g, node, generated, expanded, max_frontier, started
+                )
+            expanded += 1
+            for child, cost in problem.expand(node):
+                if child in kept:
+                    continue
+                new_cost = g[node] + cost
+                if child not in pending:
+                    generated += 1
+                    pending[child] = (new_cost, node)
+                elif new_cost < pending[child][0]:
+                    pending[child] = (new_cost, node)
+        max_frontier = max(max_frontier, len(pending))
+        ranked = sorted(
+            enumerate(pending.items()),
+            key=lambda item: (item[1][1][0] + heuristic(item[1][0]), item[0]),
+        )
+        beam = []
+        for _, (child, (cost, parent)) in ranked[:k]:
+            parents[child] = parent
+            g[child] = cost
+            kept.add(child)
+            beam.append(child)
+    return failed(name, generated, expanded, max_frontier, started)
