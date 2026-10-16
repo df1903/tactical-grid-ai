@@ -76,3 +76,38 @@
 - Contexto: el usuario pidió commits pequeños de F2 con Jorge como autor.
 - Decisión: autor y committer Jorge Iván Garcia Torres, sin trailers `Co-Authored-By`, igual que en F1; el uso de IA sigue declarado en los docstrings y el informe técnico.
 - Alternativas descartadas: dejar a Daniel como committer.
+
+## 2026-10-16 — Función de utilidad y pesos (F4)
+- Contexto: Minimax y alfa-beta necesitan una utilidad propia (RF-25 a RF-33); bloqueaba F4. Propuesta por Claude, aprobada por Daniel.
+- Decisión: `U = 10·entregas + 3·(recurso cargado) − distancia_al_objetivo − 0.5·distancia_rival_al_portador`, desde la perspectiva del bando MAX. Los pesos salen del escenario JSON, no del código.
+- Alternativas descartadas: utilidad solo por distancia al recurso (no distingue entre cargarlo y no cargarlo).
+
+## 2026-10-16 — Librería de GUI: tkinter (F5)
+- Contexto: RF-40 exige una GUI mínima; el stack no fijaba librería. Propuesta por Claude, aprobada por Daniel.
+- Decisión: `tkinter`; viene con Python y no añade dependencia. Se registra en `stack.md` al empezar F5.
+- Alternativas descartadas: Pygame (dependencia nueva sin necesidad para una GUI mínima).
+
+## 2026-10-16 — Meta de tiempo de Minimax y tamaño máximo de mapa
+- Contexto: el enunciado no fija límite de tiempo ni de mapa (G12 y pregunta 5). Propuesta por Claude, aprobada por Daniel.
+- Decisión: meta de 5 s por jugada con profundidad configurable; mapa máximo de 15×15 para Minimax (BFS, DFS, UCS, A* y Beam no tienen tope más allá de la memoria).
+- Alternativas descartadas: sin límite (riesgo en la sustentación).
+
+## 2026-10-16 — Formato de exportación de resultados (F6)
+- Contexto: RF-38 y RF-39 piden exportar resultados. Propuesta por Claude, aprobada por Daniel.
+- Decisión: CSV para las métricas y JSON para las trazas.
+- Alternativas descartadas: solo JSON (menos cómodo para tablas en el informe).
+
+## 2026-10-16 — Reparto y calendario de F3–F6
+- Contexto: el plan iba atrasado frente a `roadmap.md`; quedan 5 días. Propuesta por Claude, aprobada por Daniel.
+- Decisión: F3 el 17, F4 el 18–19, F5 el 20, F6 el 21 (colchón absorbido). Daniel firma los commits de F3; la autoría de F4 en adelante queda por decidir.
+- Alternativas descartadas: mantener las fechas originales del roadmap (ya vencidas).
+
+## 2026-10-16 — Atribución de commits de F3
+- Contexto: hasta F2 los commits salieron a nombre de Jorge; para F3 el usuario pidió firmarlos él.
+- Decisión: los commits de F3 tienen a Daniel Felipe Franco Rincón como autor y committer, sin trailer `Co-Authored-By`; el uso de IA sigue declarado en docstrings e informe técnico.
+- Alternativas descartadas: seguir con Jorge como autor (no participó en F3).
+
+## 2026-10-16 — A* y Beam Search: heurísticas, desempate y criterio de poda (F3)
+- Contexto: RF-20 a RF-24 y G9; el enunciado deja libres la segunda heurística y el criterio de Beam.
+- Decisión: h1 = Manhattan × costo transitable mínimo del escenario; h2 (propuesta del equipo) = distancia en movimientos que rodea muros y la base rival (BFS inverso desde la meta) × costo mínimo; h2 ≥ h1 y ambas son admisibles y consistentes. A*: prioridad `f = g + h`, desempate por orden de entrada a la frontera (como UCS), con reapertura si aparece un camino más barato. Beam: por niveles, conserva los k candidatos con menor `f = g + h`, desempate por orden de generación; un estado ya conservado en un nivel anterior no vuelve a generarse; es incompleto (puede fallar). `max_frontier` cuenta los candidatos antes de podar.
+- Alternativas descartadas: poda por `h` sola (Beam voraz, ignora el costo ya pagado); solo Manhattan escalada (la segunda heurística no aportaría nada que comparar en el caso 4).
