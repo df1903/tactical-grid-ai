@@ -6,6 +6,7 @@ is ignored. The rival base is still not enterable (domain rule). Legality and co
 `domain.rules`; this module only restricts and normalizes what the domain produces.
 """
 
+import time
 from dataclasses import dataclass, replace
 
 from tactical_grid.domain.model import Board, GameState, Move, Position
@@ -90,3 +91,41 @@ def reconstruct(
         node = parents[node]
     cells.reverse()
     return tuple(cells)
+
+
+def found(
+    name: str,
+    problem: PathProblem,
+    parents: dict[GameState, GameState | None],
+    g: dict[GameState, float],
+    goal: GameState,
+    generated: int,
+    expanded: int,
+    max_frontier: int,
+    started: float,
+) -> SearchResult:
+    return SearchResult(
+        algorithm=name,
+        success=True,
+        path=reconstruct(parents, goal, problem.unit_id),
+        cost=g[goal],
+        generated=generated,
+        expanded=expanded,
+        max_frontier=max_frontier,
+        time_seconds=time.perf_counter() - started,
+    )
+
+
+def failed(
+    name: str, generated: int, expanded: int, max_frontier: int, started: float
+) -> SearchResult:
+    return SearchResult(
+        algorithm=name,
+        success=False,
+        path=(),
+        cost=0.0,
+        generated=generated,
+        expanded=expanded,
+        max_frontier=max_frontier,
+        time_seconds=time.perf_counter() - started,
+    )

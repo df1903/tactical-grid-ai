@@ -4,7 +4,7 @@ import heapq
 import time
 from collections import deque
 
-from tactical_grid.algorithms.common import PathProblem, SearchResult, reconstruct
+from tactical_grid.algorithms.common import PathProblem, SearchResult, failed, found
 from tactical_grid.domain.model import GameState
 
 
@@ -33,7 +33,7 @@ def bfs(problem: PathProblem) -> SearchResult:
     while frontier:
         node = frontier.popleft()
         if problem.is_goal(node):
-            return _found(
+            return found(
                 "BFS", problem, parents, g, node, generated, expanded, max_frontier, started
             )
         expanded += 1
@@ -46,7 +46,7 @@ def bfs(problem: PathProblem) -> SearchResult:
             frontier.append(child)
             generated += 1
         max_frontier = max(max_frontier, len(frontier))
-    return _failed("BFS", generated, expanded, max_frontier, started)
+    return failed("BFS", generated, expanded, max_frontier, started)
 
 
 def dfs(problem: PathProblem) -> SearchResult:
@@ -74,7 +74,7 @@ def dfs(problem: PathProblem) -> SearchResult:
     while frontier:
         node = frontier.pop()
         if problem.is_goal(node):
-            return _found(
+            return found(
                 "DFS", problem, parents, g, node, generated, expanded, max_frontier, started
             )
         expanded += 1
@@ -89,7 +89,7 @@ def dfs(problem: PathProblem) -> SearchResult:
             generated += 1
         frontier.extend(reversed(fresh))
         max_frontier = max(max_frontier, len(frontier))
-    return _failed("DFS", generated, expanded, max_frontier, started)
+    return failed("DFS", generated, expanded, max_frontier, started)
 
 
 def ucs(problem: PathProblem) -> SearchResult:
@@ -126,7 +126,7 @@ def ucs(problem: PathProblem) -> SearchResult:
             continue  # stale entry left behind by a cost update
         waiting.discard(node)
         if problem.is_goal(node):
-            return _found(
+            return found(
                 "UCS", problem, parents, g, node, generated, expanded, max_frontier, started
             )
         expanded += 1
@@ -148,42 +148,4 @@ def ucs(problem: PathProblem) -> SearchResult:
                 g[child] = new_cost
                 heapq.heappush(heap, (new_cost, order[child]))
         max_frontier = max(max_frontier, len(waiting))
-    return _failed("UCS", generated, expanded, max_frontier, started)
-
-
-def _found(
-    name: str,
-    problem: PathProblem,
-    parents: dict[GameState, GameState | None],
-    g: dict[GameState, float],
-    goal: GameState,
-    generated: int,
-    expanded: int,
-    max_frontier: int,
-    started: float,
-) -> SearchResult:
-    return SearchResult(
-        algorithm=name,
-        success=True,
-        path=reconstruct(parents, goal, problem.unit_id),
-        cost=g[goal],
-        generated=generated,
-        expanded=expanded,
-        max_frontier=max_frontier,
-        time_seconds=time.perf_counter() - started,
-    )
-
-
-def _failed(
-    name: str, generated: int, expanded: int, max_frontier: int, started: float
-) -> SearchResult:
-    return SearchResult(
-        algorithm=name,
-        success=False,
-        path=(),
-        cost=0.0,
-        generated=generated,
-        expanded=expanded,
-        max_frontier=max_frontier,
-        time_seconds=time.perf_counter() - started,
-    )
+    return failed("UCS", generated, expanded, max_frontier, started)
