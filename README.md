@@ -10,12 +10,17 @@ Project 1 of *Sistemas Inteligentes I* (UCALDAS). Team: Jorge Iván Garcia Torre
 ## Usage
 ```bash
 uv sync                          # install dependencies
-uv run python -m tactical_grid   # run the app
+uv run python -m tactical_grid scenarios/apendice_a.json --algorithm A_STAR --verify
+uv run python -m tactical_grid scenarios/caso_07_decision_adversarial.json --algorithm ALPHA_BETA --depth 3
 uv run pytest                    # tests
 uv run ruff check .              # lint
 uv run ruff format --check .     # format check
 uv run mypy src                  # types (strict)
 ```
+
+Options (they override the scenario's `prueba` section): `--mode busqueda|adversarial|partida`,
+`--algorithm BFS|DFS|UCS|A_STAR|BEAM|MINIMAX|ALPHA_BETA`, `--heuristic H1|H2`, `--k`, `--depth`,
+`--order default|reversed`, `--unit`, `--goal row,col`, `--verify`. The report is printed as JSON.
 
 ## Layout
 | Path | Content |
