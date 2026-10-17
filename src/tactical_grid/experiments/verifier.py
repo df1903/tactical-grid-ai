@@ -1,13 +1,12 @@
-"""Solution verifier for single-unit searches (RF-42, checks 1 to 5).
-
-Check 6 (Minimax only considers legal actions) belongs to the adversarial phase.
-"""
+"""Solution verifier (RF-42): checks 1 to 5 for single-unit searches, check 6 for Minimax."""
 
 import math
 from dataclasses import dataclass
 
+from tactical_grid.algorithms.adversarial import AdversarialResult
 from tactical_grid.algorithms.common import PathProblem, SearchResult
-from tactical_grid.domain.model import GameState, Position
+from tactical_grid.domain.model import Board, GameState, Position
+from tactical_grid.domain.rules import legal_actions
 
 
 @dataclass(frozen=True)
@@ -106,3 +105,46 @@ def _valid_state(problem: PathProblem, state: GameState) -> bool:
     if len(set(cells)) != len(cells):
         return False
     return all(problem.board.is_passable(cell) for cell in cells)
+
+
+def verify_adversarial(
+    board: Board, state: GameState, result: AdversarialResult
+) -> VerificationReport:
+    """RF-42 check 6: every action Minimax considered is legal under the game rules.
+
+    Purpose: independent check that the adversarial search only expands legal actions.
+    Preconditions: `result` was produced from `state` with `record=True`, so that
+        `result.considered` lists every (state, action) pair the search tried.
+    Postconditions: never raises; also checks that the selected action was among the legal
+        root actions. A result without recorded actions fails the first check.
+    Complexity: O(N * U^2) for N recorded actions and U units.
+    AI usage: Claude Code (Sonnet 5.5) drafted the function from RF-42.
+    AI intervention: none after the draft.
+    Student validation: pending cross-review by the other team member.
+    """
+    illegal = [
+        index
+        for index, (node, action) in enumerate(result.considered)
+        if action not in legal_actions(board, node)
+    ]
+    recorded = bool(result.considered) or result.action is None
+    root_legal = result.action is None or result.action in legal_actions(board, state)
+    checks = (
+        Check(
+            "legal actions",
+            recorded and not illegal,
+            "every considered action is legal"
+            if recorded and not illegal
+            else (
+                f"illegal actions at positions {illegal[:5]}"
+                if illegal
+                else "no considered actions were recorded (run with record=True)"
+            ),
+        ),
+        Check(
+            "selected action legal",
+            root_legal,
+            f"selected {result.action}",
+        ),
+    )
+    return VerificationReport(result.algorithm, checks)
