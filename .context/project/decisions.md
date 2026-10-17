@@ -132,3 +132,8 @@
 - Contexto: el usuario pidió que los commits desde el punto de entrada en adelante vayan a nombre de Daniel.
 - Decisión: autor y committer Daniel Felipe Franco Rincón, sin trailers `Co-Authored-By`; el uso de IA sigue declarado en docstrings e informe técnico.
 - Alternativas descartadas: seguir con Jorge como autor.
+
+## 2026-10-17 — Barridos y exportación de resultados (F6)
+- Contexto: RF-29, RF-32 y RF-38/39 piden comparar profundidades, órdenes y algoritmos, y dejar los resultados accesibles; el formato CSV/JSON se aprobó el 2026-10-16.
+- Decisión: `--algorithm`, `--heuristic`, `--k`, `--depth` y `--order` aceptan listas separadas por comas y se ejecutan las combinaciones que aplican (heurística para A* y Beam, `k` para Beam, profundidad y orden para Minimax y alfa-beta). `--csv` escribe una fila plana por corrida (el camino como `r,c;r,c` y los chequeos como `verificacion_ok`); `--json` escribe los informes completos, con camino, `valores_raiz` y chequeos. Los `valores_raiz` de alfa-beta de las acciones posteriores a la mejor pueden ser cotas, no valores exactos.
+- Alternativas descartadas: un archivo de experimentos aparte (más formato que mantener); exportar siempre sin que se pida.

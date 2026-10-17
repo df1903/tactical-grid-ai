@@ -3,7 +3,7 @@
 > Foto del momento: fase, tareas activas y avance. **Se sobrescribe en cada cierre de sesión**; el histórico va en `handoffs/`.
 
 ## Fase actual
-Fase 4 — Adversarial (sin GUI): **Minimax, alfa-beta, utilidad, chequeo 6 y casos 7–10 completos, pusheados (autor Jorge)**. CLI y caso 6 hechos (autor Daniel), sin push. Siguiente: F5 GUI mínima y conectar los modos de `prueba`. Entrega: 2026-10-21.
+Fase 4 — Adversarial (sin GUI): **Minimax, alfa-beta, utilidad, chequeo 6 y casos 7–10 completos, pusheados (autor Jorge)**. CLI y caso 6 hechos (autor Daniel), sin push. Siguiente: F5 GUI mínima y conectar los modos de `prueba`. Exportación CSV/JSON y barridos hechos. Entrega: 2026-10-21.
 
 ## Tareas activas
 - [ ] Revisión cruzada de Jorge sobre `domain/`, `scenario/` y `algorithms/`
@@ -21,7 +21,8 @@ Fase 4 — Adversarial (sin GUI): **Minimax, alfa-beta, utilidad, chequeo 6 y ca
 | F3 heurísticas, A*, Beam, casos 3–5 | completada (pusheada) |
 | F4 utilidad, Minimax, alfa-beta, chequeo 6, casos 7–10 | completada (sin push) |
 | CLI `__main__`, `experiments/runner.py`, campos de `prueba` (G10), caso 6 | completada (sin push) |
-| Tests | 152 pasan; `ruff` y `mypy --strict` en verde |
+| Barridos y exportación CSV/JSON (`experiments/sweep.py`) | completada (sin push) |
+| Tests | 161 pasan; `ruff` y `mypy --strict` en verde |
 | Commits F3 | autor y committer Daniel, sin trailers |
 | Commits F4 | autor y committer Jorge, sin trailers (pusheados) |
 | Commits desde la CLI | autor y committer Daniel, sin trailers |
