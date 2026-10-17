@@ -1,0 +1,212 @@
+"""Run one test of a scenario (modes `busqueda`, `adversarial`, `partida`) and report it.
+
+Results use keys equivalent to Appendix B of the assignment so they are easy to compare and
+reproduce (RF-38, RF-39). The command line in `__main__` is a thin wrapper over this module.
+"""
+
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
+
+from tactical_grid.algorithms.adversarial import (
+    ActionOrder,
+    AdversarialResult,
+    alpha_beta,
+    minimax,
+)
+from tactical_grid.algorithms.common import PathProblem, SearchResult, make_problem
+from tactical_grid.algorithms.heuristics import Heuristic, manhattan, obstacle_aware
+from tactical_grid.algorithms.informed import a_star, beam_search
+from tactical_grid.algorithms.uninformed import bfs, dfs, ucs
+from tactical_grid.algorithms.utility import UtilityWeights, make_utility
+from tactical_grid.domain.model import Position
+from tactical_grid.experiments.verifier import (
+    VerificationReport,
+    verify_adversarial,
+    verify_search,
+)
+from tactical_grid.scenario.loader import Scenario
+
+MODES = ("busqueda", "adversarial", "partida")
+_ALIASES = {"A*": "A_STAR", "A_ESTRELLA": "A_STAR", "ASTAR": "A_STAR", "BEAM_SEARCH": "BEAM"}
+SEARCH_ALGORITHMS = ("BFS", "DFS", "UCS", "A_STAR", "BEAM")
+ADVERSARIAL_ALGORITHMS = ("MINIMAX", "ALPHA_BETA")
+_HEURISTICS: dict[str, Callable[[PathProblem], Heuristic]] = {
+    "H1": manhattan,
+    "MANHATTAN": manhattan,
+    "H2": obstacle_aware,
+    "OBSTACLE_AWARE": obstacle_aware,
+}
+_UNINFORMED = {"BFS": bfs, "DFS": dfs, "UCS": ucs}
+
+
+class RunError(Exception):
+    """The requested test cannot run (missing or unknown option)."""
+
+
+@dataclass(frozen=True)
+class RunOptions:
+    """Overrides; any field left as None falls back to the scenario's `prueba` section."""
+
+    mode: str | None = None
+    algorithm: str | None = None
+    heuristic: str | None = None
+    k: int | None = None
+    depth: int | None = None
+    order: str | None = None
+    unit: str | None = None
+    goal: Position | None = None
+    verify: bool = False
+
+
+def canonical(name: str) -> str:
+    key = name.strip().upper().replace("-", "_").replace(" ", "_")
+    return _ALIASES.get(key, key)
+
+
+def run(scenario: Scenario, options: RunOptions) -> dict[str, Any]:
+    """Execute the configured test and return a JSON-serializable report.
+
+    Purpose: single entry point that picks the mode, resolves options against the scenario's
+        `prueba` section (the explicit options win) and runs the algorithm.
+    Preconditions: `scenario` was loaded and validated.
+    Postconditions: raises RunError, never a bare KeyError, for missing or unknown options.
+        With `options.verify` the report carries the RF-42 checks that apply to the mode.
+    Complexity: that of the chosen algorithm.
+    AI usage: Claude Code (Sonnet 5.5) drafted the module.
+    AI intervention: none after the draft; option names are the team's G10 proposal.
+    Student validation: pending cross-review by the other team member.
+    """
+    config = scenario.test_config
+    mode = (options.mode or config.mode or "").lower()
+    if mode not in MODES:
+        raise RunError(f"mode must be one of {MODES}, got {mode!r}")
+    if mode == "partida":
+        return describe(scenario)
+    name = canonical(options.algorithm or config.algorithm or "")
+    if mode == "busqueda":
+        return _run_search(scenario, options, name)
+    return _run_adversarial(scenario, options, name)
+
+
+def describe(scenario: Scenario) -> dict[str, Any]:
+    """Mode `partida`: summary of the loaded game (the GUI continues it turn by turn)."""
+    board, state = scenario.board, scenario.initial_state
+    return {
+        "modo": "partida",
+        "mapa": [board.rows, board.cols],
+        "turno": state.turn.value,
+        "portador": state.carrier,
+        "recurso": _cell(state.resource) if state.resource else None,
+        "unidades": {
+            uid: {"bando": board.unit_sides[uid].value, "celda": _cell(pos)}
+            for uid, pos in state.positions
+        },
+        "bases": {side.value: _cell(pos) for side, pos in board.bases.items()},
+        "limite_turnos": board.turn_limit,
+    }
+
+
+def _run_search(scenario: Scenario, options: RunOptions, name: str) -> dict[str, Any]:
+    config = scenario.test_config
+    if name not in SEARCH_ALGORITHMS:
+        raise RunError(f"search algorithm must be one of {SEARCH_ALGORITHMS}, got {name!r}")
+    unit = options.unit or config.start_unit
+    goal = options.goal or config.goal
+    if unit is None or goal is None:
+        raise RunError("a search needs a start unit and a goal (prueba.unidad_inicio/objetivo)")
+    if unit not in scenario.board.unit_sides:
+        raise RunError(f"unknown unit {unit!r}")
+    if not scenario.board.is_passable(goal):
+        raise RunError(f"goal {_cell(goal)} is outside the map or not passable")
+    problem = make_problem(scenario.board, scenario.initial_state, unit, goal)
+
+    if name in _UNINFORMED:
+        result = _UNINFORMED[name](problem)
+    else:
+        heuristic_name = canonical(options.heuristic or config.heuristic or "H1")
+        factory = _HEURISTICS.get(heuristic_name)
+        if factory is None:
+            raise RunError(
+                f"heuristic must be one of {sorted(_HEURISTICS)}, got {heuristic_name!r}"
+            )
+        heuristic = factory(problem)
+        if name == "A_STAR":
+            result = a_star(problem, heuristic, f"A_STAR_{heuristic_name}")
+        else:
+            k = options.k if options.k is not None else config.beam_width
+            if k is None:
+                raise RunError("BEAM needs a width k (prueba.k or --k)")
+            if k < 1:
+                raise RunError(f"beam width k must be at least 1, got {k}")
+            result = beam_search(problem, heuristic, k, f"BEAM_K{k}")
+    report = _search_report(result)
+    if options.verify:
+        report["verificacion"] = _checks(verify_search(problem, result))
+    return report
+
+
+def _run_adversarial(scenario: Scenario, options: RunOptions, name: str) -> dict[str, Any]:
+    config = scenario.test_config
+    if name not in ADVERSARIAL_ALGORITHMS:
+        raise RunError(
+            f"adversarial algorithm must be one of {ADVERSARIAL_ALGORITHMS}, got {name!r}"
+        )
+    depth = options.depth if options.depth is not None else config.minimax_depth
+    if depth is None:
+        raise RunError("Minimax needs a depth (juego.profundidad_maxima_minimax or --depth)")
+    if depth < 1:
+        raise RunError(f"depth must be at least 1, got {depth}")
+    order = (options.order or config.action_order or "default").lower()
+    if order not in ("default", "reversed"):
+        raise RunError(f"action order must be default or reversed, got {order!r}")
+    board, state = scenario.board, scenario.initial_state
+    weights = UtilityWeights.from_mapping(scenario.utility_weights)
+    utility = make_utility(board, state.turn, weights)
+    algorithm = minimax if name == "MINIMAX" else alpha_beta
+    action_order: ActionOrder = "reversed" if order == "reversed" else "default"
+    result = algorithm(board, state, depth, utility, action_order, record=options.verify)
+    report = _adversarial_report(result, depth, order)
+    if options.verify:
+        report["verificacion"] = _checks(verify_adversarial(board, state, result))
+    return report
+
+
+def _cell(pos: Position) -> list[int]:
+    return [pos.row, pos.col]
+
+
+def _search_report(result: SearchResult) -> dict[str, Any]:
+    return {
+        "algoritmo": result.algorithm,
+        "exito": result.success,
+        "camino": [_cell(cell) for cell in result.path],
+        "costo": result.cost,
+        "longitud": result.length,
+        "estados_generados": result.generated,
+        "estados_expandidos": result.expanded,
+        "maximo_frontera": result.max_frontier,
+        "tiempo_segundos": result.time_seconds,
+    }
+
+
+def _adversarial_report(result: AdversarialResult, depth: int, order: str) -> dict[str, Any]:
+    return {
+        "algoritmo": result.algorithm,
+        "profundidad": depth,
+        "orden_acciones": order,
+        "accion": None if result.action is None else repr(result.action),
+        "valor": result.value,
+        "nodos_generados": result.generated,
+        "nodos_evaluados": result.evaluated,
+        "nodos_podados": result.pruned,
+        "profundidad_alcanzada": result.depth_reached,
+        "tiempo_segundos": result.time_seconds,
+    }
+
+
+def _checks(report: VerificationReport) -> list[dict[str, Any]]:
+    return [
+        {"chequeo": check.name, "ok": check.passed, "detalle": check.detail}
+        for check in report.checks
+    ]
