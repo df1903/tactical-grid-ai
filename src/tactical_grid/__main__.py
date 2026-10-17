@@ -1,12 +1,14 @@
-"""Command line: load a scenario JSON, run its test (or an override) and print the report."""
+"""Command line: load a scenario JSON, run its test (or a sweep) and print the report."""
 
 import argparse
 import json
 import sys
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+from typing import Any
 
 from tactical_grid.domain.model import Position
-from tactical_grid.experiments.runner import MODES, RunError, RunOptions, run
+from tactical_grid.experiments.runner import MODES, RunError, RunOptions
+from tactical_grid.experiments.sweep import Sweep, run_sweep, write_csv, write_json
 from tactical_grid.scenario.loader import ScenarioError, load_scenario
 
 
@@ -18,24 +20,42 @@ def _goal(text: str) -> Position:
     return Position(row, col)
 
 
+def _list_of[T](convert: Callable[[str], T]) -> Callable[[str], tuple[T, ...]]:
+    def parse(text: str) -> tuple[T, ...]:
+        try:
+            return tuple(convert(part.strip()) for part in text.split(",") if part.strip())
+        except ValueError as exc:
+            raise argparse.ArgumentTypeError(f"invalid list {text!r}: {exc}") from exc
+
+    return parse
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="tactical_grid",
-        description="Run a TacticalGrid test; options override the scenario's `prueba` section.",
+        description="Run a TacticalGrid test; options override the scenario's `prueba` section. "
+        "Options marked (list) accept comma-separated values and run every combination.",
     )
     parser.add_argument("scenario", nargs="?", help="path to the scenario JSON")
     parser.add_argument("--mode", choices=MODES)
     parser.add_argument(
         "--algorithm",
-        help="BFS, DFS, UCS, A_STAR (A*, A_ESTRELLA), BEAM, MINIMAX or ALPHA_BETA",
+        type=_list_of(str),
+        help="(list) BFS, DFS, UCS, A_STAR (A*, A_ESTRELLA), BEAM, MINIMAX or ALPHA_BETA",
     )
-    parser.add_argument("--heuristic", help="H1 (Manhattan) or H2 (obstacle aware); A* and Beam")
-    parser.add_argument("--k", type=int, help="beam width")
-    parser.add_argument("--depth", type=int, help="Minimax depth (default: from the JSON)")
-    parser.add_argument("--order", choices=("default", "reversed"), help="action order")
+    parser.add_argument(
+        "--heuristic", type=_list_of(str), help="(list) H1 (Manhattan) or H2 (obstacle aware)"
+    )
+    parser.add_argument("--k", type=_list_of(int), help="(list) beam width")
+    parser.add_argument("--depth", type=_list_of(int), help="(list) Minimax depth")
+    parser.add_argument(
+        "--order", type=_list_of(str), help="(list) action order: default or reversed"
+    )
     parser.add_argument("--unit", help="start unit of a search")
     parser.add_argument("--goal", type=_goal, help="goal cell of a search, as row,col")
     parser.add_argument("--verify", action="store_true", help="run the RF-42 checks")
+    parser.add_argument("--csv", metavar="PATH", help="write the metrics, one row per run")
+    parser.add_argument("--json", metavar="PATH", help="write the full reports as JSON")
     return parser
 
 
@@ -48,27 +68,29 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
     try:
         scenario = load_scenario(args.scenario)
-        options = RunOptions(
-            mode=args.mode,
-            algorithm=args.algorithm,
-            heuristic=args.heuristic,
-            k=args.k,
-            depth=args.depth,
-            order=args.order,
-            unit=args.unit,
-            goal=args.goal,
-            verify=args.verify,
+        sweep = Sweep(
+            base=RunOptions(mode=args.mode, unit=args.unit, goal=args.goal, verify=args.verify),
+            algorithms=args.algorithm or (),
+            heuristics=args.heuristic or (),
+            ks=args.k or (),
+            depths=args.depth or (),
+            orders=args.order or (),
         )
-        report = run(scenario, options)
+        reports = run_sweep(scenario, sweep)
+        if args.csv:
+            write_csv(args.csv, reports)
+        if args.json:
+            write_json(args.json, reports)
     except ScenarioError as exc:
         print("invalid scenario:", file=sys.stderr)
         for error in exc.errors:
             print(f"  - {error}", file=sys.stderr)
         return 2
-    except RunError as exc:
+    except (RunError, OSError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
-    print(json.dumps(report, ensure_ascii=False, indent=2))
+    output: Any = reports[0] if len(reports) == 1 else reports
+    print(json.dumps(output, ensure_ascii=False, indent=2))
     return 0
 
 

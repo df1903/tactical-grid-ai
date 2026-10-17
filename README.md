@@ -21,6 +21,9 @@ uv run mypy src                  # types (strict)
 Options (they override the scenario's `prueba` section): `--mode busqueda|adversarial|partida`,
 `--algorithm BFS|DFS|UCS|A_STAR|BEAM|MINIMAX|ALPHA_BETA`, `--heuristic H1|H2`, `--k`, `--depth`,
 `--order default|reversed`, `--unit`, `--goal row,col`, `--verify`. The report is printed as JSON.
+`--algorithm`, `--heuristic`, `--k`, `--depth` and `--order` take comma-separated lists and run every
+applicable combination (a sweep); `--csv PATH` writes one metrics row per run and `--json PATH` the
+full reports. Example: `--algorithm MINIMAX,ALPHA_BETA --depth 1,2,3,4 --order default,reversed`.
 
 ## Layout
 | Path | Content |

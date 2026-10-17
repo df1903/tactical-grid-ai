@@ -201,6 +201,9 @@ def _adversarial_report(result: AdversarialResult, depth: int, order: str) -> di
         "nodos_evaluados": result.evaluated,
         "nodos_podados": result.pruned,
         "profundidad_alcanzada": result.depth_reached,
+        "valores_raiz": [
+            {"accion": repr(action), "valor": value} for action, value in result.root_values
+        ],
         "tiempo_segundos": result.time_seconds,
     }
 
