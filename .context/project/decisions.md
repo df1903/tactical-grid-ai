@@ -122,3 +122,13 @@
 - Contexto: el usuario pidió que F4 figure a nombre de Jorge.
 - Decisión: autor y committer Jorge Iván Garcia Torres, sin trailers `Co-Authored-By`; el uso de IA sigue declarado en docstrings e informe técnico.
 - Alternativas descartadas: Daniel como autor (como en F3).
+
+## 2026-10-17 — Campos de `prueba` y línea de comandos (G10)
+- Contexto: el enunciado (pregunta 3) no fija qué campos de `prueba` usar para algoritmo, heurística, `k` y orden; hacía falta un punto de entrada para escenarios externos. Propuesta por Claude, aprobada por Daniel.
+- Decisión: campos opcionales propios (RNF-02) en `prueba`: `algoritmo`, `heuristica` (`H1` Manhattan, `H2` obstacle aware), `k`, `orden_acciones` (`default` o `reversed`); la profundidad sigue en `juego.profundidad_maxima_minimax`. Nombres canónicos de algoritmo con alias `A*`, `A_ESTRELLA`. CLI `python -m tactical_grid <escenario.json> [--mode --algorithm --heuristic --k --depth --order --unit --goal --verify]`: las opciones de la CLI mandan sobre el JSON; salida JSON con claves del Apéndice B; errores de escenario o de opciones salen por stderr con código 2. Modo `partida` solo describe la partida cargada (la continúa la GUI). Si no se da heurística, A* y Beam usan `H1`.
+- Alternativas descartadas: exigir los campos en el JSON (impide probar escenarios del profesor sin editarlos); nombres de campo en inglés (el JSON del enunciado es en español).
+
+## 2026-10-17 — Atribución de commits desde el punto de entrada (F4/F5)
+- Contexto: el usuario pidió que los commits desde el punto de entrada en adelante vayan a nombre de Daniel.
+- Decisión: autor y committer Daniel Felipe Franco Rincón, sin trailers `Co-Authored-By`; el uso de IA sigue declarado en docstrings e informe técnico.
+- Alternativas descartadas: seguir con Jorge como autor.
