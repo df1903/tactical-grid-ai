@@ -158,3 +158,22 @@ def test_invalid_file_is_rejected_atomically(tmp_path: Path) -> None:
 def test_missing_file_gives_clear_error(tmp_path: Path) -> None:
     with pytest.raises(ScenarioError, match="cannot read scenario"):
         load_scenario(tmp_path / "nope.json")
+
+
+def test_utility_weights_default_when_section_is_missing() -> None:
+    weights = build_scenario(raw_scenario()).utility_weights
+    assert weights == {"delivery": 10.0, "carry": 3.0, "goal_distance": 1.0, "rival_distance": 0.5}
+
+
+def test_utility_weights_are_read_from_the_json() -> None:
+    raw = raw_scenario()
+    raw["utilidad"] = {"entrega": 20, "distancia_rival": 0}
+    weights = build_scenario(raw).utility_weights
+    assert (weights["delivery"], weights["rival_distance"], weights["carry"]) == (20.0, 0.0, 3.0)
+
+
+@pytest.mark.parametrize("section", [{"entrega": -1}, {"entrega": "x"}, {"otro": 1}, [1]])
+def test_invalid_utility_section_is_rejected(section: Any) -> None:
+    raw = raw_scenario()
+    raw["utilidad"] = section
+    assert any("utilidad" in error for error in errors_of(raw))

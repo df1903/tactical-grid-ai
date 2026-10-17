@@ -4,13 +4,28 @@ JSON keys are Spanish and are read only here; the domain uses English names.
 """
 
 import json
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, TypeGuard
 
 from tactical_grid.domain.model import Board, GameState, Position, Side, Terrain
 
 DEFAULT_TURN_LIMIT = 100
+
+# Optional extra section `utilidad` (RNF-02). Values below apply only when the JSON omits a key.
+UTILITY_KEYS = {
+    "entrega": "delivery",
+    "recurso_cargado": "carry",
+    "distancia_objetivo": "goal_distance",
+    "distancia_rival": "rival_distance",
+}
+DEFAULT_UTILITY_WEIGHTS: Mapping[str, float] = {
+    "delivery": 10.0,
+    "carry": 3.0,
+    "goal_distance": 1.0,
+    "rival_distance": 0.5,
+}
 
 
 class ScenarioError(Exception):
@@ -36,6 +51,7 @@ class Scenario:
     board: Board
     initial_state: GameState
     test_config: TestConfig
+    utility_weights: Mapping[str, float] = field(default_factory=lambda: DEFAULT_UTILITY_WEIGHTS)
 
 
 def load_scenario(path: str | Path) -> Scenario:
@@ -71,6 +87,7 @@ def build_scenario(raw: dict[str, Any]) -> Scenario:
     turn = _read_side(raw.get("turno"), "turno", errors)
     carrier = _read_carrier(raw, units, errors)
     turn_limit = _read_turn_limit(raw, errors)
+    weights = _read_utility_weights(raw, errors)
 
     if errors or rows is None or cols is None or grid is None or turn is None:
         raise ScenarioError(errors or ["incomplete scenario"])
@@ -92,7 +109,12 @@ def build_scenario(raw: dict[str, Any]) -> Scenario:
         resource=None if carrier is not None else resource,
         turn=turn,
     )
-    return Scenario(board=board, initial_state=state, test_config=_read_test_config(raw))
+    return Scenario(
+        board=board,
+        initial_state=state,
+        test_config=_read_test_config(raw),
+        utility_weights=weights,
+    )
 
 
 def _is_int(value: object) -> TypeGuard[int]:
@@ -284,6 +306,24 @@ def _read_turn_limit(raw: dict[str, Any], errors: list[str]) -> int:
         errors.append(f"juego.limite_turnos must be a positive integer, got {limit!r}")
         return DEFAULT_TURN_LIMIT
     return int(limit)
+
+
+def _read_utility_weights(raw: dict[str, Any], errors: list[str]) -> dict[str, float]:
+    weights = dict(DEFAULT_UTILITY_WEIGHTS)
+    section = raw.get("utilidad")
+    if section is None:
+        return weights
+    if not isinstance(section, dict):
+        errors.append("'utilidad' must be an object")
+        return weights
+    for key, value in section.items():
+        if key not in UTILITY_KEYS:
+            errors.append(f"utilidad.{key} is unknown; expected one of {sorted(UTILITY_KEYS)}")
+        elif not _is_number(value) or value < 0:
+            errors.append(f"utilidad.{key} must be a non-negative number, got {value!r}")
+        else:
+            weights[UTILITY_KEYS[key]] = float(value)
+    return weights
 
 
 def _read_test_config(raw: dict[str, Any]) -> TestConfig:
