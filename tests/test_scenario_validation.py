@@ -177,3 +177,14 @@ def test_invalid_utility_section_is_rejected(section: Any) -> None:
     raw = raw_scenario()
     raw["utilidad"] = section
     assert any("utilidad" in error for error in errors_of(raw))
+
+
+def test_optional_prueba_fields_are_read() -> None:
+    raw = raw_scenario()
+    raw["prueba"].update(
+        {"algoritmo": "beam", "heuristica": "H2", "k": 4, "orden_acciones": "reversed"}
+    )
+    config = build_scenario(raw).test_config
+    assert (config.algorithm, config.heuristic, config.beam_width) == ("beam", "H2", 4)
+    assert config.action_order == "reversed"
+    assert build_scenario(raw_scenario()).test_config.beam_width is None

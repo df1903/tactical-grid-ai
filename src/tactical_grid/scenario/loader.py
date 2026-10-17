@@ -44,6 +44,11 @@ class TestConfig:
     start_unit: str | None
     goal: Position | None
     minimax_depth: int | None
+    # Optional extra `prueba` fields (RNF-02, G10): all default to None when absent.
+    algorithm: str | None = None
+    heuristic: str | None = None
+    beam_width: int | None = None
+    action_order: str | None = None
 
 
 @dataclass(frozen=True)
@@ -342,4 +347,12 @@ def _read_test_config(raw: dict[str, Any]) -> TestConfig:
         if isinstance(goal, dict) and _is_int(goal.get("fila")) and _is_int(goal.get("columna"))
         else None,
         minimax_depth=depth if _is_int(depth) else None,
+        algorithm=_text(prueba.get("algoritmo")),
+        heuristic=_text(prueba.get("heuristica")),
+        beam_width=prueba["k"] if _is_int(prueba.get("k")) else None,
+        action_order=_text(prueba.get("orden_acciones")),
     )
+
+
+def _text(value: object) -> str | None:
+    return value if isinstance(value, str) else None
