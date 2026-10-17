@@ -109,3 +109,18 @@ def test_cli_reports_run_errors_and_missing_files(capsys: pytest.CaptureFixture[
 def test_cli_without_arguments_prints_usage(capsys: pytest.CaptureFixture[str]) -> None:
     assert main([]) == 0
     assert "usage" in capsys.readouterr().out
+
+
+def test_20x20_scenario_with_three_units_per_side() -> None:
+    scenario = load_scenario(SCENARIOS / "prueba_20x20.json")
+    board = scenario.board
+    assert (board.rows, board.cols) == (20, 20)
+    sides = [side for side in board.unit_sides.values()]
+    assert sides.count(sides[0]) == 3 and len(sides) == 6
+    report = run(scenario, RunOptions(verify=True))
+    assert report["algoritmo"] == "ALPHA_BETA" and report["profundidad"] == 4
+    assert all(check["ok"] for check in report["verificacion"])
+    search = run(
+        scenario, RunOptions(mode="busqueda", algorithm="A_STAR", unit="A1", goal=Position(18, 17))
+    )
+    assert search["exito"] is True
