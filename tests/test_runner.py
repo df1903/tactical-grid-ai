@@ -124,3 +124,10 @@ def test_20x20_scenario_with_three_units_per_side() -> None:
         scenario, RunOptions(mode="busqueda", algorithm="A_STAR", unit="A1", goal=Position(18, 17))
     )
     assert search["exito"] is True
+
+
+def test_15x15_performance_scenario_decides_within_the_time_target() -> None:
+    scenario = load_scenario(SCENARIOS / "prueba_15x15.json")
+    assert (scenario.board.rows, scenario.board.cols) == (15, 15)
+    report = run(scenario, RunOptions(depth=5))
+    assert report["algoritmo"] == "ALPHA_BETA" and report["tiempo_segundos"] < 5.0

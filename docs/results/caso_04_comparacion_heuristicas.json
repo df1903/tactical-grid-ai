@@ -1,0 +1,395 @@
+[
+  {
+    "algoritmo": "UCS",
+    "exito": true,
+    "camino": [
+      [
+        9,
+        5
+      ],
+      [
+        8,
+        5
+      ],
+      [
+        7,
+        5
+      ],
+      [
+        6,
+        5
+      ],
+      [
+        5,
+        5
+      ],
+      [
+        4,
+        5
+      ],
+      [
+        3,
+        5
+      ],
+      [
+        2,
+        5
+      ],
+      [
+        2,
+        6
+      ],
+      [
+        2,
+        7
+      ],
+      [
+        2,
+        8
+      ],
+      [
+        2,
+        9
+      ],
+      [
+        2,
+        10
+      ],
+      [
+        3,
+        10
+      ],
+      [
+        4,
+        10
+      ],
+      [
+        5,
+        10
+      ],
+      [
+        6,
+        10
+      ],
+      [
+        7,
+        10
+      ],
+      [
+        8,
+        10
+      ],
+      [
+        9,
+        10
+      ],
+      [
+        9,
+        11
+      ],
+      [
+        9,
+        12
+      ],
+      [
+        9,
+        13
+      ]
+    ],
+    "costo": 24.0,
+    "longitud": 22,
+    "estados_generados": 346,
+    "estados_expandidos": 332,
+    "maximo_frontera": 20,
+    "tiempo_segundos": 0.015049599998746999,
+    "verificacion": [
+      {
+        "chequeo": "valid moves",
+        "ok": true,
+        "detalle": "every step is a legal action"
+      },
+      {
+        "chequeo": "no obstacles",
+        "ok": true,
+        "detalle": "no cell is blocked"
+      },
+      {
+        "chequeo": "cost matches",
+        "ok": true,
+        "detalle": "reported 24.0, replayed 24.0"
+      },
+      {
+        "chequeo": "goal reached",
+        "ok": true,
+        "detalle": "final cell Position(row=9, col=13), goal Position(row=9, col=13)"
+      },
+      {
+        "chequeo": "no invalid states",
+        "ok": true,
+        "detalle": "all replayed states are valid"
+      }
+    ]
+  },
+  {
+    "algoritmo": "A_STAR_H1",
+    "exito": true,
+    "camino": [
+      [
+        9,
+        5
+      ],
+      [
+        9,
+        6
+      ],
+      [
+        9,
+        7
+      ],
+      [
+        9,
+        8
+      ],
+      [
+        8,
+        8
+      ],
+      [
+        7,
+        8
+      ],
+      [
+        6,
+        8
+      ],
+      [
+        5,
+        8
+      ],
+      [
+        4,
+        8
+      ],
+      [
+        3,
+        8
+      ],
+      [
+        2,
+        8
+      ],
+      [
+        2,
+        9
+      ],
+      [
+        2,
+        10
+      ],
+      [
+        3,
+        10
+      ],
+      [
+        4,
+        10
+      ],
+      [
+        5,
+        10
+      ],
+      [
+        6,
+        10
+      ],
+      [
+        7,
+        10
+      ],
+      [
+        8,
+        10
+      ],
+      [
+        9,
+        10
+      ],
+      [
+        9,
+        11
+      ],
+      [
+        9,
+        12
+      ],
+      [
+        9,
+        13
+      ]
+    ],
+    "costo": 24.0,
+    "longitud": 22,
+    "estados_generados": 230,
+    "estados_expandidos": 186,
+    "maximo_frontera": 44,
+    "tiempo_segundos": 0.0084591999911936,
+    "verificacion": [
+      {
+        "chequeo": "valid moves",
+        "ok": true,
+        "detalle": "every step is a legal action"
+      },
+      {
+        "chequeo": "no obstacles",
+        "ok": true,
+        "detalle": "no cell is blocked"
+      },
+      {
+        "chequeo": "cost matches",
+        "ok": true,
+        "detalle": "reported 24.0, replayed 24.0"
+      },
+      {
+        "chequeo": "goal reached",
+        "ok": true,
+        "detalle": "final cell Position(row=9, col=13), goal Position(row=9, col=13)"
+      },
+      {
+        "chequeo": "no invalid states",
+        "ok": true,
+        "detalle": "all replayed states are valid"
+      }
+    ]
+  },
+  {
+    "algoritmo": "A_STAR_H2",
+    "exito": true,
+    "camino": [
+      [
+        9,
+        5
+      ],
+      [
+        8,
+        5
+      ],
+      [
+        7,
+        5
+      ],
+      [
+        6,
+        5
+      ],
+      [
+        5,
+        5
+      ],
+      [
+        4,
+        5
+      ],
+      [
+        3,
+        5
+      ],
+      [
+        2,
+        5
+      ],
+      [
+        2,
+        6
+      ],
+      [
+        2,
+        7
+      ],
+      [
+        2,
+        8
+      ],
+      [
+        2,
+        9
+      ],
+      [
+        2,
+        10
+      ],
+      [
+        3,
+        10
+      ],
+      [
+        4,
+        10
+      ],
+      [
+        5,
+        10
+      ],
+      [
+        6,
+        10
+      ],
+      [
+        7,
+        10
+      ],
+      [
+        8,
+        10
+      ],
+      [
+        9,
+        10
+      ],
+      [
+        9,
+        11
+      ],
+      [
+        9,
+        12
+      ],
+      [
+        9,
+        13
+      ]
+    ],
+    "costo": 24.0,
+    "longitud": 22,
+    "estados_generados": 164,
+    "estados_expandidos": 115,
+    "maximo_frontera": 49,
+    "tiempo_segundos": 0.005563099999562837,
+    "verificacion": [
+      {
+        "chequeo": "valid moves",
+        "ok": true,
+        "detalle": "every step is a legal action"
+      },
+      {
+        "chequeo": "no obstacles",
+        "ok": true,
+        "detalle": "no cell is blocked"
+      },
+      {
+        "chequeo": "cost matches",
+        "ok": true,
+        "detalle": "reported 24.0, replayed 24.0"
+      },
+      {
+        "chequeo": "goal reached",
+        "ok": true,
+        "detalle": "final cell Position(row=9, col=13), goal Position(row=9, col=13)"
+      },
+      {
+        "chequeo": "no invalid states",
+        "ok": true,
+        "detalle": "all replayed states are valid"
+      }
+    ]
+  }
+]

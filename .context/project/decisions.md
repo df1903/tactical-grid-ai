@@ -137,3 +137,15 @@
 - Contexto: RF-29, RF-32 y RF-38/39 piden comparar profundidades, órdenes y algoritmos, y dejar los resultados accesibles; el formato CSV/JSON se aprobó el 2026-10-16.
 - Decisión: `--algorithm`, `--heuristic`, `--k`, `--depth` y `--order` aceptan listas separadas por comas y se ejecutan las combinaciones que aplican (heurística para A* y Beam, `k` para Beam, profundidad y orden para Minimax y alfa-beta). `--csv` escribe una fila plana por corrida (el camino como `r,c;r,c` y los chequeos como `verificacion_ok`); `--json` escribe los informes completos, con camino, `valores_raiz` y chequeos. Los `valores_raiz` de alfa-beta de las acciones posteriores a la mejor pueden ser cotas, no valores exactos.
 - Alternativas descartadas: un archivo de experimentos aparte (más formato que mantener); exportar siempre sin que se pida.
+
+## 2026-10-17 — Pesos de utilidad: se conservan 10/3/1/0.5
+- Contexto: la limitación de la utilidad (recurso soltado bajo una unidad propia vale más que llevarlo a más de 3 pasos de la base; profundidades pares aplanan valores) quedó pendiente de decisión. Elegida por Claude a petición de Daniel (delegó la elección).
+- Decisión: no cambiar los valores por defecto. Cambiarlos invalidaría los casos 7–10 ya demostrados a 4 días de la entrega; los pesos ya son configurables en la sección `utilidad` del JSON (RNF-03), así que se documenta como limitación en el informe técnico y se ajusta por escenario si hace falta (por ejemplo `recurso_cargado` ≥ 8).
+- Alternativas descartadas: subir `recurso_cargado` por defecto (riesgo de regresión sin tiempo de revalidar los casos).
+
+## 2026-10-17 — Rendimiento de Minimax medido y GUI mínima (F5)
+- Contexto: prueba pendiente de la meta de 5 s por jugada (decisión 2026-10-16) y GUI de RF-40.
+- Medición (mapa 15×15 con pantanos y muro, 3 unidades por bando, profundidad contada en acciones de un bando): alfa-beta d=5 0.04 s, d=6 0.18 s, d=7 0.86 s; Minimax d=4 0.10 s, d=5 1.2 s, d=6 15.7 s (supera la meta). Con 5 unidades por bando: alfa-beta d=5 0.15 s, d=6 0.85 s. En 20×20 con 3 unidades, alfa-beta d=6 0.20 s. Conclusión: dentro de la meta alfa-beta hasta d=7 y Minimax simple hasta d=5.
+- Decisión: GUI en `gui/app.py` (tkinter) sobre `gui/session.py` (sin tkinter, probado en `tests/test_gui_session.py`); se abre con `python -m tactical_grid.gui [escenario.json]`. Clic izquierdo selecciona o mueve, clic derecho fija la meta de la búsqueda; ejecuta los 7 algoritmos, dibuja el camino o la acción sugerida, permite jugar turnos (a mano o con IA), deshacer y reiniciar. Los colores de terreno salen del costo leído del JSON, no de nombres. No hay vista de estados explorados (RF-41, opcional).
+- Alternativas descartadas: reutilizar `describe` del runner como estado de la GUI (no sirve para jugar); colores por nombre de terreno (viola RNF-03).
+- Autoría: los commits de F5 los firma Daniel (continúa la decisión del 2026-10-17).

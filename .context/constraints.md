@@ -26,5 +26,4 @@
 - No hay otras restricciones de la universidad o del profesor conocidas.
 
 ## Rendimiento
-- Meta de tiempo por decisión de Minimax a la profundidad por defecto (≈10 s): `<pendiente>` hasta medir.
-- Tamaño máximo de mapa: `<pendiente>`.
+- Meta de 5 s por decisión de Minimax con profundidad configurable; mapa máximo de 15×15 para Minimax. *(decisión 2026-10-16; medido el 2026-10-17: ver decisions.md)*

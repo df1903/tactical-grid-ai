@@ -6,7 +6,7 @@
 - Python 3.14 — todo el código del proyecto.
 
 ## Frameworks y librerías
-- GUI: `<pendiente>` (el usuario aceptó librerías externas; no se eligió ninguna).
+- `tkinter` (librería estándar de Python 3.14) — GUI mínima (RF-40); sin dependencia nueva. *(aprobado 2026-10-16)*
 - `pytest` 9.1.1 — pruebas. *(delegado por el usuario; aprobado en la conversación del 2026-10-07)*
 - Resto de librerías de ejecución: `<pendiente>`; por defecto, solo librería estándar (`json`, `time`, `dataclasses`).
 

@@ -1,0 +1,345 @@
+{
+ "mapa": {
+  "filas": 15,
+  "columnas": 15
+ },
+ "tipos_terreno": {
+  "camino": {
+   "costo": 1,
+   "transitable": true
+  },
+  "pantano": {
+   "costo": 3,
+   "transitable": true
+  },
+  "muro": {
+   "transitable": false
+  }
+ },
+ "terreno": [
+  [
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "pantano",
+   "camino",
+   "camino",
+   "camino"
+  ],
+  [
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "pantano",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino"
+  ],
+  [
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "pantano",
+   "camino",
+   "camino",
+   "camino",
+   "camino"
+  ],
+  [
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "pantano",
+   "camino",
+   "camino",
+   "muro",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino"
+  ],
+  [
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "muro",
+   "camino",
+   "pantano",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino"
+  ],
+  [
+   "camino",
+   "camino",
+   "camino",
+   "pantano",
+   "camino",
+   "camino",
+   "camino",
+   "muro",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "pantano"
+  ],
+  [
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "muro",
+   "pantano",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino"
+  ],
+  [
+   "camino",
+   "camino",
+   "pantano",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "muro",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "pantano",
+   "camino"
+  ],
+  [
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "muro",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino"
+  ],
+  [
+   "camino",
+   "pantano",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "muro",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "pantano",
+   "camino",
+   "camino"
+  ],
+  [
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "pantano",
+   "muro",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino"
+  ],
+  [
+   "pantano",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "muro",
+   "camino",
+   "camino",
+   "camino",
+   "pantano",
+   "camino",
+   "camino",
+   "camino"
+  ],
+  [
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "pantano",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino"
+  ],
+  [
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "pantano",
+   "camino",
+   "camino",
+   "camino",
+   "camino"
+  ],
+  [
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "pantano",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino",
+   "camino"
+  ]
+ ],
+ "bases": {
+  "A": {
+   "fila": 0,
+   "columna": 0
+  },
+  "B": {
+   "fila": 14,
+   "columna": 14
+  }
+ },
+ "recurso": {
+  "fila": 2,
+  "columna": 9
+ },
+ "unidades": [
+  {
+   "id": "A1",
+   "bando": "A",
+   "tipo": "estandar",
+   "fila": 1,
+   "columna": 1
+  },
+  {
+   "id": "B1",
+   "bando": "B",
+   "tipo": "estandar",
+   "fila": 13,
+   "columna": 13
+  },
+  {
+   "id": "A2",
+   "bando": "A",
+   "tipo": "estandar",
+   "fila": 2,
+   "columna": 1
+  },
+  {
+   "id": "B2",
+   "bando": "B",
+   "tipo": "estandar",
+   "fila": 12,
+   "columna": 13
+  },
+  {
+   "id": "A3",
+   "bando": "A",
+   "tipo": "estandar",
+   "fila": 3,
+   "columna": 1
+  },
+  {
+   "id": "B3",
+   "bando": "B",
+   "tipo": "estandar",
+   "fila": 11,
+   "columna": 13
+  }
+ ],
+ "turno": "A",
+ "juego": {
+  "portador_recurso": null,
+  "limite_turnos": 100,
+  "profundidad_maxima_minimax": 5
+ },
+ "version": "1.0",
+ "prueba": {
+  "modo": "adversarial",
+  "algoritmo": "ALPHA_BETA"
+ }
+}

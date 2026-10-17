@@ -37,7 +37,9 @@ full reports. Example: `--algorithm MINIMAX,ALPHA_BETA --depth 1,2,3,4 --order d
 | `src/tactical_grid/experiments/` | metrics, verifier, minimal cases |
 | `tests/` | automated tests |
 | `scenarios/` | JSON scenarios (`apendice_a.json` is the official example) |
-| `docs/` | assignment statement (`enunciado.md`), technical report, user manual |
+| `docs/` | assignment statement (`enunciado.md`), `technical-report.md`, `user-manual.md`, `cases.md` (10 cases, expected vs. obtained), `results/` (raw CSV/JSON of the experiments) |
 
 ## Status
-Phase 0 (setup) done. Next: Phase 1 — model and scenario. See `.context/state/current.md` and `.context/project/roadmap.md`.
+All functional requirements are implemented (domain, scenario loader, BFS/DFS/UCS/A*/Beam, Minimax/alpha-beta,
+verifier, CLI with sweeps and export, GUI with automatic mode) and documented. Pending: the *Student validation*
+field of the method docstrings (cross-review). See `.context/state/current.md`.
