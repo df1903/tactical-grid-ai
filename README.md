@@ -12,6 +12,8 @@ Project 1 of *Sistemas Inteligentes I* (UCALDAS). Team: Jorge Iván Garcia Torre
 uv sync                          # install dependencies
 uv run python -m tactical_grid scenarios/apendice_a.json --algorithm A_STAR --verify
 uv run python -m tactical_grid scenarios/caso_07_decision_adversarial.json --algorithm ALPHA_BETA --depth 3
+uv run python -m tactical_grid.gui scenarios/apendice_a.json   # GUI (omit the path to pick a file)
+uv run python -m tactical_grid.gui scenarios/prueba_20x20.json   # 20x20 test, 3 units per side
 uv run pytest                    # tests
 uv run ruff check .              # lint
 uv run ruff format --check .     # format check
