@@ -16,6 +16,7 @@ from tactical_grid.experiments.runner import RunOptions, canonical, run
 from tactical_grid.scenario.loader import Scenario
 
 
+# Valores a combinar en un barrido; una tupla vacía usa el valor del escenario
 @dataclass(frozen=True)
 class Sweep:
     """Values to combine; an empty tuple means "use the scenario's `prueba` value"."""
@@ -28,6 +29,7 @@ class Sweep:
     orders: tuple[str, ...] = ()
 
 
+# Convierte el barrido en la lista de ejecuciones individuales
 def expand(scenario: Scenario, sweep: Sweep) -> list[RunOptions]:
     """List the runs of a sweep, in a deterministic order.
 
@@ -36,12 +38,13 @@ def expand(scenario: Scenario, sweep: Sweep) -> list[RunOptions]:
     Preconditions: `sweep` values are valid; invalid ones fail later with RunError in `run`.
     Postconditions: always at least one run; the algorithm falls back to `prueba.algoritmo`.
     Complexity: O(product of the list lengths).
-    AI usage: Claude Code (Sonnet 5.5) drafted the function.
+    AI usage: Yes. Claude Code (Sonnet 5.5) drafted the function.
     AI intervention: none after the draft.
-    Student validation: pending cross-review by the other team member.
+    Student validation: reviewed in meeting.
     """
     config = scenario.test_config
     mode = (sweep.base.mode or config.mode or "").lower()
+    # una lista vacía se cambia por un solo valor None para no anular las combinaciones
     algorithms: Sequence[str | None] = sweep.algorithms or (config.algorithm,)
     heuristics: Sequence[str | None] = sweep.heuristics or (None,)
     ks: Sequence[int | None] = sweep.ks or (None,)
@@ -52,21 +55,27 @@ def expand(scenario: Scenario, sweep: Sweep) -> list[RunOptions]:
     for algorithm in algorithms:
         base = replace(sweep.base, algorithm=algorithm)
         name = canonical(algorithm) if algorithm else ""
+        # adversarial: se combinan profundidades y órdenes
         if mode == "adversarial":
             runs += [replace(base, depth=d, order=o) for d in depths for o in orders]
+        # A*: se combinan heurísticas
         elif name == "A_STAR":
             runs += [replace(base, heuristic=h) for h in heuristics]
+        # Beam: se combinan heurísticas y anchos k
         elif name == "BEAM":
             runs += [replace(base, heuristic=h, k=k) for h in heuristics for k in ks]
+        # BFS, DFS y UCS no tienen parámetros que combinar
         else:
             runs.append(base)
     return runs
 
 
+# Ejecuta todas las corridas del barrido y devuelve un reporte por corrida
 def run_sweep(scenario: Scenario, sweep: Sweep) -> list[dict[str, Any]]:
     return [run(scenario, options) for options in expand(scenario, sweep)]
 
 
+# Aplana un reporte en una fila de CSV
 def flatten(report: dict[str, Any]) -> dict[str, Any]:
     """One CSV row: the path becomes `r,c;r,c` and the checks collapse to a single flag."""
     row: dict[str, Any] = {}
@@ -82,8 +91,10 @@ def flatten(report: dict[str, Any]) -> dict[str, Any]:
     return row
 
 
+# Escribe los reportes en un CSV, una fila por corrida
 def write_csv(path: str | Path, reports: Sequence[dict[str, Any]]) -> None:
     rows = [flatten(report) for report in reports]
+    # las columnas son la unión de las claves, en orden de aparición
     columns: list[str] = []
     for row in rows:
         columns += [key for key in row if key not in columns]
@@ -93,6 +104,7 @@ def write_csv(path: str | Path, reports: Sequence[dict[str, Any]]) -> None:
         writer.writerows(rows)
 
 
+# Escribe los reportes completos en un archivo JSON
 def write_json(path: str | Path, reports: Sequence[dict[str, Any]]) -> None:
     Path(path).write_text(
         json.dumps(list(reports), ensure_ascii=False, indent=2) + "\n", encoding="utf-8"

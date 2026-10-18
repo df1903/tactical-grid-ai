@@ -8,6 +8,7 @@ from tactical_grid.algorithms.common import PathProblem, SearchResult, failed, f
 from tactical_grid.domain.model import GameState
 
 
+# Busqueda en anchura (BFS)
 def bfs(problem: PathProblem) -> SearchResult:
     """Breadth-first graph search with a FIFO frontier.
 
@@ -18,20 +19,26 @@ def bfs(problem: PathProblem) -> SearchResult:
         expanded. The initial state counts as generated. Successor order is the domain
         order (up, down, left, right). `max_frontier` is the peak frontier size.
     Complexity: O(S) time and space over S reachable states (position-only state space).
-    AI usage: Claude Code (Sonnet 5.5) drafted the function.
+    AI usage: Yes. Claude Code (Sonnet 5.5) drafted the function.
     AI intervention: none after the draft; goal-at-expansion is a team convention.
-    Student validation: pending cross-review by the other team member.
+    Student validation: reviewed in meeting.
     """
+    # se guarda la hora de inicio para medir el tiempo
     started = time.perf_counter()
     start = problem.initial
+    # padre de cada estado, para reconstruir el camino
     parents: dict[GameState, GameState | None] = {start: None}
+    # costo acumulado hasta cada estado
     g: dict[GameState, float] = {start: 0.0}
+    # frontera FIFO: el primero en entrar es el primero en salir
     frontier: deque[GameState] = deque([start])
     explored: set[GameState] = set()
+    # contadores para las métricas
     generated, expanded, max_frontier = 1, 0, 1
 
     while frontier:
         node = frontier.popleft()
+        # la meta se prueba al expandir el nodo
         if problem.is_goal(node):
             return found(
                 "BFS", problem, parents, g, node, generated, expanded, max_frontier, started
@@ -39,6 +46,7 @@ def bfs(problem: PathProblem) -> SearchResult:
         expanded += 1
         explored.add(node)
         for child, cost in problem.expand(node):
+            # se ignoran estados ya expandidos o ya en la frontera
             if child in explored or child in parents:
                 continue
             parents[child] = node
@@ -46,9 +54,11 @@ def bfs(problem: PathProblem) -> SearchResult:
             frontier.append(child)
             generated += 1
         max_frontier = max(max_frontier, len(frontier))
+    # la frontera se vació sin encontrar la meta
     return failed("BFS", generated, expanded, max_frontier, started)
 
 
+# Busqueda en profundidad (DFS)
 def dfs(problem: PathProblem) -> SearchResult:
     """Depth-first graph search with a LIFO frontier.
 
@@ -59,14 +69,15 @@ def dfs(problem: PathProblem) -> SearchResult:
         twice, initial state counts as generated). Children are pushed in reverse domain
         order so the first one in domain order (up, down, left, right) is expanded first.
     Complexity: O(S) time and space over S reachable states.
-    AI usage: Claude Code (Sonnet 5.5) drafted the function.
+    AI usage: Yes. Claude Code (Sonnet 5.5) drafted the function.
     AI intervention: none after the draft; successor order is a team convention.
-    Student validation: pending cross-review by the other team member.
+    Student validation: reviewed in meeting.
     """
     started = time.perf_counter()
     start = problem.initial
     parents: dict[GameState, GameState | None] = {start: None}
     g: dict[GameState, float] = {start: 0.0}
+    # frontera LIFO (pila): el último en entrar es el primero en salir
     frontier: list[GameState] = [start]
     explored: set[GameState] = set()
     generated, expanded, max_frontier = 1, 0, 1
@@ -79,6 +90,7 @@ def dfs(problem: PathProblem) -> SearchResult:
             )
         expanded += 1
         explored.add(node)
+        # hijos nuevos de este nodo
         fresh: list[GameState] = []
         for child, cost in problem.expand(node):
             if child in explored or child in parents:
@@ -87,11 +99,13 @@ def dfs(problem: PathProblem) -> SearchResult:
             g[child] = g[node] + cost
             fresh.append(child)
             generated += 1
+        # se apilan al revés para que salga primero el primer hijo del dominio
         frontier.extend(reversed(fresh))
         max_frontier = max(max_frontier, len(frontier))
     return failed("DFS", generated, expanded, max_frontier, started)
 
 
+# Busqueda de costo uniforme (UCS)
 def ucs(problem: PathProblem) -> SearchResult:
     """Uniform-cost search: always expand the frontier node with the lowest g(n).
 
@@ -104,17 +118,20 @@ def ucs(problem: PathProblem) -> SearchResult:
         on expansion, so the returned cost is optimal. `max_frontier` counts distinct
         states waiting to be expanded (stale heap entries are not counted).
     Complexity: O(S log S) time and O(S) space over S reachable states.
-    AI usage: Claude Code (Sonnet 5.5) drafted the function.
+    AI usage: Yes. Claude Code (Sonnet 5.5) drafted the function.
     AI intervention: none after the draft; tie-break and update rules come from RF-19.
-    Student validation: pending cross-review by the other team member.
+    Student validation: reviewed in meeting.
     """
     started = time.perf_counter()
     start = problem.initial
     parents: dict[GameState, GameState | None] = {start: None}
     g: dict[GameState, float] = {start: 0.0}
+    # orden de llegada a la frontera, sirve para desempatar costos iguales
     order: dict[GameState, int] = {start: 0}
     by_order: list[GameState] = [start]
+    # frontera como cola de prioridad con (costo, orden de llegada)
     heap: list[tuple[float, int]] = [(0.0, 0)]
+    # estados que siguen esperando ser expandidos
     waiting: set[GameState] = {start}
     explored: set[GameState] = set()
     generated, expanded, max_frontier = 1, 0, 1
@@ -125,6 +142,7 @@ def ucs(problem: PathProblem) -> SearchResult:
         if node in explored or cost_so_far > g[node]:
             continue  # stale entry left behind by a cost update
         waiting.discard(node)
+        # la meta se prueba al expandir, por eso el costo devuelto es el óptimo
         if problem.is_goal(node):
             return found(
                 "UCS", problem, parents, g, node, generated, expanded, max_frontier, started
@@ -135,6 +153,7 @@ def ucs(problem: PathProblem) -> SearchResult:
             if child in explored:
                 continue
             new_cost = g[node] + cost
+            # estado nuevo: se registra y cuenta como generado
             if child not in g:
                 parents[child] = node
                 g[child] = new_cost
@@ -143,6 +162,7 @@ def ucs(problem: PathProblem) -> SearchResult:
                 waiting.add(child)
                 generated += 1
                 heapq.heappush(heap, (new_cost, order[child]))
+            # estado conocido con un camino más barato: se actualiza costo y padre
             elif new_cost < g[child]:
                 parents[child] = node
                 g[child] = new_cost

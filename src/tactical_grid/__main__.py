@@ -12,6 +12,7 @@ from tactical_grid.experiments.sweep import Sweep, run_sweep, write_csv, write_j
 from tactical_grid.scenario.loader import ScenarioError, load_scenario
 
 
+# Convierte un texto "fila,col" en una posición (para el argumento --goal)
 def _goal(text: str) -> Position:
     try:
         row, col = (int(part) for part in text.split(","))
@@ -20,6 +21,7 @@ def _goal(text: str) -> Position:
     return Position(row, col)
 
 
+# Crea un lector de listas separadas por comas, aplicando `convert` a cada elemento
 def _list_of[T](convert: Callable[[str], T]) -> Callable[[str], tuple[T, ...]]:
     def parse(text: str) -> tuple[T, ...]:
         try:
@@ -30,6 +32,7 @@ def _list_of[T](convert: Callable[[str], T]) -> Callable[[str], tuple[T, ...]]:
     return parse
 
 
+# Define los argumentos de la línea de comandos
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="tactical_grid",
@@ -59,15 +62,18 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+# Punto de entrada: carga el escenario, ejecuta la prueba o el barrido e imprime el reporte
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    # sin escenario solo se muestra el uso
     if args.scenario is None:
         print("TacticalGrid")
         parser.print_usage()
         return 0
     try:
         scenario = load_scenario(args.scenario)
+        # las opciones de la terminal se agrupan en un barrido (una sola corrida si no hay listas)
         sweep = Sweep(
             base=RunOptions(mode=args.mode, unit=args.unit, goal=args.goal, verify=args.verify),
             algorithms=args.algorithm or (),
@@ -77,10 +83,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             orders=args.order or (),
         )
         reports = run_sweep(scenario, sweep)
+        # exportación opcional a CSV y JSON
         if args.csv:
             write_csv(args.csv, reports)
         if args.json:
             write_json(args.json, reports)
+    # errores del escenario o de la ejecución: se muestran y se sale con código 2
     except ScenarioError as exc:
         print("invalid scenario:", file=sys.stderr)
         for error in exc.errors:
@@ -89,6 +97,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     except (RunError, OSError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
+    # una sola corrida se imprime como objeto; varias, como lista
     output: Any = reports[0] if len(reports) == 1 else reports
     print(json.dumps(output, ensure_ascii=False, indent=2))
     return 0

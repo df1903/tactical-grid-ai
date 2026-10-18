@@ -27,23 +27,30 @@ from tactical_grid.experiments.verifier import (
 )
 from tactical_grid.scenario.loader import Scenario
 
+# modos de prueba permitidos
 MODES = ("busqueda", "adversarial", "partida")
+# nombres alternativos de algoritmos que se convierten al nombre oficial
 _ALIASES = {"A*": "A_STAR", "A_ESTRELLA": "A_STAR", "ASTAR": "A_STAR", "BEAM_SEARCH": "BEAM"}
+# algoritmos de búsqueda de camino y algoritmos adversariales disponibles
 SEARCH_ALGORITHMS = ("BFS", "DFS", "UCS", "A_STAR", "BEAM")
 ADVERSARIAL_ALGORITHMS = ("MINIMAX", "ALPHA_BETA")
+# heurísticas disponibles por nombre (H1 = Manhattan, H2 = con obstáculos)
 _HEURISTICS: dict[str, Callable[[PathProblem], Heuristic]] = {
     "H1": manhattan,
     "MANHATTAN": manhattan,
     "H2": obstacle_aware,
     "OBSTACLE_AWARE": obstacle_aware,
 }
+# algoritmos sin heurística, buscados por nombre
 _UNINFORMED = {"BFS": bfs, "DFS": dfs, "UCS": ucs}
 
 
+# Excepción para cuando la prueba no se puede ejecutar (opción faltante o desconocida)
 class RunError(Exception):
     """The requested test cannot run (missing or unknown option)."""
 
 
+# Opciones de la ejecución; lo que quede en None se toma de la sección `prueba` del escenario
 @dataclass(frozen=True)
 class RunOptions:
     """Overrides; any field left as None falls back to the scenario's `prueba` section."""
@@ -59,11 +66,13 @@ class RunOptions:
     verify: bool = False
 
 
+# Pasa un nombre a su forma oficial: mayúsculas, guiones bajos y sin alias
 def canonical(name: str) -> str:
     key = name.strip().upper().replace("-", "_").replace(" ", "_")
     return _ALIASES.get(key, key)
 
 
+# Ejecuta la prueba configurada y devuelve el reporte
 def run(scenario: Scenario, options: RunOptions) -> dict[str, Any]:
     """Execute the configured test and return a JSON-serializable report.
 
@@ -73,14 +82,16 @@ def run(scenario: Scenario, options: RunOptions) -> dict[str, Any]:
     Postconditions: raises RunError, never a bare KeyError, for missing or unknown options.
         With `options.verify` the report carries the RF-42 checks that apply to the mode.
     Complexity: that of the chosen algorithm.
-    AI usage: Claude Code (Sonnet 5.5) drafted the module.
+    AI usage: Yes. Claude Code (Sonnet 5.5) drafted the module.
     AI intervention: none after the draft; option names are the team's G10 proposal.
-    Student validation: pending cross-review by the other team member.
+    Student validation: reviewed in meeting.
     """
     config = scenario.test_config
+    # la opción explícita gana; si falta se usa la del escenario
     mode = (options.mode or config.mode or "").lower()
     if mode not in MODES:
         raise RunError(f"mode must be one of {MODES}, got {mode!r}")
+    # en modo partida solo se describe el juego cargado
     if mode == "partida":
         return describe(scenario)
     name = canonical(options.algorithm or config.algorithm or "")
@@ -89,6 +100,7 @@ def run(scenario: Scenario, options: RunOptions) -> dict[str, Any]:
     return _run_adversarial(scenario, options, name)
 
 
+# Resumen del juego cargado (modo partida)
 def describe(scenario: Scenario) -> dict[str, Any]:
     """Mode `partida`: summary of the loaded game (the GUI continues it turn by turn)."""
     board, state = scenario.board, scenario.initial_state
@@ -107,10 +119,12 @@ def describe(scenario: Scenario) -> dict[str, Any]:
     }
 
 
+# Ejecuta una búsqueda de camino (BFS, DFS, UCS, A* o Beam) y arma su reporte
 def _run_search(scenario: Scenario, options: RunOptions, name: str) -> dict[str, Any]:
     config = scenario.test_config
     if name not in SEARCH_ALGORITHMS:
         raise RunError(f"search algorithm must be one of {SEARCH_ALGORITHMS}, got {name!r}")
+    # unidad y meta: la opción explícita gana sobre la del escenario
     unit = options.unit or config.start_unit
     goal = options.goal or config.goal
     if unit is None or goal is None:
@@ -121,9 +135,11 @@ def _run_search(scenario: Scenario, options: RunOptions, name: str) -> dict[str,
         raise RunError(f"goal {_cell(goal)} is outside the map or not passable")
     problem = make_problem(scenario.board, scenario.initial_state, unit, goal)
 
+    # los algoritmos sin heurística se ejecutan directo
     if name in _UNINFORMED:
         result = _UNINFORMED[name](problem)
     else:
+        # A* y Beam necesitan una heurística (por defecto H1)
         heuristic_name = canonical(options.heuristic or config.heuristic or "H1")
         factory = _HEURISTICS.get(heuristic_name)
         if factory is None:
@@ -134,6 +150,7 @@ def _run_search(scenario: Scenario, options: RunOptions, name: str) -> dict[str,
         if name == "A_STAR":
             result = a_star(problem, heuristic, f"A_STAR_{heuristic_name}")
         else:
+            # Beam además necesita el ancho k del haz
             k = options.k if options.k is not None else config.beam_width
             if k is None:
                 raise RunError("BEAM needs a width k (prueba.k or --k)")
@@ -141,17 +158,20 @@ def _run_search(scenario: Scenario, options: RunOptions, name: str) -> dict[str,
                 raise RunError(f"beam width k must be at least 1, got {k}")
             result = beam_search(problem, heuristic, k, f"BEAM_K{k}")
     report = _search_report(result)
+    # si se pidió verificar, se agregan los chequeos al reporte
     if options.verify:
         report["verificacion"] = _checks(verify_search(problem, result))
     return report
 
 
+# Ejecuta Minimax o alfa-beta sobre el estado inicial y arma su reporte
 def _run_adversarial(scenario: Scenario, options: RunOptions, name: str) -> dict[str, Any]:
     config = scenario.test_config
     if name not in ADVERSARIAL_ALGORITHMS:
         raise RunError(
             f"adversarial algorithm must be one of {ADVERSARIAL_ALGORITHMS}, got {name!r}"
         )
+    # profundidad y orden de acciones: la opción explícita gana sobre la del escenario
     depth = options.depth if options.depth is not None else config.minimax_depth
     if depth is None:
         raise RunError("Minimax needs a depth (juego.profundidad_maxima_minimax or --depth)")
@@ -161,10 +181,12 @@ def _run_adversarial(scenario: Scenario, options: RunOptions, name: str) -> dict
     if order not in ("default", "reversed"):
         raise RunError(f"action order must be default or reversed, got {order!r}")
     board, state = scenario.board, scenario.initial_state
+    # la utilidad se mide desde el lado que tiene el turno, con los pesos del escenario
     weights = UtilityWeights.from_mapping(scenario.utility_weights)
     utility = make_utility(board, state.turn, weights)
     algorithm = minimax if name == "MINIMAX" else alpha_beta
     action_order: ActionOrder = "reversed" if order == "reversed" else "default"
+    # con verify se registran las acciones consideradas para poder revisarlas después
     result = algorithm(board, state, depth, utility, action_order, record=options.verify)
     report = _adversarial_report(result, depth, order)
     if options.verify:
@@ -172,10 +194,12 @@ def _run_adversarial(scenario: Scenario, options: RunOptions, name: str) -> dict
     return report
 
 
+# Posición como lista [fila, columna] para el reporte
 def _cell(pos: Position) -> list[int]:
     return [pos.row, pos.col]
 
 
+# Reporte (con claves en español) del resultado de una búsqueda de camino
 def _search_report(result: SearchResult) -> dict[str, Any]:
     return {
         "algoritmo": result.algorithm,
@@ -190,6 +214,7 @@ def _search_report(result: SearchResult) -> dict[str, Any]:
     }
 
 
+# Reporte (con claves en español) del resultado de una decisión adversarial
 def _adversarial_report(result: AdversarialResult, depth: int, order: str) -> dict[str, Any]:
     return {
         "algoritmo": result.algorithm,
@@ -208,6 +233,7 @@ def _adversarial_report(result: AdversarialResult, depth: int, order: str) -> di
     }
 
 
+# Convierte los chequeos del verificador a una lista de diccionarios para el reporte
 def _checks(report: VerificationReport) -> list[dict[str, Any]]:
     return [
         {"chequeo": check.name, "ok": check.passed, "detalle": check.detail}
