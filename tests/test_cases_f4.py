@@ -1,20 +1,23 @@
 """Minimum demonstration cases 7 to 10 (enunciado section 13): expected vs. obtained.
 
-All four use `caso_07_decision_adversarial.json`: 5x7 open map (camino, cost 1), two units per
-side, default utility weights 10 / 3 / 1 / 0.5. Resource at (0,1); A1 (1,0), A2 (0,2),
-B1 (1,2), B2 (2,4); A moves first. The metrics checked are the deterministic ones (everything
-except time).
+All four use `caso_07_decision_adversarial.json`: 20x20 map (camino, a few pantanos and a wall
+with a gap), three units per side, default utility weights 10 / 3 / 1 / 0.5 / 0.5. Resource at
+(8,11), neutral; A1 (9,11) and A3 (7,11) are both next to it, A2 (7,8); B1 (10,8), B2 (12,11),
+B3 (12,8) come from the south; A moves first. The metrics checked are the deterministic ones
+(everything except time).
 """
 
 from helpers import SCENARIOS
 from tactical_grid.algorithms.adversarial import alpha_beta, minimax
 from tactical_grid.algorithms.utility import Utility, UtilityWeights, make_utility
-from tactical_grid.domain.model import Board, GameState, Move, Position
+from tactical_grid.domain.model import Board, GameState, Move, Position, Side
+from tactical_grid.domain.rules import apply, is_terminal, skip_turn, winner
 from tactical_grid.experiments.verifier import verify_adversarial
 from tactical_grid.scenario.loader import load_scenario
 
-GRAB = Move("A2", Position(0, 1))  # the nearest unit steps onto the resource
-GUARD = Move("A1", Position(1, 1))  # the other unit takes the third neighbor of the resource
+RESOURCE = Position(8, 11)
+GRAB_A1 = Move("A1", RESOURCE)  # the unit south of the resource steps onto it
+GRAB_A3 = Move("A3", RESOURCE)  # the unit north of the resource steps onto it
 
 
 def _case() -> tuple[Board, GameState, Utility]:
@@ -24,22 +27,23 @@ def _case() -> tuple[Board, GameState, Utility]:
     return scenario.board, scenario.initial_state, utility
 
 
-def test_case_7_best_decision_is_not_to_grab_the_resource() -> None:
-    # Greedy (depth 1) grabs: A2 -> (0,1) carries the resource next to the base (U = 3).
-    # Depth 2 still prefers it but its value falls to 0: B1 steps next to the carrier and the
-    # resource drops (interception). Depth 3 finds that moving A1 -> (1,1) first leaves B1 no
-    # free cell adjacent to (0,1) before A2 grabs, so the carrier keeps it: U = 3 - 1 + 0.5 * 2.
+def test_case_7_deeper_search_breaks_the_tie_between_the_two_grabs() -> None:
+    # Depth 1 and 2 cannot tell the two grabs apart (A1 and A3 are equally close), so the first
+    # in action order wins. From depth 3 the rivals' approach is inside the horizon: grabbing with
+    # A3 leaves A1 on the south side, between the carrier and the rivals (who come from the
+    # south), and its value is clearly the best (-1.0 against -3.5 for everything else).
     board, state, utility = _case()
     greedy = minimax(board, state, 1, utility)
     two_ply = minimax(board, state, 2, utility)
     decision = minimax(board, state, 3, utility, record=True)
 
-    assert (greedy.action, greedy.value) == (GRAB, 3.0)
-    assert (two_ply.action, two_ply.value) == (GRAB, 0.0)
-    assert (decision.action, decision.value) == (GUARD, 3.0)
+    assert (greedy.action, greedy.value) == (GRAB_A1, -2.5)
+    assert dict(greedy.root_values)[GRAB_A3] == -2.5  # the same value at depth 1: a tie
+    assert (two_ply.action, two_ply.value) == (GRAB_A1, -3.5)
+    assert (decision.action, decision.value) == (GRAB_A3, -1.0)
     values = dict(decision.root_values)
-    assert values[GRAB] == 0.0
-    assert max(value for action, value in values.items() if action != GUARD) == 0.0
+    assert values[GRAB_A1] == -3.5
+    assert max(value for action, value in values.items() if action != GRAB_A3) == -3.5
     assert verify_adversarial(board, state, decision).ok
 
 
@@ -48,9 +52,9 @@ def test_case_8_alpha_beta_same_action_fewer_nodes() -> None:
     plain = minimax(board, state, 4, utility)
     pruned = alpha_beta(board, state, 4, utility, record=True)
 
-    assert (pruned.action, pruned.value) == (plain.action, plain.value)
-    assert (plain.generated, plain.evaluated, plain.pruned) == (1616, 1388, 0)
-    assert (pruned.generated, pruned.evaluated, pruned.pruned) == (239, 165, 271)
+    assert (pruned.action, pruned.value) == (plain.action, plain.value) == (GRAB_A3, -2.0)
+    assert (plain.generated, plain.evaluated, plain.pruned) == (14896, 13501, 0)
+    assert (pruned.generated, pruned.evaluated, pruned.pruned) == (1440, 1064, 2557)
     assert verify_adversarial(board, state, pruned).ok
 
 
@@ -59,31 +63,39 @@ def test_case_9_action_order_changes_the_amount_of_pruning() -> None:
     default = alpha_beta(board, state, 3, utility, "default")
     reverse = alpha_beta(board, state, 3, utility, "reversed")
 
-    assert default.action == reverse.action == GUARD  # the decision does not depend on order
-    assert default.value == reverse.value == 3.0
-    assert (default.generated, default.evaluated, default.pruned) == (80, 58, 48)
-    assert (reverse.generated, reverse.evaluated, reverse.pruned) == (96, 67, 78)
+    assert default.action == reverse.action == GRAB_A3  # the decision does not depend on order
+    assert default.value == reverse.value == -1.0
+    assert (default.generated, default.evaluated, default.pruned) == (486, 412, 273)
+    assert (reverse.generated, reverse.evaluated, reverse.pruned) == (304, 262, 153)
 
 
 def test_case_10_depth_changes_effort_value_and_decision() -> None:
-    # Depths 1 and 3 end on A's move, so grabbing (1) or guarding (3) looks safe; from depth 4 B
-    # has enough replies to intercept whatever A does and every value flattens to 0, so the
-    # first action in order wins the tie.
+    # Depths 1 and 2 pick the first grab in order; from depth 3 the better one (A3) is found and
+    # kept. The value changes with the horizon (even depths let B answer last) and the effort
+    # grows about 6x per level.
     board, state, utility = _case()
     runs = {depth: alpha_beta(board, state, depth, utility) for depth in (1, 2, 3, 4, 5)}
 
     assert [(r.value, r.depth_reached) for r in runs.values()] == [
-        (3.0, 1),
-        (0.0, 2),
-        (3.0, 3),
-        (0.0, 4),
-        (0.0, 5),
+        (-2.5, 1),
+        (-3.5, 2),
+        (-1.0, 3),
+        (-2.0, 4),
+        (0.5, 5),
     ]
-    assert [r.action for r in runs.values()] == [
-        GRAB,
-        GRAB,
-        GUARD,
-        Move("A1", Position(0, 0)),
-        Move("A1", Position(0, 0)),
-    ]
-    assert [r.evaluated for r in runs.values()] == [5, 18, 58, 165, 577]
+    assert [r.action for r in runs.values()] == [GRAB_A1, GRAB_A1, GRAB_A3, GRAB_A3, GRAB_A3]
+    assert [r.evaluated for r in runs.values()] == [11, 25, 412, 1064, 7205]
+
+
+def test_self_play_on_case_7_ends_with_a_delivery_instead_of_a_draw() -> None:
+    # With the tackle as a deliberate action and the utility of moves-to-win, the game is
+    # decided: both sides play alpha-beta at depth 3 and A delivers the resource.
+    scenario = load_scenario(SCENARIOS / "caso_07_decision_adversarial.json")
+    board, state = scenario.board, scenario.initial_state
+    weights = UtilityWeights.from_mapping(scenario.utility_weights)
+    while not is_terminal(board, state):
+        utility = make_utility(board, state.turn, weights)
+        action = alpha_beta(board, state, 3, utility).action
+        state = skip_turn(state) if action is None else apply(board, state, action)[0]
+    assert winner(board, state) is Side.A
+    assert state.turn_number <= 45

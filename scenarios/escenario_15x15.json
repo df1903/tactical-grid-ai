@@ -1,0 +1,49 @@
+{
+  "version": "1.0",
+  "mapa": {"filas": 15, "columnas": 15},
+  "tipos_terreno": {
+    "camino": {"costo": 1, "transitable": true},
+    "pasto": {"costo": 2, "transitable": true},
+    "bosque": {"costo": 4, "transitable": true},
+    "pantano": {"costo": 7, "transitable": true},
+    "muro": {"transitable": false}
+  },
+  "terreno": [
+    ["camino", "camino", "pantano", "muro", "muro", "camino", "pasto", "pasto", "bosque", "camino", "camino", "camino", "bosque", "camino", "camino"],
+    ["camino", "camino", "camino", "camino", "camino", "camino", "pantano", "muro", "camino", "muro", "camino", "pasto", "pasto", "bosque", "camino"],
+    ["bosque", "pasto", "bosque", "bosque", "camino", "pantano", "pasto", "camino", "camino", "pasto", "pasto", "camino", "pasto", "pasto", "camino"],
+    ["bosque", "muro", "camino", "camino", "muro", "pasto", "bosque", "bosque", "pantano", "camino", "pasto", "pasto", "camino", "camino", "camino"],
+    ["pantano", "camino", "camino", "pasto", "camino", "camino", "pasto", "camino", "camino", "muro", "pasto", "camino", "camino", "pasto", "pasto"],
+    ["camino", "camino", "pasto", "pantano", "camino", "pantano", "camino", "pasto", "pasto", "bosque", "camino", "camino", "pasto", "pasto", "camino"],
+    ["camino", "muro", "pantano", "camino", "camino", "muro", "camino", "pasto", "camino", "camino", "pantano", "bosque", "camino", "bosque", "muro"],
+    ["camino", "camino", "bosque", "pantano", "pasto", "camino", "muro", "camino", "bosque", "bosque", "bosque", "camino", "bosque", "camino", "camino"],
+    ["pasto", "pantano", "pasto", "camino", "pasto", "camino", "camino", "camino", "camino", "camino", "pasto", "camino", "camino", "camino", "camino"],
+    ["pasto", "camino", "muro", "pasto", "camino", "camino", "bosque", "pasto", "bosque", "camino", "bosque", "pasto", "pasto", "camino", "pantano"],
+    ["pasto", "camino", "camino", "bosque", "camino", "camino", "pasto", "camino", "muro", "camino", "bosque", "bosque", "pantano", "pasto", "pantano"],
+    ["muro", "pasto", "muro", "camino", "pantano", "muro", "camino", "camino", "muro", "camino", "pasto", "camino", "camino", "pasto", "pasto"],
+    ["camino", "pantano", "muro", "bosque", "camino", "pasto", "camino", "pantano", "pasto", "camino", "camino", "camino", "bosque", "camino", "bosque"],
+    ["camino", "muro", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "muro", "camino", "camino", "camino", "camino"],
+    ["camino", "camino", "pasto", "muro", "muro", "muro", "camino", "bosque", "pasto", "camino", "camino", "muro", "bosque", "camino", "camino"]
+  ],
+  "bases": { "A": {"fila": 0, "columna": 0}, "B": {"fila": 14, "columna": 14} },
+  "recurso": {"fila": 7, "columna": 7},
+  "unidades": [
+    {"id": "A1", "bando": "A", "tipo": "estandar", "fila": 0, "columna": 1},
+    {"id": "A2", "bando": "A", "tipo": "estandar", "fila": 1, "columna": 0},
+    {"id": "A3", "bando": "A", "tipo": "estandar", "fila": 1, "columna": 1},
+    {"id": "B1", "bando": "B", "tipo": "estandar", "fila": 14, "columna": 13},
+    {"id": "B2", "bando": "B", "tipo": "estandar", "fila": 13, "columna": 14},
+    {"id": "B3", "bando": "B", "tipo": "estandar", "fila": 13, "columna": 13}
+  ],
+  "turno": "A",
+  "juego": {
+    "portador_recurso": null,
+    "limite_turnos": 100,
+    "profundidad_maxima_minimax": 4
+  },
+  "prueba": {
+    "modo": "busqueda",
+    "unidad_inicio": "A1",
+    "objetivo": {"fila": 7, "columna": 7}
+  }
+}

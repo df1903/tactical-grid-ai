@@ -43,8 +43,8 @@ def test_depth_sweep_reproduces_case_10() -> None:
         load_scenario(CASE_7),
         Sweep(base=RunOptions(mode="adversarial"), algorithms=("ALPHA_BETA",), depths=(1, 2, 3)),
     )
-    assert [r["valor"] for r in reports] == [3.0, 0.0, 3.0]
-    assert [r["nodos_evaluados"] for r in reports] == [5, 18, 58]
+    assert [r["valor"] for r in reports] == [-2.5, -3.5, -1.0]
+    assert [r["nodos_evaluados"] for r in reports] == [11, 25, 412]
     assert reports[2]["valores_raiz"][0]["accion"].startswith("Move(unit_id='A1'")
 
 

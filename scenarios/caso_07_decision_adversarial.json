@@ -1,113 +1,44 @@
 {
- "mapa": {
-  "filas": 5,
-  "columnas": 7
- },
- "tipos_terreno": {
-  "camino": {
-   "costo": 1,
-   "transitable": true
-  }
- },
- "terreno": [
-  [
-   "camino",
-   "camino",
-   "camino",
-   "camino",
-   "camino",
-   "camino",
-   "camino"
-  ],
-  [
-   "camino",
-   "camino",
-   "camino",
-   "camino",
-   "camino",
-   "camino",
-   "camino"
-  ],
-  [
-   "camino",
-   "camino",
-   "camino",
-   "camino",
-   "camino",
-   "camino",
-   "camino"
-  ],
-  [
-   "camino",
-   "camino",
-   "camino",
-   "camino",
-   "camino",
-   "camino",
-   "camino"
-  ],
-  [
-   "camino",
-   "camino",
-   "camino",
-   "camino",
-   "camino",
-   "camino",
-   "camino"
-  ]
- ],
- "bases": {
-  "A": {
-   "fila": 0,
-   "columna": 0
+  "version": "1.0",
+  "mapa": {"filas": 20, "columnas": 20},
+  "tipos_terreno": {
+    "camino": {"costo": 1, "transitable": true},
+    "pantano": {"costo": 3, "transitable": true},
+    "muro": {"transitable": false}
   },
-  "B": {
-   "fila": 4,
-   "columna": 6
-  }
- },
- "recurso": {
-  "fila": 0,
-  "columna": 1
- },
- "unidades": [
-  {
-   "id": "A1",
-   "bando": "A",
-   "tipo": "estandar",
-   "fila": 1,
-   "columna": 0
-  },
-  {
-   "id": "A2",
-   "bando": "A",
-   "tipo": "estandar",
-   "fila": 0,
-   "columna": 2
-  },
-  {
-   "id": "B1",
-   "bando": "B",
-   "tipo": "estandar",
-   "fila": 1,
-   "columna": 2
-  },
-  {
-   "id": "B2",
-   "bando": "B",
-   "tipo": "estandar",
-   "fila": 2,
-   "columna": 4
-  }
- ],
- "turno": "A",
- "juego": {
-  "portador_recurso": null,
-  "limite_turnos": 50,
-  "profundidad_maxima_minimax": 3
- },
- "version": "1.0",
- "prueba": {
-  "modo": "adversarial"
- }
+  "terreno": [
+    ["camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino"],
+    ["camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino"],
+    ["camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino"],
+    ["camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino"],
+    ["camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino"],
+    ["camino", "camino", "camino", "camino", "camino", "pantano", "pantano", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino"],
+    ["camino", "camino", "camino", "camino", "camino", "pantano", "camino", "camino", "camino", "camino", "muro", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino"],
+    ["camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "muro", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino"],
+    ["camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "muro", "camino", "pantano", "camino", "camino", "camino", "camino", "camino", "camino", "camino"],
+    ["camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino"],
+    ["camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino"],
+    ["camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "muro", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino"],
+    ["camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "pantano", "camino", "muro", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino"],
+    ["camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "pantano", "pantano", "camino", "camino", "camino", "camino", "camino"],
+    ["camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "pantano", "camino", "camino", "camino", "camino", "camino", "camino"],
+    ["camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino"],
+    ["camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino"],
+    ["camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino"],
+    ["camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino"],
+    ["camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino", "camino"]
+  ],
+  "bases": {"A": {"fila": 0, "columna": 0}, "B": {"fila": 19, "columna": 19}},
+  "recurso": {"fila": 8, "columna": 11},
+  "unidades": [
+    {"id": "A1", "bando": "A", "tipo": "estandar", "fila": 9, "columna": 11},
+    {"id": "A2", "bando": "A", "tipo": "estandar", "fila": 7, "columna": 8},
+    {"id": "A3", "bando": "A", "tipo": "estandar", "fila": 7, "columna": 11},
+    {"id": "B1", "bando": "B", "tipo": "estandar", "fila": 10, "columna": 8},
+    {"id": "B2", "bando": "B", "tipo": "estandar", "fila": 12, "columna": 11},
+    {"id": "B3", "bando": "B", "tipo": "estandar", "fila": 12, "columna": 8}
+  ],
+  "turno": "A",
+  "juego": {"portador_recurso": null, "limite_turnos": 100, "profundidad_maxima_minimax": 3},
+  "prueba": {"modo": "adversarial", "unidad_inicio": "A1", "objetivo": {"fila": 8, "columna": 11}, "algoritmo": "ALPHA_BETA"}
 }

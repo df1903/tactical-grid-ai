@@ -41,8 +41,8 @@ def test_heuristic_and_beam_width_are_options() -> None:
 def test_adversarial_mode_uses_the_depth_of_the_json() -> None:
     scenario = load_scenario(CASE_7)  # juego.profundidad_maxima_minimax = 3
     report = run(scenario, RunOptions(mode="adversarial", algorithm="MINIMAX", verify=True))
-    assert report["profundidad"] == 3 and report["valor"] == 3.0
-    assert report["nodos_generados"] == 234 and report["nodos_podados"] == 0
+    assert report["profundidad"] == 3 and report["valor"] == -1.0
+    assert report["nodos_generados"] == 1395 and report["nodos_podados"] == 0
     assert all(check["ok"] for check in report["verificacion"])
     deeper = run(scenario, RunOptions(mode="adversarial", algorithm="ALPHA_BETA", depth=4))
     assert deeper["profundidad_alcanzada"] == 4 and deeper["nodos_podados"] > 0
@@ -51,7 +51,7 @@ def test_adversarial_mode_uses_the_depth_of_the_json() -> None:
 def test_game_mode_describes_the_loaded_game() -> None:
     report = run(load_scenario(CASE_7), RunOptions(mode="partida"))
     assert report["turno"] == "A" and report["portador"] is None
-    assert report["recurso"] == [0, 1] and report["unidades"]["B1"]["celda"] == [1, 2]
+    assert report["recurso"] == [8, 11] and report["unidades"]["B1"]["celda"] == [10, 8]
 
 
 @pytest.mark.parametrize(
