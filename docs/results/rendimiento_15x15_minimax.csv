@@ -1,0 +1,4 @@
+algoritmo,profundidad,orden_acciones,accion,valor,nodos_generados,nodos_evaluados,nodos_podados,profundidad_alcanzada,tiempo_segundos
+MINIMAX,4,default,"Move(unit_id='A2', dest=Position(row=2, col=2))",-3.0,7112,6400,0,4,0.10814999998547137
+MINIMAX,5,default,"Move(unit_id='A2', dest=Position(row=2, col=2))",-2.0,69432,62320,0,5,1.0365588999993633
+MINIMAX,6,default,"Move(unit_id='A2', dest=Position(row=2, col=2))",-2.5,676273,606841,0,6,10.039807199995266

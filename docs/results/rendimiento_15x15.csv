@@ -1,0 +1,4 @@
+algoritmo,profundidad,orden_acciones,accion,valor,nodos_generados,nodos_evaluados,nodos_podados,profundidad_alcanzada,tiempo_segundos
+ALPHA_BETA,5,default,"Move(unit_id='A2', dest=Position(row=2, col=2))",-2.0,6746,5654,3921,5,0.1038981000019703
+ALPHA_BETA,6,default,"Move(unit_id='A2', dest=Position(row=2, col=2))",-2.5,23553,16807,41018,6,0.3790682000108063
+ALPHA_BETA,7,default,"Move(unit_id='A2', dest=Position(row=2, col=2))",-1.5,145753,122200,97336,7,2.224189700005809

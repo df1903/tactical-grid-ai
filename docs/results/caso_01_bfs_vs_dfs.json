@@ -29,7 +29,7 @@
     "estados_generados": 39,
     "estados_expandidos": 29,
     "maximo_frontera": 11,
-    "tiempo_segundos": 0.0013189000019337982,
+    "tiempo_segundos": 0.00136749999364838,
     "verificacion": [
       {
         "chequeo": "valid moves",
@@ -240,7 +240,7 @@
     "estados_generados": 152,
     "estados_expandidos": 94,
     "maximo_frontera": 58,
-    "tiempo_segundos": 0.00427960000524763,
+    "tiempo_segundos": 0.0041529000154696405,
     "verificacion": [
       {
         "chequeo": "valid moves",
@@ -299,7 +299,7 @@
     "estados_generados": 39,
     "estados_expandidos": 29,
     "maximo_frontera": 11,
-    "tiempo_segundos": 0.0013049000117462128,
+    "tiempo_segundos": 0.0013509999844245613,
     "verificacion": [
       {
         "chequeo": "valid moves",

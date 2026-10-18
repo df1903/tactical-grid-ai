@@ -69,7 +69,7 @@
     "estados_generados": 46,
     "estados_expandidos": 45,
     "maximo_frontera": 8,
-    "tiempo_segundos": 0.001523099999758415,
+    "tiempo_segundos": 0.0015962999896146357,
     "verificacion": [
       {
         "chequeo": "valid moves",
@@ -107,7 +107,7 @@
     "estados_generados": 9,
     "estados_expandidos": 5,
     "maximo_frontera": 3,
-    "tiempo_segundos": 0.00017749999824445695,
+    "tiempo_segundos": 0.00018330002785660326,
     "verificacion": []
   },
   {
@@ -188,7 +188,7 @@
     "estados_generados": 43,
     "estados_expandidos": 29,
     "maximo_frontera": 6,
-    "tiempo_segundos": 0.0009589000110281631,
+    "tiempo_segundos": 0.0010246000019833446,
     "verificacion": [
       {
         "chequeo": "valid moves",
@@ -287,7 +287,7 @@
     "estados_generados": 50,
     "estados_expandidos": 41,
     "maximo_frontera": 6,
-    "tiempo_segundos": 0.0013113000022713095,
+    "tiempo_segundos": 0.0014593999949283898,
     "verificacion": [
       {
         "chequeo": "valid moves",
@@ -386,7 +386,7 @@
     "estados_generados": 46,
     "estados_expandidos": 44,
     "maximo_frontera": 6,
-    "tiempo_segundos": 0.001393900005496107,
+    "tiempo_segundos": 0.001515799987828359,
     "verificacion": [
       {
         "chequeo": "valid moves",

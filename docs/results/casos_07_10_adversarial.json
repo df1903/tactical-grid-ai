@@ -3,35 +3,59 @@
     "algoritmo": "MINIMAX",
     "profundidad": 1,
     "orden_acciones": "default",
-    "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-    "valor": 3.0,
-    "nodos_generados": 5,
-    "nodos_evaluados": 5,
+    "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
+    "valor": -2.5,
+    "nodos_generados": 11,
+    "nodos_evaluados": 11,
     "nodos_podados": 0,
     "profundidad_alcanzada": 1,
     "valores_raiz": [
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-        "valor": -1.0
+        "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
+        "valor": -2.5
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=2, col=0))",
-        "valor": -1.0
+        "accion": "Move(unit_id='A1', dest=Position(row=10, col=11))",
+        "valor": -8.5
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-        "valor": -1.0
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=10))",
+        "valor": -8.5
       },
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-        "valor": 3.0
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=12))",
+        "valor": -8.5
       },
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
-        "valor": -2.0
+        "accion": "Move(unit_id='A2', dest=Position(row=6, col=8))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=8, col=8))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=7))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=9))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=6, col=11))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+        "valor": -2.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=7, col=12))",
+        "valor": -8.5
       }
     ],
-    "tiempo_segundos": 7.740000728517771e-05,
+    "tiempo_segundos": 0.004726399987703189,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -41,7 +65,7 @@
       {
         "chequeo": "selected action legal",
         "ok": true,
-        "detalle": "selected Move(unit_id='A2', dest=Position(row=0, col=1))"
+        "detalle": "selected Move(unit_id='A1', dest=Position(row=8, col=11))"
       }
     ]
   },
@@ -49,35 +73,59 @@
     "algoritmo": "MINIMAX",
     "profundidad": 1,
     "orden_acciones": "reversed",
-    "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-    "valor": 3.0,
-    "nodos_generados": 5,
-    "nodos_evaluados": 5,
+    "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+    "valor": -2.5,
+    "nodos_generados": 11,
+    "nodos_evaluados": 11,
     "nodos_podados": 0,
     "profundidad_alcanzada": 1,
     "valores_raiz": [
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
-        "valor": -2.0
+        "accion": "Move(unit_id='A3', dest=Position(row=7, col=12))",
+        "valor": -8.5
       },
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-        "valor": 3.0
+        "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+        "valor": -2.5
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-        "valor": -1.0
+        "accion": "Move(unit_id='A3', dest=Position(row=6, col=11))",
+        "valor": -8.5
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=2, col=0))",
-        "valor": -1.0
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=9))",
+        "valor": -8.5
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-        "valor": -1.0
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=7))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=8, col=8))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=6, col=8))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=12))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=10))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=10, col=11))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
+        "valor": -2.5
       }
     ],
-    "tiempo_segundos": 3.91000066883862e-05,
+    "tiempo_segundos": 0.0049205000104848295,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -87,7 +135,7 @@
       {
         "chequeo": "selected action legal",
         "ok": true,
-        "detalle": "selected Move(unit_id='A2', dest=Position(row=0, col=1))"
+        "detalle": "selected Move(unit_id='A3', dest=Position(row=8, col=11))"
       }
     ]
   },
@@ -95,35 +143,59 @@
     "algoritmo": "MINIMAX",
     "profundidad": 2,
     "orden_acciones": "default",
-    "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-    "valor": 0.0,
-    "nodos_generados": 41,
-    "nodos_evaluados": 36,
+    "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
+    "valor": -3.5,
+    "nodos_generados": 132,
+    "nodos_evaluados": 121,
     "nodos_podados": 0,
     "profundidad_alcanzada": 2,
     "valores_raiz": [
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-        "valor": -1.0
+        "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
+        "valor": -3.5
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=2, col=0))",
-        "valor": -1.0
+        "accion": "Move(unit_id='A1', dest=Position(row=10, col=11))",
+        "valor": -9.0
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-        "valor": -1.0
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=10))",
+        "valor": -9.0
       },
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-        "valor": 0.0
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=12))",
+        "valor": -9.0
       },
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
-        "valor": -2.0
+        "accion": "Move(unit_id='A2', dest=Position(row=6, col=8))",
+        "valor": -9.0
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=8, col=8))",
+        "valor": -9.0
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=7))",
+        "valor": -9.0
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=9))",
+        "valor": -9.0
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=6, col=11))",
+        "valor": -9.0
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=7, col=12))",
+        "valor": -9.0
       }
     ],
-    "tiempo_segundos": 0.0002125000028172508,
+    "tiempo_segundos": 0.006522999989101663,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -133,7 +205,7 @@
       {
         "chequeo": "selected action legal",
         "ok": true,
-        "detalle": "selected Move(unit_id='A2', dest=Position(row=0, col=1))"
+        "detalle": "selected Move(unit_id='A1', dest=Position(row=8, col=11))"
       }
     ]
   },
@@ -141,35 +213,269 @@
     "algoritmo": "MINIMAX",
     "profundidad": 2,
     "orden_acciones": "reversed",
-    "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-    "valor": 0.0,
-    "nodos_generados": 41,
-    "nodos_evaluados": 36,
+    "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+    "valor": -3.5,
+    "nodos_generados": 132,
+    "nodos_evaluados": 121,
     "nodos_podados": 0,
     "profundidad_alcanzada": 2,
     "valores_raiz": [
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
+        "accion": "Move(unit_id='A3', dest=Position(row=7, col=12))",
+        "valor": -9.0
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=6, col=11))",
+        "valor": -9.0
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=9))",
+        "valor": -9.0
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=7))",
+        "valor": -9.0
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=8, col=8))",
+        "valor": -9.0
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=6, col=8))",
+        "valor": -9.0
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=12))",
+        "valor": -9.0
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=10))",
+        "valor": -9.0
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=10, col=11))",
+        "valor": -9.0
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
+        "valor": -3.5
+      }
+    ],
+    "tiempo_segundos": 0.008173000009264797,
+    "verificacion": [
+      {
+        "chequeo": "legal actions",
+        "ok": true,
+        "detalle": "every considered action is legal"
+      },
+      {
+        "chequeo": "selected action legal",
+        "ok": true,
+        "detalle": "selected Move(unit_id='A3', dest=Position(row=8, col=11))"
+      }
+    ]
+  },
+  {
+    "algoritmo": "MINIMAX",
+    "profundidad": 3,
+    "orden_acciones": "default",
+    "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+    "valor": -1.0,
+    "nodos_generados": 1395,
+    "nodos_evaluados": 1263,
+    "nodos_podados": 0,
+    "profundidad_alcanzada": 3,
+    "valores_raiz": [
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=10, col=11))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=10))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=12))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=6, col=8))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=8, col=8))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=7))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=9))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=6, col=11))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+        "valor": -1.0
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=7, col=12))",
+        "valor": -3.5
+      }
+    ],
+    "tiempo_segundos": 0.030502200010232627,
+    "verificacion": [
+      {
+        "chequeo": "legal actions",
+        "ok": true,
+        "detalle": "every considered action is legal"
+      },
+      {
+        "chequeo": "selected action legal",
+        "ok": true,
+        "detalle": "selected Move(unit_id='A3', dest=Position(row=8, col=11))"
+      }
+    ]
+  },
+  {
+    "algoritmo": "MINIMAX",
+    "profundidad": 3,
+    "orden_acciones": "reversed",
+    "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+    "valor": -1.0,
+    "nodos_generados": 1395,
+    "nodos_evaluados": 1263,
+    "nodos_podados": 0,
+    "profundidad_alcanzada": 3,
+    "valores_raiz": [
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=7, col=12))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+        "valor": -1.0
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=6, col=11))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=9))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=7))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=8, col=8))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=6, col=8))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=12))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=10))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=10, col=11))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
+        "valor": -3.5
+      }
+    ],
+    "tiempo_segundos": 0.029414799995720387,
+    "verificacion": [
+      {
+        "chequeo": "legal actions",
+        "ok": true,
+        "detalle": "every considered action is legal"
+      },
+      {
+        "chequeo": "selected action legal",
+        "ok": true,
+        "detalle": "selected Move(unit_id='A3', dest=Position(row=8, col=11))"
+      }
+    ]
+  },
+  {
+    "algoritmo": "MINIMAX",
+    "profundidad": 4,
+    "orden_acciones": "default",
+    "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+    "valor": -2.0,
+    "nodos_generados": 14896,
+    "nodos_evaluados": 13501,
+    "nodos_podados": 0,
+    "profundidad_alcanzada": 4,
+    "valores_raiz": [
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
+        "valor": -4.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=10, col=11))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=10))",
+        "valor": -4.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=12))",
+        "valor": -4.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=6, col=8))",
+        "valor": -4.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=8, col=8))",
+        "valor": -4.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=7))",
+        "valor": -4.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=9))",
+        "valor": -4.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=6, col=11))",
+        "valor": -4.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
         "valor": -2.0
       },
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-        "valor": -1.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=2, col=0))",
-        "valor": -1.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-        "valor": -1.0
+        "accion": "Move(unit_id='A3', dest=Position(row=7, col=12))",
+        "valor": -4.5
       }
     ],
-    "tiempo_segundos": 0.00019770000653807074,
+    "tiempo_segundos": 0.2402056000137236,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -179,145 +485,7 @@
       {
         "chequeo": "selected action legal",
         "ok": true,
-        "detalle": "selected Move(unit_id='A2', dest=Position(row=0, col=1))"
-      }
-    ]
-  },
-  {
-    "algoritmo": "MINIMAX",
-    "profundidad": 3,
-    "orden_acciones": "default",
-    "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-    "valor": 3.0,
-    "nodos_generados": 234,
-    "nodos_evaluados": 193,
-    "nodos_podados": 0,
-    "profundidad_alcanzada": 3,
-    "valores_raiz": [
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=2, col=0))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-        "valor": 3.0
-      },
-      {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
-        "valor": -1.0
-      }
-    ],
-    "tiempo_segundos": 0.0013154000043869019,
-    "verificacion": [
-      {
-        "chequeo": "legal actions",
-        "ok": true,
-        "detalle": "every considered action is legal"
-      },
-      {
-        "chequeo": "selected action legal",
-        "ok": true,
-        "detalle": "selected Move(unit_id='A1', dest=Position(row=1, col=1))"
-      }
-    ]
-  },
-  {
-    "algoritmo": "MINIMAX",
-    "profundidad": 3,
-    "orden_acciones": "reversed",
-    "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-    "valor": 3.0,
-    "nodos_generados": 234,
-    "nodos_evaluados": 193,
-    "nodos_podados": 0,
-    "profundidad_alcanzada": 3,
-    "valores_raiz": [
-      {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
-        "valor": -1.0
-      },
-      {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-        "valor": 3.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=2, col=0))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-        "valor": 0.0
-      }
-    ],
-    "tiempo_segundos": 0.0012796999944839627,
-    "verificacion": [
-      {
-        "chequeo": "legal actions",
-        "ok": true,
-        "detalle": "every considered action is legal"
-      },
-      {
-        "chequeo": "selected action legal",
-        "ok": true,
-        "detalle": "selected Move(unit_id='A1', dest=Position(row=1, col=1))"
-      }
-    ]
-  },
-  {
-    "algoritmo": "MINIMAX",
-    "profundidad": 4,
-    "orden_acciones": "default",
-    "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-    "valor": 0.0,
-    "nodos_generados": 1616,
-    "nodos_evaluados": 1388,
-    "nodos_podados": 0,
-    "profundidad_alcanzada": 4,
-    "valores_raiz": [
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=2, col=0))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
-        "valor": -1.0
-      }
-    ],
-    "tiempo_segundos": 0.009072000000742264,
-    "verificacion": [
-      {
-        "chequeo": "legal actions",
-        "ok": true,
-        "detalle": "every considered action is legal"
-      },
-      {
-        "chequeo": "selected action legal",
-        "ok": true,
-        "detalle": "selected Move(unit_id='A1', dest=Position(row=0, col=0))"
+        "detalle": "selected Move(unit_id='A3', dest=Position(row=8, col=11))"
       }
     ]
   },
@@ -325,35 +493,59 @@
     "algoritmo": "MINIMAX",
     "profundidad": 4,
     "orden_acciones": "reversed",
-    "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-    "valor": 0.0,
-    "nodos_generados": 1616,
-    "nodos_evaluados": 1388,
+    "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+    "valor": -2.0,
+    "nodos_generados": 14896,
+    "nodos_evaluados": 13501,
     "nodos_podados": 0,
     "profundidad_alcanzada": 4,
     "valores_raiz": [
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
-        "valor": -1.0
+        "accion": "Move(unit_id='A3', dest=Position(row=7, col=12))",
+        "valor": -4.5
       },
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-        "valor": 0.0
+        "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+        "valor": -2.0
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-        "valor": 0.0
+        "accion": "Move(unit_id='A3', dest=Position(row=6, col=11))",
+        "valor": -4.5
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=2, col=0))",
-        "valor": 0.0
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=9))",
+        "valor": -4.5
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-        "valor": 0.0
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=7))",
+        "valor": -4.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=8, col=8))",
+        "valor": -4.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=6, col=8))",
+        "valor": -4.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=12))",
+        "valor": -4.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=10))",
+        "valor": -4.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=10, col=11))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
+        "valor": -4.5
       }
     ],
-    "tiempo_segundos": 0.008106199995381758,
+    "tiempo_segundos": 0.23093739998876117,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -363,7 +555,7 @@
       {
         "chequeo": "selected action legal",
         "ok": true,
-        "detalle": "selected Move(unit_id='A2', dest=Position(row=0, col=1))"
+        "detalle": "selected Move(unit_id='A3', dest=Position(row=8, col=11))"
       }
     ]
   },
@@ -371,35 +563,59 @@
     "algoritmo": "MINIMAX",
     "profundidad": 5,
     "orden_acciones": "default",
-    "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-    "valor": 0.0,
-    "nodos_generados": 8626,
-    "nodos_evaluados": 7016,
+    "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+    "valor": 0.5,
+    "nodos_generados": 155944,
+    "nodos_evaluados": 141048,
     "nodos_podados": 0,
     "profundidad_alcanzada": 5,
     "valores_raiz": [
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-        "valor": 0.0
+        "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
+        "valor": -2.0
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=2, col=0))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
+        "accion": "Move(unit_id='A1', dest=Position(row=10, col=11))",
         "valor": -1.0
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=10))",
+        "valor": -2.0
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=12))",
+        "valor": -2.0
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=6, col=8))",
+        "valor": -2.0
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=8, col=8))",
+        "valor": -2.0
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=7))",
+        "valor": -2.0
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=9))",
+        "valor": -2.0
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=6, col=11))",
+        "valor": -2.0
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+        "valor": 0.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=7, col=12))",
+        "valor": -2.0
       }
     ],
-    "tiempo_segundos": 0.047195599996484816,
+    "tiempo_segundos": 2.5368638999934774,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -409,7 +625,7 @@
       {
         "chequeo": "selected action legal",
         "ok": true,
-        "detalle": "selected Move(unit_id='A1', dest=Position(row=0, col=0))"
+        "detalle": "selected Move(unit_id='A3', dest=Position(row=8, col=11))"
       }
     ]
   },
@@ -417,35 +633,59 @@
     "algoritmo": "MINIMAX",
     "profundidad": 5,
     "orden_acciones": "reversed",
-    "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-    "valor": 0.0,
-    "nodos_generados": 8626,
-    "nodos_evaluados": 7016,
+    "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+    "valor": 0.5,
+    "nodos_generados": 155944,
+    "nodos_evaluados": 141048,
     "nodos_podados": 0,
     "profundidad_alcanzada": 5,
     "valores_raiz": [
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
+        "accion": "Move(unit_id='A3', dest=Position(row=7, col=12))",
+        "valor": -2.0
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+        "valor": 0.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=6, col=11))",
+        "valor": -2.0
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=9))",
+        "valor": -2.0
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=7))",
+        "valor": -2.0
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=8, col=8))",
+        "valor": -2.0
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=6, col=8))",
+        "valor": -2.0
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=12))",
+        "valor": -2.0
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=10))",
+        "valor": -2.0
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=10, col=11))",
         "valor": -1.0
       },
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=2, col=0))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-        "valor": 0.0
+        "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
+        "valor": -2.0
       }
     ],
-    "tiempo_segundos": 0.05131390001042746,
+    "tiempo_segundos": 2.6239655000099447,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -455,7 +695,7 @@
       {
         "chequeo": "selected action legal",
         "ok": true,
-        "detalle": "selected Move(unit_id='A2', dest=Position(row=0, col=1))"
+        "detalle": "selected Move(unit_id='A3', dest=Position(row=8, col=11))"
       }
     ]
   },
@@ -463,35 +703,59 @@
     "algoritmo": "ALPHA_BETA",
     "profundidad": 1,
     "orden_acciones": "default",
-    "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-    "valor": 3.0,
-    "nodos_generados": 5,
-    "nodos_evaluados": 5,
+    "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
+    "valor": -2.5,
+    "nodos_generados": 11,
+    "nodos_evaluados": 11,
     "nodos_podados": 0,
     "profundidad_alcanzada": 1,
     "valores_raiz": [
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-        "valor": -1.0
+        "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
+        "valor": -2.5
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=2, col=0))",
-        "valor": -1.0
+        "accion": "Move(unit_id='A1', dest=Position(row=10, col=11))",
+        "valor": -8.5
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-        "valor": -1.0
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=10))",
+        "valor": -8.5
       },
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-        "valor": 3.0
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=12))",
+        "valor": -8.5
       },
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
-        "valor": -2.0
+        "accion": "Move(unit_id='A2', dest=Position(row=6, col=8))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=8, col=8))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=7))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=9))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=6, col=11))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+        "valor": -2.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=7, col=12))",
+        "valor": -8.5
       }
     ],
-    "tiempo_segundos": 4.8300003982149065e-05,
+    "tiempo_segundos": 0.004189300001598895,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -501,7 +765,7 @@
       {
         "chequeo": "selected action legal",
         "ok": true,
-        "detalle": "selected Move(unit_id='A2', dest=Position(row=0, col=1))"
+        "detalle": "selected Move(unit_id='A1', dest=Position(row=8, col=11))"
       }
     ]
   },
@@ -509,35 +773,59 @@
     "algoritmo": "ALPHA_BETA",
     "profundidad": 1,
     "orden_acciones": "reversed",
-    "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-    "valor": 3.0,
-    "nodos_generados": 5,
-    "nodos_evaluados": 5,
+    "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+    "valor": -2.5,
+    "nodos_generados": 11,
+    "nodos_evaluados": 11,
     "nodos_podados": 0,
     "profundidad_alcanzada": 1,
     "valores_raiz": [
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
-        "valor": -2.0
+        "accion": "Move(unit_id='A3', dest=Position(row=7, col=12))",
+        "valor": -8.5
       },
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-        "valor": 3.0
+        "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+        "valor": -2.5
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-        "valor": -1.0
+        "accion": "Move(unit_id='A3', dest=Position(row=6, col=11))",
+        "valor": -8.5
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=2, col=0))",
-        "valor": -1.0
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=9))",
+        "valor": -8.5
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-        "valor": -1.0
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=7))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=8, col=8))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=6, col=8))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=12))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=10))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=10, col=11))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
+        "valor": -2.5
       }
     ],
-    "tiempo_segundos": 3.3499993151053786e-05,
+    "tiempo_segundos": 0.004397600016091019,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -547,7 +835,7 @@
       {
         "chequeo": "selected action legal",
         "ok": true,
-        "detalle": "selected Move(unit_id='A2', dest=Position(row=0, col=1))"
+        "detalle": "selected Move(unit_id='A3', dest=Position(row=8, col=11))"
       }
     ]
   },
@@ -555,35 +843,59 @@
     "algoritmo": "ALPHA_BETA",
     "profundidad": 2,
     "orden_acciones": "default",
-    "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-    "valor": 0.0,
-    "nodos_generados": 23,
-    "nodos_evaluados": 18,
-    "nodos_podados": 18,
+    "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
+    "valor": -3.5,
+    "nodos_generados": 36,
+    "nodos_evaluados": 25,
+    "nodos_podados": 96,
     "profundidad_alcanzada": 2,
     "valores_raiz": [
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-        "valor": -1.0
+        "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
+        "valor": -3.5
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=2, col=0))",
-        "valor": -1.0
+        "accion": "Move(unit_id='A1', dest=Position(row=10, col=11))",
+        "valor": -8.5
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-        "valor": -1.0
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=10))",
+        "valor": -8.5
       },
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-        "valor": 0.0
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=12))",
+        "valor": -8.5
       },
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
-        "valor": -2.0
+        "accion": "Move(unit_id='A2', dest=Position(row=6, col=8))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=8, col=8))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=7))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=9))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=6, col=11))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=7, col=12))",
+        "valor": -8.5
       }
     ],
-    "tiempo_segundos": 0.00016830000095069408,
+    "tiempo_segundos": 0.004626700014341623,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -593,7 +905,7 @@
       {
         "chequeo": "selected action legal",
         "ok": true,
-        "detalle": "selected Move(unit_id='A2', dest=Position(row=0, col=1))"
+        "detalle": "selected Move(unit_id='A1', dest=Position(row=8, col=11))"
       }
     ]
   },
@@ -601,35 +913,269 @@
     "algoritmo": "ALPHA_BETA",
     "profundidad": 2,
     "orden_acciones": "reversed",
-    "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-    "valor": 0.0,
-    "nodos_generados": 24,
-    "nodos_evaluados": 19,
-    "nodos_podados": 17,
+    "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+    "valor": -3.5,
+    "nodos_generados": 48,
+    "nodos_evaluados": 37,
+    "nodos_podados": 84,
     "profundidad_alcanzada": 2,
     "valores_raiz": [
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
+        "accion": "Move(unit_id='A3', dest=Position(row=7, col=12))",
+        "valor": -9.0
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=6, col=11))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=9))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=7))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=8, col=8))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=6, col=8))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=12))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=10))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=10, col=11))",
+        "valor": -8.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
+        "valor": -3.5
+      }
+    ],
+    "tiempo_segundos": 0.004814399988390505,
+    "verificacion": [
+      {
+        "chequeo": "legal actions",
+        "ok": true,
+        "detalle": "every considered action is legal"
+      },
+      {
+        "chequeo": "selected action legal",
+        "ok": true,
+        "detalle": "selected Move(unit_id='A3', dest=Position(row=8, col=11))"
+      }
+    ]
+  },
+  {
+    "algoritmo": "ALPHA_BETA",
+    "profundidad": 3,
+    "orden_acciones": "default",
+    "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+    "valor": -1.0,
+    "nodos_generados": 486,
+    "nodos_evaluados": 412,
+    "nodos_podados": 273,
+    "profundidad_alcanzada": 3,
+    "valores_raiz": [
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=10, col=11))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=10))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=12))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=6, col=8))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=8, col=8))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=7))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=9))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=6, col=11))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+        "valor": -1.0
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=7, col=12))",
+        "valor": -2.5
+      }
+    ],
+    "tiempo_segundos": 0.016709199990145862,
+    "verificacion": [
+      {
+        "chequeo": "legal actions",
+        "ok": true,
+        "detalle": "every considered action is legal"
+      },
+      {
+        "chequeo": "selected action legal",
+        "ok": true,
+        "detalle": "selected Move(unit_id='A3', dest=Position(row=8, col=11))"
+      }
+    ]
+  },
+  {
+    "algoritmo": "ALPHA_BETA",
+    "profundidad": 3,
+    "orden_acciones": "reversed",
+    "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+    "valor": -1.0,
+    "nodos_generados": 304,
+    "nodos_evaluados": 262,
+    "nodos_podados": 153,
+    "profundidad_alcanzada": 3,
+    "valores_raiz": [
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=7, col=12))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+        "valor": -1.0
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=6, col=11))",
+        "valor": -2.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=9))",
+        "valor": -2.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=7))",
+        "valor": -2.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=8, col=8))",
+        "valor": -2.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=6, col=8))",
+        "valor": -2.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=12))",
+        "valor": -2.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=10))",
+        "valor": -2.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=10, col=11))",
+        "valor": -2.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
+        "valor": -2.5
+      }
+    ],
+    "tiempo_segundos": 0.01215220001176931,
+    "verificacion": [
+      {
+        "chequeo": "legal actions",
+        "ok": true,
+        "detalle": "every considered action is legal"
+      },
+      {
+        "chequeo": "selected action legal",
+        "ok": true,
+        "detalle": "selected Move(unit_id='A3', dest=Position(row=8, col=11))"
+      }
+    ]
+  },
+  {
+    "algoritmo": "ALPHA_BETA",
+    "profundidad": 4,
+    "orden_acciones": "default",
+    "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+    "valor": -2.0,
+    "nodos_generados": 1440,
+    "nodos_evaluados": 1064,
+    "nodos_podados": 2557,
+    "profundidad_alcanzada": 4,
+    "valores_raiz": [
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
+        "valor": -4.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=10, col=11))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=10))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=12))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=6, col=8))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=8, col=8))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=7))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=9))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=6, col=11))",
+        "valor": -3.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
         "valor": -2.0
       },
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-        "valor": -1.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=2, col=0))",
-        "valor": -1.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-        "valor": -1.0
+        "accion": "Move(unit_id='A3', dest=Position(row=7, col=12))",
+        "valor": -2.5
       }
     ],
-    "tiempo_segundos": 0.00015530000382568687,
+    "tiempo_segundos": 0.03323729999829084,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -639,145 +1185,7 @@
       {
         "chequeo": "selected action legal",
         "ok": true,
-        "detalle": "selected Move(unit_id='A2', dest=Position(row=0, col=1))"
-      }
-    ]
-  },
-  {
-    "algoritmo": "ALPHA_BETA",
-    "profundidad": 3,
-    "orden_acciones": "default",
-    "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-    "valor": 3.0,
-    "nodos_generados": 80,
-    "nodos_evaluados": 58,
-    "nodos_podados": 48,
-    "profundidad_alcanzada": 3,
-    "valores_raiz": [
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=2, col=0))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-        "valor": 3.0
-      },
-      {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
-        "valor": -1.0
-      }
-    ],
-    "tiempo_segundos": 0.0004923999949824065,
-    "verificacion": [
-      {
-        "chequeo": "legal actions",
-        "ok": true,
-        "detalle": "every considered action is legal"
-      },
-      {
-        "chequeo": "selected action legal",
-        "ok": true,
-        "detalle": "selected Move(unit_id='A1', dest=Position(row=1, col=1))"
-      }
-    ]
-  },
-  {
-    "algoritmo": "ALPHA_BETA",
-    "profundidad": 3,
-    "orden_acciones": "reversed",
-    "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-    "valor": 3.0,
-    "nodos_generados": 96,
-    "nodos_evaluados": 67,
-    "nodos_podados": 78,
-    "profundidad_alcanzada": 3,
-    "valores_raiz": [
-      {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
-        "valor": -1.0
-      },
-      {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-        "valor": 3.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=2, col=0))",
-        "valor": 3.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-        "valor": 3.0
-      }
-    ],
-    "tiempo_segundos": 0.0006133999995654449,
-    "verificacion": [
-      {
-        "chequeo": "legal actions",
-        "ok": true,
-        "detalle": "every considered action is legal"
-      },
-      {
-        "chequeo": "selected action legal",
-        "ok": true,
-        "detalle": "selected Move(unit_id='A1', dest=Position(row=1, col=1))"
-      }
-    ]
-  },
-  {
-    "algoritmo": "ALPHA_BETA",
-    "profundidad": 4,
-    "orden_acciones": "default",
-    "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-    "valor": 0.0,
-    "nodos_generados": 239,
-    "nodos_evaluados": 165,
-    "nodos_podados": 271,
-    "profundidad_alcanzada": 4,
-    "valores_raiz": [
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=2, col=0))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
-        "valor": -1.0
-      }
-    ],
-    "tiempo_segundos": 0.0016216000076383352,
-    "verificacion": [
-      {
-        "chequeo": "legal actions",
-        "ok": true,
-        "detalle": "every considered action is legal"
-      },
-      {
-        "chequeo": "selected action legal",
-        "ok": true,
-        "detalle": "selected Move(unit_id='A1', dest=Position(row=0, col=0))"
+        "detalle": "selected Move(unit_id='A3', dest=Position(row=8, col=11))"
       }
     ]
   },
@@ -785,35 +1193,59 @@
     "algoritmo": "ALPHA_BETA",
     "profundidad": 4,
     "orden_acciones": "reversed",
-    "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-    "valor": 0.0,
-    "nodos_generados": 315,
-    "nodos_evaluados": 239,
-    "nodos_podados": 209,
+    "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+    "valor": -2.0,
+    "nodos_generados": 1425,
+    "nodos_evaluados": 1121,
+    "nodos_podados": 1766,
     "profundidad_alcanzada": 4,
     "valores_raiz": [
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
-        "valor": -1.0
+        "accion": "Move(unit_id='A3', dest=Position(row=7, col=12))",
+        "valor": -4.5
       },
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-        "valor": 0.0
+        "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+        "valor": -2.0
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-        "valor": 0.0
+        "accion": "Move(unit_id='A3', dest=Position(row=6, col=11))",
+        "valor": -2.5
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=2, col=0))",
-        "valor": 0.0
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=9))",
+        "valor": -2.5
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-        "valor": 0.0
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=7))",
+        "valor": -2.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=8, col=8))",
+        "valor": -2.5
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=6, col=8))",
+        "valor": -2.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=12))",
+        "valor": -2.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=10))",
+        "valor": -2.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=10, col=11))",
+        "valor": -2.5
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
+        "valor": -2.5
       }
     ],
-    "tiempo_segundos": 0.0018642000068211928,
+    "tiempo_segundos": 0.03044410000438802,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -823,7 +1255,7 @@
       {
         "chequeo": "selected action legal",
         "ok": true,
-        "detalle": "selected Move(unit_id='A2', dest=Position(row=0, col=1))"
+        "detalle": "selected Move(unit_id='A3', dest=Position(row=8, col=11))"
       }
     ]
   },
@@ -831,35 +1263,59 @@
     "algoritmo": "ALPHA_BETA",
     "profundidad": 5,
     "orden_acciones": "default",
-    "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-    "valor": 0.0,
-    "nodos_generados": 788,
-    "nodos_evaluados": 577,
-    "nodos_podados": 393,
+    "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+    "valor": 0.5,
+    "nodos_generados": 8639,
+    "nodos_evaluados": 7205,
+    "nodos_podados": 6289,
     "profundidad_alcanzada": 5,
     "valores_raiz": [
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-        "valor": 0.0
+        "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
+        "valor": -2.0
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=2, col=0))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
+        "accion": "Move(unit_id='A1', dest=Position(row=10, col=11))",
         "valor": -1.0
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=10))",
+        "valor": -1.0
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=12))",
+        "valor": -1.0
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=6, col=8))",
+        "valor": -1.0
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=8, col=8))",
+        "valor": -1.0
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=7))",
+        "valor": -1.0
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=9))",
+        "valor": -1.0
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=6, col=11))",
+        "valor": -1.0
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+        "valor": 0.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=7, col=12))",
+        "valor": 0.0
       }
     ],
-    "tiempo_segundos": 0.0045959999988554046,
+    "tiempo_segundos": 0.16180390000226907,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -869,7 +1325,7 @@
       {
         "chequeo": "selected action legal",
         "ok": true,
-        "detalle": "selected Move(unit_id='A1', dest=Position(row=0, col=0))"
+        "detalle": "selected Move(unit_id='A3', dest=Position(row=8, col=11))"
       }
     ]
   },
@@ -877,35 +1333,59 @@
     "algoritmo": "ALPHA_BETA",
     "profundidad": 5,
     "orden_acciones": "reversed",
-    "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-    "valor": 0.0,
-    "nodos_generados": 1370,
-    "nodos_evaluados": 996,
-    "nodos_podados": 683,
+    "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+    "valor": 0.5,
+    "nodos_generados": 11614,
+    "nodos_evaluados": 10189,
+    "nodos_podados": 4426,
     "profundidad_alcanzada": 5,
     "valores_raiz": [
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
-        "valor": -1.0
+        "accion": "Move(unit_id='A3', dest=Position(row=7, col=12))",
+        "valor": -2.0
       },
       {
-        "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
+        "accion": "Move(unit_id='A3', dest=Position(row=8, col=11))",
+        "valor": 0.5
+      },
+      {
+        "accion": "Move(unit_id='A3', dest=Position(row=6, col=11))",
         "valor": 0.0
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=9))",
         "valor": 0.0
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=2, col=0))",
+        "accion": "Move(unit_id='A2', dest=Position(row=7, col=7))",
         "valor": 0.0
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
+        "accion": "Move(unit_id='A2', dest=Position(row=8, col=8))",
+        "valor": 0.0
+      },
+      {
+        "accion": "Move(unit_id='A2', dest=Position(row=6, col=8))",
+        "valor": 0.0
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=12))",
+        "valor": 0.0
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=9, col=10))",
+        "valor": 0.0
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=10, col=11))",
+        "valor": 0.0
+      },
+      {
+        "accion": "Move(unit_id='A1', dest=Position(row=8, col=11))",
         "valor": 0.0
       }
     ],
-    "tiempo_segundos": 0.0079004999861354,
+    "tiempo_segundos": 0.19390899999416433,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -915,7 +1395,7 @@
       {
         "chequeo": "selected action legal",
         "ok": true,
-        "detalle": "selected Move(unit_id='A2', dest=Position(row=0, col=1))"
+        "detalle": "selected Move(unit_id='A3', dest=Position(row=8, col=11))"
       }
     ]
   }

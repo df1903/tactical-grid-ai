@@ -1,0 +1,21 @@
+algoritmo,profundidad,orden_acciones,accion,valor,nodos_generados,nodos_evaluados,nodos_podados,profundidad_alcanzada,tiempo_segundos,verificacion_ok
+MINIMAX,1,default,"Move(unit_id='A1', dest=Position(row=8, col=11))",-2.5,11,11,0,1,0.004726399987703189,True
+MINIMAX,1,reversed,"Move(unit_id='A3', dest=Position(row=8, col=11))",-2.5,11,11,0,1,0.0049205000104848295,True
+MINIMAX,2,default,"Move(unit_id='A1', dest=Position(row=8, col=11))",-3.5,132,121,0,2,0.006522999989101663,True
+MINIMAX,2,reversed,"Move(unit_id='A3', dest=Position(row=8, col=11))",-3.5,132,121,0,2,0.008173000009264797,True
+MINIMAX,3,default,"Move(unit_id='A3', dest=Position(row=8, col=11))",-1.0,1395,1263,0,3,0.030502200010232627,True
+MINIMAX,3,reversed,"Move(unit_id='A3', dest=Position(row=8, col=11))",-1.0,1395,1263,0,3,0.029414799995720387,True
+MINIMAX,4,default,"Move(unit_id='A3', dest=Position(row=8, col=11))",-2.0,14896,13501,0,4,0.2402056000137236,True
+MINIMAX,4,reversed,"Move(unit_id='A3', dest=Position(row=8, col=11))",-2.0,14896,13501,0,4,0.23093739998876117,True
+MINIMAX,5,default,"Move(unit_id='A3', dest=Position(row=8, col=11))",0.5,155944,141048,0,5,2.5368638999934774,True
+MINIMAX,5,reversed,"Move(unit_id='A3', dest=Position(row=8, col=11))",0.5,155944,141048,0,5,2.6239655000099447,True
+ALPHA_BETA,1,default,"Move(unit_id='A1', dest=Position(row=8, col=11))",-2.5,11,11,0,1,0.004189300001598895,True
+ALPHA_BETA,1,reversed,"Move(unit_id='A3', dest=Position(row=8, col=11))",-2.5,11,11,0,1,0.004397600016091019,True
+ALPHA_BETA,2,default,"Move(unit_id='A1', dest=Position(row=8, col=11))",-3.5,36,25,96,2,0.004626700014341623,True
+ALPHA_BETA,2,reversed,"Move(unit_id='A3', dest=Position(row=8, col=11))",-3.5,48,37,84,2,0.004814399988390505,True
+ALPHA_BETA,3,default,"Move(unit_id='A3', dest=Position(row=8, col=11))",-1.0,486,412,273,3,0.016709199990145862,True
+ALPHA_BETA,3,reversed,"Move(unit_id='A3', dest=Position(row=8, col=11))",-1.0,304,262,153,3,0.01215220001176931,True
+ALPHA_BETA,4,default,"Move(unit_id='A3', dest=Position(row=8, col=11))",-2.0,1440,1064,2557,4,0.03323729999829084,True
+ALPHA_BETA,4,reversed,"Move(unit_id='A3', dest=Position(row=8, col=11))",-2.0,1425,1121,1766,4,0.03044410000438802,True
+ALPHA_BETA,5,default,"Move(unit_id='A3', dest=Position(row=8, col=11))",0.5,8639,7205,6289,5,0.16180390000226907,True
+ALPHA_BETA,5,reversed,"Move(unit_id='A3', dest=Position(row=8, col=11))",0.5,11614,10189,4426,5,0.19390899999416433,True

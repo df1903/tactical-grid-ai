@@ -1,0 +1,6 @@
+algoritmo,profundidad,orden_acciones,accion,valor,nodos_generados,nodos_evaluados,nodos_podados,profundidad_alcanzada,tiempo_segundos
+ALPHA_BETA,2,default,"Move(unit_id='A3', dest=Position(row=4, col=1))",-13.0,45,37,27,2,0.005558300006669015
+ALPHA_BETA,3,default,"Move(unit_id='A3', dest=Position(row=4, col=1))",-12.0,349,304,92,3,0.009483500005444512
+ALPHA_BETA,4,default,"Move(unit_id='A3', dest=Position(row=4, col=1))",-12.5,1421,1072,2056,4,0.027236000023549423
+ALPHA_BETA,5,default,"Move(unit_id='A3', dest=Position(row=4, col=1))",-11.5,10097,8676,4312,5,0.15843360000872053
+ALPHA_BETA,6,default,"Move(unit_id='A3', dest=Position(row=4, col=1))",-12.0,36763,26666,60253,6,0.6063565999793354
