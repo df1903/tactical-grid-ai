@@ -3,7 +3,7 @@ from typing import Any
 
 from tactical_grid.algorithms.common import PathProblem, make_problem
 from tactical_grid.domain.model import Position
-from tactical_grid.scenario.loader import build_scenario, load_scenario
+from tactical_grid.scenario.loader import Scenario, build_scenario, load_scenario
 
 SCENARIOS = Path(__file__).parent.parent / "scenarios"
 APENDICE_A = SCENARIOS / "apendice_a.json"
@@ -60,3 +60,24 @@ def ascii_problem(rows: list[str]) -> PathProblem:
     }
     scenario = build_scenario(raw)
     return make_problem(scenario.board, scenario.initial_state, "A1", Position(gr, gc))
+
+
+def mini_race() -> Scenario:
+    """5x7 open map, two units per side, resource (0,1) next to base A: a race to count by hand."""
+    units = [("A1", "A", 1, 0), ("A2", "A", 0, 2), ("B1", "B", 1, 2), ("B2", "B", 2, 4)]
+    return build_scenario(
+        {
+            "version": "1.0",
+            "mapa": {"filas": 5, "columnas": 7},
+            "tipos_terreno": {"camino": {"costo": 1, "transitable": True}},
+            "terreno": [["camino"] * 7 for _ in range(5)],
+            "bases": {"A": {"fila": 0, "columna": 0}, "B": {"fila": 4, "columna": 6}},
+            "recurso": {"fila": 0, "columna": 1},
+            "unidades": [
+                {"id": uid, "bando": side, "tipo": "estandar", "fila": r, "columna": c}
+                for uid, side, r, c in units
+            ],
+            "turno": "A",
+            "juego": {"portador_recurso": None, "limite_turnos": 50},
+        }
+    )

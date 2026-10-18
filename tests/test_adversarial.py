@@ -5,17 +5,23 @@ from pathlib import Path
 
 import pytest
 
-from helpers import APENDICE_A, SCENARIOS
+from helpers import APENDICE_A, SCENARIOS, mini_race
 from tactical_grid.algorithms.adversarial import ActionOrder, AdversarialResult, alpha_beta, minimax
 from tactical_grid.algorithms.utility import Utility, UtilityWeights, make_utility
-from tactical_grid.domain.model import Move, Position
-from tactical_grid.domain.rules import legal_actions
+from tactical_grid.domain.model import GameState, Move, Position
+from tactical_grid.domain.rules import apply, legal_actions, skip_turn
 from tactical_grid.experiments.verifier import verify_adversarial
-from tactical_grid.scenario.loader import Scenario, TestConfig, load_scenario
+from tactical_grid.scenario.loader import (
+    DEFAULT_UTILITY_WEIGHTS,
+    Scenario,
+    TestConfig,
+    load_scenario,
+)
 from test_domain_rules import make
 
 CASE_7 = SCENARIOS / "caso_07_decision_adversarial.json"
 FILES = [APENDICE_A, CASE_7]
+LARGE = [SCENARIOS / "prueba_20x20.json", SCENARIOS / "caso_03_obstaculo_heuristica.json"]
 Algorithm = Callable[..., AdversarialResult]
 
 
@@ -56,7 +62,7 @@ def test_terminal_root_has_no_action() -> None:
 
 
 def test_a_delivery_is_found_and_valued_above_everything_else() -> None:
-    scenario = load_scenario(CASE_7)
+    scenario = mini_race()
     # A1 carries the resource and stands next to its base: moving onto the base wins.
     state = replace(scenario.initial_state, carrier="A1", resource=None)
     result = minimax(scenario.board, state, 4, _utility(scenario))
@@ -72,7 +78,7 @@ def test_depth_must_be_positive() -> None:
 
 @pytest.mark.parametrize("algorithm", [minimax, alpha_beta])
 def test_only_legal_actions_are_considered(algorithm: Algorithm) -> None:
-    scenario = load_scenario(CASE_7)
+    scenario = mini_race()
     board, state, utility = scenario.board, scenario.initial_state, _utility(scenario)
     result = algorithm(board, state, 3, utility, record=True)
     assert len(result.considered) == result.generated
@@ -80,7 +86,7 @@ def test_only_legal_actions_are_considered(algorithm: Algorithm) -> None:
 
 
 def test_verifier_rejects_an_illegal_action() -> None:
-    scenario = load_scenario(CASE_7)
+    scenario = mini_race()
     board, state, utility = scenario.board, scenario.initial_state, _utility(scenario)
     result = minimax(board, state, 2, utility, record=True)
     # B moves are illegal at the root, where A is the side to move.
@@ -92,7 +98,7 @@ def test_verifier_rejects_an_illegal_action() -> None:
 
 
 def test_verifier_requires_recorded_actions() -> None:
-    scenario = load_scenario(CASE_7)
+    scenario = mini_race()
     board, state, utility = scenario.board, scenario.initial_state, _utility(scenario)
     report = verify_adversarial(board, state, minimax(board, state, 2, utility))
     assert not report.checks[0].passed
@@ -109,3 +115,38 @@ def test_blocked_side_node_is_evaluated_as_a_leaf() -> None:
         result = algorithm(board, state, 3, _utility(scenario))
         assert result.action is not None
         assert math.isfinite(result.value)
+
+
+def _mid_game(scenario: Scenario, plies: int) -> GameState:
+    """State after `plies` alpha-beta moves of self-play (depth 2), to test away from the start."""
+    board, state = scenario.board, scenario.initial_state
+    weights = UtilityWeights.from_mapping(scenario.utility_weights)
+    for _ in range(plies):
+        action = alpha_beta(board, state, 2, make_utility(board, state.turn, weights)).action
+        state = skip_turn(state) if action is None else apply(board, state, action)[0]
+    return state
+
+
+@pytest.mark.parametrize("path", LARGE)
+@pytest.mark.parametrize("plies", [0, 25])
+@pytest.mark.parametrize("order", ["default", "reversed"])
+def test_alpha_beta_matches_minimax_on_large_maps(
+    path: Path, plies: int, order: ActionOrder
+) -> None:
+    scenario = load_scenario(path)
+    board, state = scenario.board, _mid_game(scenario, plies)
+    weights = UtilityWeights.from_mapping(scenario.utility_weights)
+    utility = make_utility(board, state.turn, weights)
+    full = minimax(board, state, 3, utility, order)
+    pruned = alpha_beta(board, state, 3, utility, order, record=True)
+    assert (pruned.action, pruned.value) == (full.action, full.value)
+    assert pruned.generated < full.generated
+    assert verify_adversarial(board, state, pruned).ok
+
+
+def test_a_blocked_side_passes_without_an_action_and_with_a_finite_value() -> None:
+    board, state = make([("A1", "A", 0, 0), ("B1", "B", 0, 1), ("B2", "B", 1, 0)], resource=(3, 3))
+    weights = UtilityWeights.from_mapping(DEFAULT_UTILITY_WEIGHTS)
+    result = alpha_beta(board, state, 3, make_utility(board, state.turn, weights))
+    assert result.action is None
+    assert math.isfinite(result.value)

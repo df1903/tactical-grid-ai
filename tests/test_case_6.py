@@ -6,17 +6,14 @@ additional game information differs, and the difference changes what the rules p
 
 from dataclasses import replace
 
-from helpers import SCENARIOS
+from helpers import mini_race
 from tactical_grid.domain.model import Move, Position, Side
 from tactical_grid.domain.rules import apply, legal_actions, winner
-from tactical_grid.scenario.loader import load_scenario
-
-CASE_7 = SCENARIOS / "caso_07_decision_adversarial.json"
 
 
 def test_case_6_same_cell_different_states_different_consequences() -> None:
     # A1 stands at (1,0), next to its base (0,0). Initial state: nobody carries the resource.
-    scenario = load_scenario(CASE_7)
+    scenario = mini_race()
     board, free = scenario.board, scenario.initial_state
     carrying = replace(free, carrier="A1", resource=None)
     rival_turn = replace(free, turn=Side.B)

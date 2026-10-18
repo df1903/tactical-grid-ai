@@ -11,6 +11,7 @@ from typing import Any, TypeGuard
 
 from tactical_grid.domain.model import Board, GameState, Position, Side, Terrain
 
+# límite de turnos por defecto si el JSON no lo trae
 DEFAULT_TURN_LIMIT = 100
 
 # Optional extra section `utilidad` (RNF-02). Values below apply only when the JSON omits a key.
@@ -19,23 +20,29 @@ UTILITY_KEYS = {
     "recurso_cargado": "carry",
     "distancia_objetivo": "goal_distance",
     "distancia_rival": "rival_distance",
+    "progreso_rival": "rival_progress",
 }
+# pesos por defecto de la utilidad
 DEFAULT_UTILITY_WEIGHTS: Mapping[str, float] = {
     "delivery": 10.0,
     "carry": 3.0,
     "goal_distance": 1.0,
     "rival_distance": 0.5,
+    "rival_progress": 0.5,
 }
 
 
+#  Excepción para errores de escenario; contiene todos los errores detectados.
 class ScenarioError(Exception):
     """Raised when a scenario is invalid; carries every detected error."""
 
+    # Guarda la lista de errores y los une en un solo mensaje
     def __init__(self, errors: list[str]) -> None:
         super().__init__("; ".join(errors))
         self.errors = errors
 
 
+# Clase para representar la configuración de prueba
 @dataclass(frozen=True)
 class TestConfig:
     __test__ = False  # not a pytest class
@@ -51,6 +58,7 @@ class TestConfig:
     action_order: str | None = None
 
 
+# Clase para representar un escenario
 @dataclass(frozen=True)
 class Scenario:
     board: Board
@@ -59,6 +67,7 @@ class Scenario:
     utility_weights: Mapping[str, float] = field(default_factory=lambda: DEFAULT_UTILITY_WEIGHTS)
 
 
+# Función para cargar un escenario desde un archivo JSON
 def load_scenario(path: str | Path) -> Scenario:
     """Load and validate a scenario file; all-or-nothing.
 
@@ -67,22 +76,27 @@ def load_scenario(path: str | Path) -> Scenario:
     Postconditions: returns a Scenario, or raises ScenarioError listing every error;
         nothing is built or modified when any error exists.
     Complexity: O(R * C + U).
-    AI usage: Claude Code (Sonnet 5.5) drafted the loader from RF-34/RF-35.
+    AI usage: Yes. Claude Code (Sonnet 5.5) drafted the loader from RF-34/RF-35.
     AI intervention: added a check that two units cannot share a cell.
-    Student validation: pending cross-review by the other team member.
+    Student validation: reviewed in meeting.
     """
+    # se lee el archivo; si no existe o el JSON está mal formado, se reporta como error de escenario
     try:
         raw = json.loads(Path(path).read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise ScenarioError([f"cannot read scenario {path}: {exc}"]) from exc
+    # la raíz del JSON debe ser un objeto
     if not isinstance(raw, dict):
         raise ScenarioError(["the scenario root must be a JSON object"])
     return build_scenario(raw)
 
 
+# Función para construir un escenario a partir de un diccionario de datos
 def build_scenario(raw: dict[str, Any]) -> Scenario:
+    # se acumulan todos los errores para mostrarlos juntos, no solo el primero
     errors: list[str] = []
 
+    # se lee cada sección del JSON; cada lector agrega sus errores a la lista
     rows, cols = _read_dimensions(raw, errors)
     terrains = _read_terrains(raw, errors)
     grid = _read_grid(raw, rows, cols, terrains, errors)
@@ -94,11 +108,14 @@ def build_scenario(raw: dict[str, Any]) -> Scenario:
     turn_limit = _read_turn_limit(raw, errors)
     weights = _read_utility_weights(raw, errors)
 
+    # si hubo algún error, no se construye nada (todo o nada)
     if errors or rows is None or cols is None or grid is None or turn is None:
         raise ScenarioError(errors or ["incomplete scenario"])
 
     assert terrains is not None and bases is not None
+    # posiciones ordenadas por id de unidad, como pide el estado
     positions = tuple(sorted((uid, pos) for uid, (_, pos) in units.items()))
+    # parte estática: no cambia durante la partida
     board = Board(
         rows=rows,
         cols=cols,
@@ -108,6 +125,7 @@ def build_scenario(raw: dict[str, Any]) -> Scenario:
         unit_sides={uid: side for uid, (side, _) in units.items()},
         turn_limit=turn_limit,
     )
+    # parte dinámica: si alguien porta el recurso, ya no hay recurso suelto en el mapa
     state = GameState(
         positions=positions,
         carrier=carrier,
@@ -122,14 +140,18 @@ def build_scenario(raw: dict[str, Any]) -> Scenario:
     )
 
 
+# Funciones auxiliares para leer y validar los datos del escenario
 def _is_int(value: object) -> TypeGuard[int]:
+    # bool es subclase de int en Python, por eso se excluye
     return isinstance(value, int) and not isinstance(value, bool)
 
 
+# Función para verificar si un valor es un número (entero o flotante)
 def _is_number(value: object) -> TypeGuard[float]:
     return isinstance(value, int | float) and not isinstance(value, bool)
 
 
+# Función para leer las dimensiones del mapa
 def _read_dimensions(raw: dict[str, Any], errors: list[str]) -> tuple[int | None, int | None]:
     mapa = raw.get("mapa")
     if not isinstance(mapa, dict):
@@ -144,6 +166,7 @@ def _read_dimensions(raw: dict[str, Any], errors: list[str]) -> tuple[int | None
     return (rows, cols) if ok else (None, None)
 
 
+# Función para leer los tipos de terreno del mapa
 def _read_terrains(raw: dict[str, Any], errors: list[str]) -> dict[str, Terrain] | None:
     catalog = raw.get("tipos_terreno")
     if not isinstance(catalog, dict) or not catalog:
@@ -156,6 +179,7 @@ def _read_terrains(raw: dict[str, Any], errors: list[str]) -> dict[str, Terrain]
             continue
         passable = spec["transitable"]
         cost = spec.get("costo")
+        # un terreno transitable necesita costo positivo; uno no transitable no tiene costo
         if passable:
             if not _is_number(cost) or cost <= 0:
                 errors.append(
@@ -169,6 +193,7 @@ def _read_terrains(raw: dict[str, Any], errors: list[str]) -> dict[str, Terrain]
     return terrains
 
 
+# Comprueba que la matriz de terreno es válida y que las celdas usan terrenos conocidos
 def _read_grid(
     raw: dict[str, Any],
     rows: int | None,
@@ -185,12 +210,14 @@ def _read_grid(
         return None
     grid: list[tuple[str, ...]] = []
     ok = True
+    # cada fila debe ser una lista con el número de columnas del mapa
     for r, line in enumerate(matrix):
         if not isinstance(line, list) or (cols is not None and len(line) != cols):
             size = len(line) if isinstance(line, list) else line
             errors.append(f"validation 1: row {r} of 'terreno' has {size}, mapa.columnas is {cols}")
             ok = False
             continue
+        # cada celda debe usar un terreno que exista en el catálogo
         for c, name in enumerate(line):
             if not isinstance(name, str) or (terrains is not None and name not in terrains):
                 errors.append(f"validation 2: cell ({r},{c}) uses unknown terrain {name!r}")
@@ -199,6 +226,7 @@ def _read_grid(
     return tuple(grid) if ok else None
 
 
+# Función para leer el bando de un jugador
 def _read_side(value: object, label: str, errors: list[str]) -> Side | None:
     if isinstance(value, str) and value.upper() in ("A", "B"):
         return Side(value.upper())
@@ -207,6 +235,7 @@ def _read_side(value: object, label: str, errors: list[str]) -> Side | None:
     return None
 
 
+# Función para leer una posición en el tablero
 def _read_position(
     value: object, label: str, rows: int | None, cols: int | None, errors: list[str]
 ) -> Position | None:
@@ -224,6 +253,7 @@ def _read_position(
     return pos
 
 
+# Función para leer las bases de los jugadores
 def _read_bases(
     raw: dict[str, Any], rows: int | None, cols: int | None, errors: list[str]
 ) -> dict[Side, Position] | None:
@@ -244,6 +274,7 @@ def _read_bases(
     return result if len(result) == 2 else None
 
 
+# Función para leer las unidades del escenario
 def _read_units(
     raw: dict[str, Any],
     rows: int | None,
@@ -257,6 +288,7 @@ def _read_units(
     if not isinstance(raw_units, list):
         errors.append("'unidades' must be a list")
         return units
+    # celdas ya ocupadas, para detectar dos unidades en el mismo lugar
     cells: dict[Position, str] = {}
     for index, item in enumerate(raw_units):
         if not isinstance(item, dict) or not isinstance(item.get("id"), str):
@@ -271,6 +303,7 @@ def _read_units(
         pos = _read_position(item, label, rows, cols, errors)
         if side is None or pos is None:
             continue
+        # una unidad no puede empezar sobre un obstáculo
         if terrains is not None and grid is not None:
             terrain = terrains.get(grid[pos.row][pos.col])
             if terrain is not None and not terrain.passable:
@@ -286,6 +319,7 @@ def _read_units(
     return units
 
 
+# Función para leer la unidad que porta el recurso
 def _read_carrier(
     raw: dict[str, Any], units: dict[str, tuple[Side, Position]], errors: list[str]
 ) -> str | None:
@@ -302,6 +336,7 @@ def _read_carrier(
     return carrier
 
 
+# Función para leer el límite de turnos del juego
 def _read_turn_limit(raw: dict[str, Any], errors: list[str]) -> int:
     juego = raw.get("juego", {})
     limit = juego.get("limite_turnos") if isinstance(juego, dict) else None
@@ -313,7 +348,9 @@ def _read_turn_limit(raw: dict[str, Any], errors: list[str]) -> int:
     return int(limit)
 
 
+# Función para leer los pesos de utilidad del escenario
 def _read_utility_weights(raw: dict[str, Any], errors: list[str]) -> dict[str, float]:
+    # se parte de los pesos por defecto y se reemplazan los que el JSON defina
     weights = dict(DEFAULT_UTILITY_WEIGHTS)
     section = raw.get("utilidad")
     if section is None:
@@ -331,7 +368,9 @@ def _read_utility_weights(raw: dict[str, Any], errors: list[str]) -> dict[str, f
     return weights
 
 
+# Función para leer la configuración de prueba del escenario
 def _read_test_config(raw: dict[str, Any]) -> TestConfig:
+    # todos los campos de `prueba` son opcionales: lo que falte o venga mal queda en None
     prueba = raw.get("prueba")
     prueba = prueba if isinstance(prueba, dict) else {}
     juego = raw.get("juego")
@@ -354,5 +393,6 @@ def _read_test_config(raw: dict[str, Any]) -> TestConfig:
     )
 
 
+# Función auxiliar para convertir un valor a texto si es una cadena
 def _text(value: object) -> str | None:
     return value if isinstance(value, str) else None

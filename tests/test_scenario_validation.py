@@ -162,7 +162,13 @@ def test_missing_file_gives_clear_error(tmp_path: Path) -> None:
 
 def test_utility_weights_default_when_section_is_missing() -> None:
     weights = build_scenario(raw_scenario()).utility_weights
-    assert weights == {"delivery": 10.0, "carry": 3.0, "goal_distance": 1.0, "rival_distance": 0.5}
+    assert weights == {
+        "delivery": 10.0,
+        "carry": 3.0,
+        "goal_distance": 1.0,
+        "rival_distance": 0.5,
+        "rival_progress": 0.5,
+    }
 
 
 def test_utility_weights_are_read_from_the_json() -> None:
