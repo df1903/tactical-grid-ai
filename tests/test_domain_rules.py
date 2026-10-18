@@ -1,7 +1,7 @@
 from dataclasses import replace
 from typing import Any
 
-from tactical_grid.domain.model import Board, GameState, Move, Position, Side
+from tactical_grid.domain.model import Board, GameState, Move, Position, Side, Tackle
 from tactical_grid.domain.rules import (
     apply,
     is_draw,
@@ -105,40 +105,89 @@ def test_delivery_wins_even_with_rival_adjacent() -> None:
     assert legal_actions(board, nxt) == []
 
 
-def test_rival_moving_next_to_carrier_drops_resource() -> None:
+def test_rival_moving_next_to_carrier_does_not_drop_resource() -> None:
     board, state = make(
         [("A1", "A", 2, 2), ("B1", "B", 2, 4)], resource=(2, 2), carrier="A1", turn="B"
     )
     nxt, _ = apply(board, state, Move("B1", Position(2, 3)))
-    assert nxt.carrier is None
-    assert nxt.resource == Position(2, 2)
+    assert nxt.carrier == "A1"
+    assert nxt.resource is None
 
 
-def test_carrier_moving_next_to_rival_drops_resource_there() -> None:
+def test_carrier_walking_next_to_a_rival_keeps_the_resource() -> None:
     board, state = make(
         [("A1", "A", 2, 2), ("B1", "B", 2, 4)], resource=(2, 2), carrier="A1", turn="A"
     )
     nxt, _ = apply(board, state, Move("A1", Position(2, 3)))
-    assert nxt.carrier is None
-    assert nxt.resource == Position(2, 3)
+    assert nxt.carrier == "A1"
 
 
-def test_no_transfer_to_interceptor() -> None:
+def test_tackle_is_legal_only_for_own_units_adjacent_to_the_rival_carrier() -> None:
     board, state = make(
-        [("A1", "A", 2, 2), ("B1", "B", 2, 4)], resource=(2, 2), carrier="A1", turn="B"
-    )
-    nxt, _ = apply(board, state, Move("B1", Position(2, 3)))
-    assert nxt.carrier != "B1"
-
-
-def test_other_unit_moving_does_not_repick_resource_under_the_dropper() -> None:
-    board, state = make(
-        [("A1", "A", 2, 2), ("A2", "A", 0, 3), ("B1", "B", 2, 4)],
+        [("A1", "A", 2, 2), ("B1", "B", 2, 3), ("B2", "B", 4, 0)],
         resource=(2, 2),
         carrier="A1",
         turn="B",
     )
-    dropped, _ = apply(board, state, Move("B1", Position(2, 3)))
+    tackles = [a for a in legal_actions(board, state) if isinstance(a, Tackle)]
+    assert tackles == [Tackle("B1", "A1")]
+
+
+def test_no_tackle_when_nobody_is_adjacent_or_the_carrier_is_own_side() -> None:
+    far, far_state = make(
+        [("A1", "A", 2, 2), ("B1", "B", 2, 4)], resource=(2, 2), carrier="A1", turn="B"
+    )
+    assert not any(isinstance(a, Tackle) for a in legal_actions(far, far_state))
+    own, own_state = make(
+        [("A1", "A", 2, 2), ("A2", "A", 2, 3), ("B1", "B", 4, 0)],
+        resource=(2, 2),
+        carrier="A1",
+        turn="A",
+    )
+    assert not any(isinstance(a, Tackle) for a in legal_actions(own, own_state))
+    no_carrier, free_state = make([("A1", "A", 2, 2), ("B1", "B", 2, 3)], turn="B")
+    assert not any(isinstance(a, Tackle) for a in legal_actions(no_carrier, free_state))
+
+
+def test_tackle_drops_the_resource_on_the_carrier_cell_without_moving_anyone() -> None:
+    board, state = make(
+        [("A1", "A", 2, 2), ("B1", "B", 2, 3)], resource=(2, 2), carrier="A1", turn="B"
+    )
+    nxt, cost = apply(board, state, Tackle("B1", "A1"))
+    assert nxt.carrier is None
+    assert nxt.resource == Position(2, 2)
+    assert nxt.positions == state.positions
+    assert nxt.turn is Side.A
+    assert nxt.turn_number == state.turn_number + 1
+    assert cost == 0.0
+
+
+def test_no_transfer_to_the_tackler() -> None:
+    board, state = make(
+        [("A1", "A", 2, 2), ("B1", "B", 2, 3)], resource=(2, 2), carrier="A1", turn="B"
+    )
+    nxt, _ = apply(board, state, Tackle("B1", "A1"))
+    assert nxt.carrier != "B1"
+
+
+def test_carrier_can_run_away_before_it_is_tackled() -> None:
+    board, state = make(
+        [("A1", "A", 2, 2), ("B1", "B", 2, 4)], resource=(2, 2), carrier="A1", turn="B"
+    )
+    threatened, _ = apply(board, state, Move("B1", Position(2, 3)))
+    fled, _ = apply(board, threatened, Move("A1", Position(1, 2)))
+    assert fled.carrier == "A1"
+    assert not any(isinstance(a, Tackle) for a in legal_actions(board, fled))
+
+
+def test_other_unit_moving_does_not_repick_resource_under_the_dropper() -> None:
+    board, state = make(
+        [("A1", "A", 2, 2), ("A2", "A", 0, 3), ("B1", "B", 2, 3)],
+        resource=(2, 2),
+        carrier="A1",
+        turn="B",
+    )
+    dropped, _ = apply(board, state, Tackle("B1", "A1"))
     after_other, _ = apply(board, dropped, Move("A2", Position(0, 2)))
     assert after_other.carrier is None
     assert after_other.resource == Position(2, 2)
@@ -156,14 +205,14 @@ def test_blocked_side_has_no_actions_and_skip_turn_passes() -> None:
 
 def test_leaving_and_returning_picks_up_again() -> None:
     board, state = make(
-        [("A1", "A", 2, 2), ("B1", "B", 2, 4)], resource=(2, 2), carrier="A1", turn="B"
+        [("A1", "A", 2, 2), ("B1", "B", 2, 3)], resource=(2, 2), carrier="A1", turn="B"
     )
-    dropped, _ = apply(board, state, Move("B1", Position(2, 3)))
+    dropped, _ = apply(board, state, Tackle("B1", "A1"))
     away, _ = apply(board, dropped, Move("A1", Position(2, 1)))
     assert away.carrier is None
-    # B1 is far enough again, so the return picks up without interception
-    b_away, _ = apply(board, away, Move("B1", Position(2, 4)))
-    back, _ = apply(board, b_away, Move("A1", Position(2, 2)))
+    # the tackler stays next to the cell, but nothing is automatic: the return picks up
+    b_waits, _ = apply(board, away, Move("B1", Position(1, 3)))
+    back, _ = apply(board, b_waits, Move("A1", Position(2, 2)))
     assert back.carrier == "A1"
     assert back.resource is None
 
