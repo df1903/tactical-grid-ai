@@ -17,14 +17,16 @@ All search scenarios are 20×20 (case 5: 7×9) with three units per side; search
 | 3 | `scenarios/caso_03_obstaculo_heuristica.json` | `uv run python -m tactical_grid scenarios/caso_03_obstaculo_heuristica.json --algorithm UCS,A_STAR --heuristic H1,H2 --verify` |
 | 4 | `scenarios/caso_04_comparacion_heuristicas.json` | `uv run python -m tactical_grid scenarios/caso_04_comparacion_heuristicas.json --algorithm UCS,A_STAR --heuristic H1,H2 --verify` |
 | 5 | `scenarios/caso_05_beam_k.json` | `uv run python -m tactical_grid scenarios/caso_05_beam_k.json --algorithm UCS,BEAM --k 1,2,4,8 --verify` |
-| 6 | `scenarios/caso_07_decision_adversarial.json` | `uv run pytest tests/test_case_6.py` |
+| 6 | 5×7 map built by the test (`tests/helpers.py::mini_race`) | `uv run pytest tests/test_case_6.py` |
 | 7 | `scenarios/caso_07_decision_adversarial.json` | `uv run python -m tactical_grid scenarios/caso_07_decision_adversarial.json --algorithm MINIMAX --depth 1,2,3 --verify` |
 | 8 | `scenarios/caso_07_decision_adversarial.json` | `uv run python -m tactical_grid scenarios/caso_07_decision_adversarial.json --algorithm MINIMAX,ALPHA_BETA --depth 4 --verify` |
 | 9 | `scenarios/caso_07_decision_adversarial.json` | `uv run python -m tactical_grid scenarios/caso_07_decision_adversarial.json --algorithm ALPHA_BETA --depth 3 --order default,reversed --verify` |
 | 10 | `scenarios/caso_07_decision_adversarial.json` | `uv run python -m tactical_grid scenarios/caso_07_decision_adversarial.json --algorithm ALPHA_BETA --depth 1,2,3,4,5 --verify` |
 
-(Cases 6 to 10 share one map: 5×7 open ground, cost 1, two units per side, resource at (0,1),
-A1 (1,0), A2 (0,2), B1 (1,2), B2 (2,4), A moves first, default utility weights 10 / 3 / 1 / 0.5.)
+(Cases 7 to 10 share one map: 20×20, mostly open ground (cost 1) with a few swamps (cost 3) and a
+wall with a gap, three units per side, resource at (8,11), A1 (9,11), A2 (7,8), A3 (7,11),
+B1 (10,8), B2 (12,11), B3 (12,8), A moves first, default utility weights
+10 / 3 / 1 / 0.5 / 0.5. Case 6 uses a small 5×7 race that the test builds.)
 
 ---
 
@@ -99,7 +101,8 @@ recover the optimum.
 
 ## Case 6 — Composite state
 
-**Setup.** Case-7 map; A1 stands at (1,0), next to its base (0,0).
+**Setup.** 5×7 open map (`mini_race` in `tests/helpers.py`); A1 stands at (1,0), next to its
+base (0,0).
 **Expectation.** The same unit on the same cell gives *different states* when the extra game
 information differs, and the difference changes what the rules produce:
 
@@ -116,17 +119,17 @@ state keeps three entries while keyed by position it would keep one. Match: yes.
 
 ## Case 7 — Adversarial decision
 
-**Expectation.** The best decision according to Minimax is not to go straight to the resource.
-Greedy depth 1 grabs it with A2 → (0,1) (U = 3). Depth 2 still prefers it but its value falls to
-0: B1 steps next to the carrier and the resource drops. Depth 3 finds that moving A1 → (1,1)
-first leaves B1 no free neighbor of (0,1) before A2 grabs, so the carrier keeps the resource:
-U = 3 − 1 + 0.5·2 = 3.
+**Expectation.** The best decision according to Minimax is not the first obvious advance. A1 and
+A3 are both next to the resource, so at depth 1 the two grabs have the same value (−2.5) and the
+first in action order (A1) wins; at depth 2 it still does (−3.5). From depth 3 the rivals'
+approach from the south is inside the horizon: grabbing with A3 leaves A1 between the carrier
+and the rivals and is worth −1.0, while grabbing with A1 or any other first move is worth −3.5.
 
 | Depth | Expected action | Expected value | Obtained action | Obtained value | Match |
 |---|---|---|---|---|---|
-| 1 | A2 → (0,1) | 3 | A2 → (0,1) | 3 | yes |
-| 2 | A2 → (0,1) | 0 | A2 → (0,1) | 0 | yes |
-| 3 | A1 → (1,1) | 3 | A1 → (1,1) | 3 | yes |
+| 1 | A1 → (8,11) | −2.5 | A1 → (8,11) | −2.5 | yes |
+| 2 | A1 → (8,11) | −3.5 | A1 → (8,11) | −3.5 | yes |
+| 3 | A3 → (8,11) | −1.0 | A3 → (8,11) | −1.0 | yes |
 
 ## Case 8 — Minimax vs. alpha-beta
 
@@ -134,10 +137,10 @@ U = 3 − 1 + 0.5·2 = 3.
 
 | Depth 4 | Action | Value | Generated | Evaluated | Pruned | Match |
 |---|---|---|---|---|---|---|
-| Minimax | A1 → (0,0) | 0 | 1,616 | 1,388 | 0 | yes |
-| Alpha-beta | A1 → (0,0) | 0 | 239 | 165 | 271 | yes |
+| Minimax | A3 → (8,11) | −2.0 | 14,896 | 13,501 | 0 | yes |
+| Alpha-beta | A3 → (8,11) | −2.0 | 1,440 | 1,064 | 2,557 | yes |
 
-Same decision with about 7× fewer generated nodes.
+Same decision with about 10× fewer generated nodes.
 
 ## Case 9 — Action order
 
@@ -145,28 +148,26 @@ Same decision with about 7× fewer generated nodes.
 
 | Depth 3 | Action | Value | Generated | Evaluated | Pruned | Match |
 |---|---|---|---|---|---|---|
-| `default` order | A1 → (1,1) | 3 | 80 | 58 | 48 | yes |
-| `reversed` order | A1 → (1,1) | 3 | 96 | 67 | 78 | yes |
+| `default` order | A3 → (8,11) | −1.0 | 486 | 412 | 273 | yes |
+| `reversed` order | A3 → (8,11) | −1.0 | 304 | 262 | 153 | yes |
 
-Reversing the order changed the generated nodes from 80 to 96.
+Reversing the order changed the generated nodes from 486 to 304.
 
 ## Case 10 — Depth
 
-**Expectation.** Depths 1 and 3 end on A's move, so grabbing or guarding looks safe (value 3).
-From depth 4 B has enough replies to intercept whatever A does and every value flattens to 0, so
-the first action in order wins the tie.
-More depth costs exponentially more nodes.
+**Expectation.** The value follows the horizon (even depths let B answer last), the decision
+settles on A3 from depth 3, and the effort grows exponentially with the depth.
 
 | Depth | Action | Value | Evaluated | Max depth reached | Match |
 |---|---|---|---|---|---|
-| 1 | A2 → (0,1) | 3 | 5 | 1 | yes |
-| 2 | A2 → (0,1) | 0 | 18 | 2 | yes |
-| 3 | A1 → (1,1) | 3 | 58 | 3 | yes |
-| 4 | A1 → (0,0) | 0 | 165 | 4 | yes |
-| 5 | A1 → (0,0) | 0 | 577 | 5 | yes |
+| 1 | A1 → (8,11) | −2.5 | 11 | 1 | yes |
+| 2 | A1 → (8,11) | −3.5 | 25 | 2 | yes |
+| 3 | A3 → (8,11) | −1.0 | 412 | 3 | yes |
+| 4 | A3 → (8,11) | −2.0 | 1,064 | 4 | yes |
+| 5 | A3 → (8,11) | 0.5 | 7,205 | 5 | yes |
 
-(Alpha-beta, `default` order. With Minimax the evaluated nodes are 5 / 36 / 193 / 1,388 /
-7,016.)
+(Alpha-beta, `default` order. With Minimax the evaluated nodes are 11 / 121 / 1,263 / 13,501 /
+141,048.)
 
 ---
 

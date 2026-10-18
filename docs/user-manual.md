@@ -28,63 +28,53 @@ uv run python -m tactical_grid scenarios/apendice_a.json --algorithm A_STAR --ve
 
 ## 3. Graphical interface
 
-Open it with `uv run python -m tactical_grid.gui [scenario.json]`. Without a path it asks for a
-file. The window is in Spanish.
+Open it with `uv run python -m tactical_grid.gui [scenario.json]`. Without a path, use *Seleccionar
+JSON*. The window is in Spanish and has the same layout for every algorithm.
 
 ### 3.1 The map
 
 | Element | How it looks |
 |---|---|
-| Terrain | color from light green (cheapest) to brown (most expensive); the cost is written in the corner of each cell when the cells are large enough |
+| Terrain | color from light green (cheapest) to brown (most expensive) |
 | Obstacle | dark grey (not passable) |
-| Base | thick outline in the color of its side, with the letter of the side |
-| Resource | gold diamond |
+| Base | thick outline in the color of its side |
+| Resource | gold diamond (Minimax / alpha-beta games) |
 | Unit | circle in the color of its side (blue = A, red = B) with its identifier |
 | Carrier | gold ring around the unit |
-| Selected unit | dashed black ring |
-| Search goal | dashed purple circle labeled *meta* |
-| Path found | purple line with an arrow |
-| Cells the selected unit can move to | green dots |
-| Suggested action | green arrow |
+| Cells expanded by a search | orange, in expansion order when animated |
+| Search goal | green outline |
+| Path found | purple line |
+| Last move or decision | purple arrow (from the unit to the cell, or to the carrier it tackles) |
+| Selected unit | green outline; its legal destinations are green dots |
 
-Move the mouse over a cell to see its row, column, terrain, cost and any unit or resource on it.
-The legend under the map explains the colors.
+### 3.2 Layout
 
-### 3.2 Panel (right side)
+- **Top bar:** *Seleccionar JSON* (the file is validated; an invalid one shows every error and
+  nothing changes) and the **Algoritmo** selector: BFS, DFS, UCS, A\*, Beam, Minimax, Alfa-beta.
+- **Estado:** turn, move number against the limit, carrier of the resource and the color legend.
+- **Parámetros:** changes with the algorithm. DFS: neighbor order. A\*: heuristic (h1 Manhattan,
+  h2 obstacle-aware). Beam: heuristic and width *k*. Minimax / alpha-beta: depth, action order
+  and the five utility weights. The initial values come from the scenario (`prueba`, `utilidad`).
+- **Métricas:** result of the last run (and the verification when enabled).
+- **Traza:** expansion order of a search, or the values of every root action of a decision
+  (`*` marks the chosen one) followed by the game history.
+- **Bottom bar:** *Ejecutar*, *Animar*, *Aplicar jugada*, *Reiniciar*, *Verificar (RF-42)* and
+  the animation speed.
 
-- **Partida:** a colored banner says whose turn it is (or who won); below it, the move number
-  against the turn limit, the carrier of the resource, the selected unit and the search goal.
-- **Clic izquierdo sobre el mapa:** choose what a left click does.
-  - *Seleccionar / mover unidades:* click a unit to select it; click a green dot to move it.
-  - *Fijar meta de la búsqueda:* click the goal cell for a search (a right click always sets
-    the goal, in any mode).
-- **Buttons:** *Deshacer* (undo the last move), *Reiniciar
-  partida*, *Abrir escenario...*. An invalid JSON is rejected with a list of every error and
-  the current game stays untouched.
-- **Algoritmo:** choose BFS, DFS, UCS, A\*, Beam Search, Minimax or Alfa-beta. Only the
-  options that apply appear: heuristic (A\*, Beam), width *k* (Beam), depth and action order
-  (Minimax, alpha-beta). *Verificar resultado* runs the six checks (RF-42).
-- **▶ Ejecutar:** runs the algorithm on the **current** state.
-  - Searches (BFS … Beam): from the selected unit to the goal; the path is drawn and the
-    metrics appear in the *Resultados* tab.
-  - Minimax / alpha-beta: the best action for the side to move is drawn in green and the
-    values of every root action are listed. *Aplicar jugada sugerida* plays it.
-- **Jugar turno con la IA:** the side to move plays the decision of the chosen algorithm
-  (alpha-beta if a search algorithm is selected).
-- **Pestañas:** *Resultados* (metrics and report) and *Jugadas* (numbered history).
+### 3.3 Using it
 
-### 3.3 Three typical uses
-
-1. **Play by hand.** Select a unit of the side that has the turn, click a green dot. The
-   other side answers by hand or with *Jugar turno con la IA*. The game ends when a carrier
-   reaches its own base (winner) or the turn limit is reached (draw).
-2. **Watch a path search.** Select `A1`, switch to *Fijar meta* and click a cell, pick an
-   algorithm and press *Ejecutar*. Change the heuristic or *k* and run again to compare.
-3. **Automatic game.** In *Modo automático (IA contra IA)* pick Minimax or Alfa-beta, the
-   depth and order, set the pause between moves with the slider (0–2000 ms) and press
-   *▶ Iniciar partida automática*. Both sides play with the chosen algorithm until someone
-   wins or the turn limit is reached. The button becomes *⏸ Pausar*; *Deshacer*, *Reiniciar*
-   and *Abrir escenario* also stop it. While it is paused you may take over by hand.
+- **Searches (BFS … Beam):** *Ejecutar* shows the path and the metrics; *Animar* replays the
+  expansion cell by cell. The unit and the goal come from `prueba` of the scenario.
+- **Minimax / alpha-beta:** *Ejecutar* shows the best action for the side to move without
+  playing it. *Aplicar jugada* plays it and, after a short pause, the rival answers with the same
+  algorithm and parameters. The game ends with a delivery or at the turn limit.
+- **Playing by hand:** with Minimax or alpha-beta selected, click a unit of the side to move and
+  then one of the green dots; to tackle, click the rival carrier when one of your units is next
+  to it. The rival answers automatically.
+- **Verificar (RF-42):** runs the six checks on the result (or on each decision of a game) and
+  lists them in *Métricas*.
+- **Reiniciar:** returns to the initial state of the scenario; changing the algorithm also
+  restarts the game.
 
 ## 4. Command line
 
@@ -153,7 +143,7 @@ Optional fields of the team (they never replace the mandatory ones):
 | Field | Meaning | Default |
 |---|---|---|
 | `juego.limite_turnos` | turn limit; the game is a draw when reached | 100 |
-| `utilidad` | weights `entrega`, `recurso_cargado`, `distancia_objetivo`, `distancia_rival` | 10 / 3 / 1 / 0.5 |
+| `utilidad` | weights `entrega`, `recurso_cargado`, `distancia_objetivo`, `distancia_rival`, `progreso_rival` | 10 / 3 / 1 / 0.5 / 0.5 |
 | `prueba.algoritmo` | algorithm of the test | none |
 | `prueba.heuristica` | `H1` or `H2` | `H1` |
 | `prueba.k` | beam width | none |
@@ -165,9 +155,10 @@ Scenarios included in `scenarios/`:
 |---|---|
 | `apendice_a.json` | official 4×4 example |
 | `caso_01` … `caso_05` | cases 1–5 (searches) |
-| `caso_07_decision_adversarial.json` | cases 6–10 |
+| `caso_07_decision_adversarial.json` | cases 7–10 (20×20, three units per side) |
 | `prueba_15x15.json` | 15×15 performance test (three units per side) |
 | `prueba_20x20.json` | 20×20 test (three units per side); open it in the GUI |
+| `escenario_03x03.json` … `escenario_30x30.json` | the same game at six sizes, for the size experiments (the 30×30 one has a limit of 200 turns) |
 
 To try another map, copy a file, change dimensions, costs, positions or units, and open it; no
 code change is needed.
@@ -191,7 +182,7 @@ $U scenarios/prueba_15x15.json --algorithm MINIMAX --depth 4,5,6 --csv $R/rendim
 $U scenarios/apendice_a.json --algorithm BFS,DFS,UCS,A_STAR,BEAM --heuristic H1,H2 --k 1,2,4,8 --verify --csv $R/apendice_a.csv
 ```
 
-(Minimax at depth 6 on the 15×15 map takes about 3.4 s.) The expected values of the 10 cases are
+(Minimax at depth 6 on the 15×15 map takes about 10 s.) The expected values of the 10 cases are
 asserted by the tests: `uv run pytest tests/test_cases_f2.py tests/test_cases_f3.py
 tests/test_case_6.py tests/test_cases_f4.py`.
 

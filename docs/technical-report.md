@@ -20,7 +20,7 @@ alpha-beta pruning.
 Everything the assignment lists as mandatory is implemented: composite state, the seven
 algorithms with their metrics, two admissible heuristics, a utility function, atomic scenario
 loading with the nine validations, the six-check verifier, a CLI with sweeps and CSV/JSON
-export, a minimal GUI with an automatic mode, and the ten demonstration cases. The project has
+export, a GUI with manual and automatic play, and the ten demonstration cases. The project has
 170+ automated tests; `ruff` and `mypy --strict` pass.
 
 What is **not** done at the time of writing: the *Student validation* field of the method
@@ -44,7 +44,7 @@ states. Both are listed in section 13.
 A decision in this game depends on four things, and the state holds each of them:
 
 1. **Where every unit is** (`positions`): needed to know which cells are free (one unit per
-   cell), who is adjacent to the carrier (interception) and how far each unit is from its
+   cell), who is adjacent to the carrier (tackle) and how far each unit is from its
    objective.
 2. **Whose unit each one is**: held in `Board.unit_sides`; units never change side, so it is
    static.
@@ -85,22 +85,25 @@ playing for its own side.
   passability come from the `tipos_terreno` catalog of the JSON, never from the code.
 - **Occupation:** one unit per cell. Bases and the resource cell may be stepped on when free;
   the **rival base cannot** be entered.
-- **Turns:** the side to move chooses one of its units and moves one of its units
-  to a neighboring cell. There is no *wait* action: moving one unit leaves the others in place.
+- **Turns:** the side to move chooses one of its units and either moves it to a
+  neighboring cell or, if it is adjacent to the rival carrier, tackles. There is no *wait*
+  action: acting with one unit leaves the others in place.
 - **Pickup:** a unit picks the resource up when it *arrives* at its cell (a unit that stays
   put does not pick it up again).
-- **Delivery:** the side whose carrier reaches its own base wins. Delivery beats interception
-  in the same move.
-- **Interception (loss of the carrier):** after *any* move that leaves a rival adjacent to the
-  carrier, the resource drops on the carrier's cell (no transfer to the rival, so no
-  tie-break). The original carrier cannot pick it up again while it stays on that cell; any
-  other unit picks it up on arrival.
+- **Delivery:** the side whose carrier reaches its own base wins.
+- **Tackle (loss of the carrier):** a unit of the side to move that is adjacent to the rival
+  carrier at the start of its turn may tackle (`Tackle(unit, carrier)`). The resource drops
+  on the carrier's cell; nobody moves, the action costs 0 and nothing is transferred to the
+  rival, so there is no tie-break. The original carrier cannot pick it up again while it stays
+  on that cell; any other unit picks it up on arrival. Being adjacent only threatens: the
+  carrier can run away or deliver before the tackle. A move never drops the resource by
+  itself.
 - **End of game:** victory on delivery; draw when `turn_number` reaches the turn limit
   (`juego.limite_turnos`, default 100). A finished game has no legal actions. A side with no
   legal move (all its units blocked) passes its turn; the pass is not an action, and Minimax
   evaluates such a node as a leaf.
 
-Order of resolution inside a move: (1) pickup, (2) delivery check, (3) interception.
+Order of resolution inside a move: (1) pickup, (2) delivery check.
 
 ## 4. Costs
 
@@ -122,11 +125,12 @@ Five components, as decided on 2026-10-07 (RNF-05); no database or network.
 | `scenario` | JSON loading, nine validations, translation to `domain` objects | `domain` |
 | `algorithms` | BFS, DFS, UCS, A\*, Beam, Minimax, alpha-beta, heuristics, utility | `domain` |
 | `experiments` | runner (modes), sweeps, CSV/JSON export, verifier | `algorithms`, `scenario` |
-| `gui` | tkinter window and `Session` (game state behind the window) | all of the above |
+| `gui` | one tkinter window (`gui/app.py`): algorithm selector with a parameter panel per algorithm, game state and click-to-move | all of the above |
 
 `algorithms` never reads JSON and never knows the GUI. The GUI holds no game rule: it calls
 `domain` (legal moves, `apply`), `algorithms` (decisions) and `experiments.runner` (searches).
-`gui/session.py` is free of tkinter so it can be tested without a display.
+The functions that run an algorithm for the window (`trace_search`, `trace_decision`) do not
+touch tkinter, so they are tested without a display.
 
 JSON keys are Spanish (the assignment's contract) and are read only in `scenario/`; the code
 uses English names.
@@ -197,6 +201,8 @@ experimented (RF-23); the result is in section 10.3.
 - MAX is the side to move at the root. One unit of depth is **one action of one side**, so
   the two sides alternate by ply.
 - Leaves are terminal states and nodes at the depth limit; utility is evaluated there.
+  A root whose side has no legal action returns no action and the utility of the root
+  (it used to return −∞).
 - Both algorithms share one recursion; alpha-beta only adds the cut `alpha ≥ beta`.
 - At the root the first action (in the given order) with a *strictly* higher value wins, so
   Minimax and alpha-beta pick the same action in ties (RF-31).
@@ -209,8 +215,10 @@ experimented (RF-23); the result is in section 10.3.
 - The values reported for root actions after the best one in alpha-beta may be bounds, not
   exact values.
 - The assignment suggests extra adversarial actions (block, protect...). The team chose
-  *move* only; interception is a consequence of movement, not an action, which
-  keeps the branching factor low.
+  *move* plus a single extra action, the *tackle* (the assignment's "intercept the
+  carrier"). It replaced an automatic interception that made every automatic game end in a
+  draw (decision of 2026-10-18); it adds at most one action per own unit next to the carrier,
+  so the branching factor stays low.
 
 ## 7. Heuristics (RF-21, RF-22)
 
@@ -246,42 +254,54 @@ Measured effect (cases 3 and 4, same cost for all three): expansions of UCS / h1
 ## 8. Utility function (RF-27, RF-33)
 
 Defined from the point of view of MAX (the side to move at the root); MAX maximizes it, MIN
-minimizes it:
+minimizes it. It measures **how many moves each side still needs to win**:
 
 ```
-U = w_entrega  · (+1 if MAX delivered, −1 if MIN delivered)
-  + w_carga    · (+1 if MAX carries, −1 if MIN carries)
-  − w_dist     · (distance to the current objective)
-  + w_rival    · (distance of the nearest rival to the carrier, only if MAX carries)
+U = w_progreso_rival · finish(MIN) − w_dist · finish(MAX)
+  + w_carga · (+1 if MAX carries, −1 if MIN carries)
+  + w_rival · (steps from the carrier to its nearest chaser; same sign as the carry term)
 ```
 
-- **Objective:** MAX's base if MAX carries; the carrier if MIN carries (chase it); the
-  resource cell if nobody carries it. Distance is Manhattan, measured from the nearest MAX
-  unit (from the carrier itself when MAX carries).
-- **Rival term:** only when MAX carries. A rival close to MAX's carrier lowers `U`
-  (interception risk).
+- **`finish(side)`** uses real step distances on the map (BFS once per target cell, cached;
+  walls and the rival base cannot be crossed, units are ignored):
+  - nobody carries: nearest own unit to the resource (2 if it stands on it, because it must
+    leave and come back) plus resource to own base;
+  - the side carries: carrier to own base;
+  - the rival carries: nearest own unit until adjacent to the carrier, 1 for the tackle,
+    plus carrier cell to own base.
+
+  It adds 2 when every free entry of the own base is occupied (someone must make way first).
+- **Terminal states:** a win is worth `bound + w_entrega + turns left`, where `bound` is an
+  upper limit of any non-terminal value computed from the board size and the weights, so a
+  win always beats every other state and a sooner win beats a later one; a loss is the
+  negative; a draw (turn limit) is 0.
 - **Weights:** `entrega = 10`, `recurso_cargado = 3`, `distancia_objetivo = 1`,
-  `distancia_rival = 0.5`. They are read from the optional `utilidad` section of the JSON
-  (RNF-02); the numbers above apply only to keys that are missing.
-- **Why these weights:** delivery must dominate everything else (it ends the game); carrying is
-  worth more than being close to the resource; each cell of distance costs one point so
-  progress is always visible; the rival term breaks ties between equally distant routes in
-  favor of safer ones.
+  `distancia_rival = 0.5`, `progreso_rival = 0.5`. They are read from the optional `utilidad`
+  section of the JSON (RNF-02); the numbers above apply only to keys that are missing.
+- **Why this form:** the estimate is continuous across the pickup (picking the resource up
+  never lowers the picker's value), it counts the rival's progress (waiting is never free),
+  and it follows walls. `progreso_rival < distancia_objetivo` makes a carrier go home instead
+  of wandering to lengthen the rival's hypothetical return trip.
 
-**Explaining a decision (RF-33).** In case 7 depth 1 grabs the resource (U = 3) and depth 2
-still prefers it, but its value drops to 0 because B1 steps next to the carrier and the
-resource falls. Depth 3 finds that moving A1 to (1,1) first leaves B1 no free neighbor of the
-resource cell before A2 grabs it, so the carrier keeps it (U = 3 − 1 + 0.5·2 = 3). Doubling
-`distancia_rival` would make safe routes even more attractive; setting `distancia_objetivo`
-to 0 would remove the incentive to approach at all.
+**Explaining a decision (RF-33).** In case 7 (20×20, resource at (8,11) with A1 south and A3
+north of it, the rivals coming from the south) depth 1 and 2 cannot tell the two grabs apart
+(U = −2.5 for both at depth 1) and keep the first in action order, A1. From depth 3 the rivals'
+approach is inside the horizon: grabbing with A3 leaves A1 between the carrier and the rivals
+and is worth −1.0, while grabbing with A1 or any other first move is worth −3.5. Doubling
+`distancia_rival` would make the screened route even more attractive; setting
+`distancia_objetivo` to 0 would remove the incentive to approach at all.
 
-**Known limitation.** With 10 / 3 / 1 / 0.5 a resource dropped under one of MAX's own units
-(U = 0) is valued above carrying it more than 3 cells from the base (U < 0). In addition,
-even depths let the opponent answer last and flatten many values to 0 (case 10). Both effects
-are consequences of the weights and of the horizon, not of the algorithms. The team decided on
-2026-10-17 not to change the defaults (it would invalidate the validated cases 7–10); a
-scenario that needs another behavior sets, for example, `recurso_cargado ≥ 8` in its
-`utilidad` section.
+**Why it was redesigned (2026-10-18).** The first utility (Manhattan distance to the current
+objective, `U = 10·delivery + 3·carry − distance − 0.5·rival`) switched objective on pickup:
+standing next to the resource scored better than carrying it far from the base, so no unit
+ever picked it up, and the rival's progress was ignored. In full self-play games every
+scenario ended in a draw. With the new utility, alpha-beta self-play at depths 2–4 ends with a delivery on
+`prueba_20x20` (A, turn 63), `caso_02` (A, 61), `caso_03` (B, 68), `caso_04` (B, 66),
+`escenario_20x20` (B, 70), `escenario_30x30` (B, 110, with `limite_turnos = 200`),
+`prueba_15x15` (A, 37), `caso_07` (A, 39) and `apendice_a` (B, 6). Two behaviors remain: the
+open map `caso_01` can produce a tackle battle (16 pickups and 16 tackles at depth 4) that
+reaches the limit, and the tiny maps `escenario_03x03` … `escenario_15x15` (made for the size
+experiments) end in a draw because the carrier is tackled right after picking the resource up.
 
 ## 9. Open decisions of the assignment (G1–G15)
 
@@ -290,8 +310,8 @@ scenario that needs another behavior sets, for example, `recurso_cargado ≥ 8` 
 | G1 | Python 3.14 with `uv`; `pytest`, `ruff`, `mypy --strict`; GUI with `tkinter` (standard library, no new dependency) | decisions 2026-10-07, 2026-10-16 |
 | G2 | Four directions; Manhattan is admissible | 2026-10-07 |
 | G3 | Cost paid on entering the destination cell; start cell free | 2026-10-07, 2026-10-14 |
-| G4 | One unit per cell; the rival base cannot be entered; bases and the resource cell can be stepped on when free. Interception = a rival adjacent to the carrier after any move | 2026-10-07, 2026-10-14 |
-| G5 | The carrier drops the resource on its own cell when intercepted (no transfer) | 2026-10-14 |
+| G4 | One unit per cell; the rival base cannot be entered; bases and the resource cell can be stepped on when free. Tackle = an own unit adjacent to the rival carrier takes the turn to make it drop the resource | 2026-10-07, 2026-10-14 |
+| G5 | The carrier drops the resource on its own cell when tackled (no transfer) | 2026-10-14, 2026-10-18 |
 | G6 | Draw at the turn limit (`juego.limite_turnos`, default 100); a side without moves passes its turn | 2026-10-07, 2026-10-14 |
 | G7 | Graph search with visited set; DFS without depth limit | 2026-10-14 |
 | G8 | Expansion order up/down/left/right; first-in-first-out tie-break for every algorithm | 2026-10-14 |
@@ -372,55 +392,64 @@ path).
 
 ### 10.4 Adversarial decision (cases 7–10)
 
-Scenario `caso_07_decision_adversarial.json`: 5×7 open map, two units per side, resource at
-(0,1), A moves first, default weights. `GRAB` = A2→(0,1); `GUARD` = A1→(1,1).
+Scenario `caso_07_decision_adversarial.json`: 20×20 map (a few swamps and a wall with a gap),
+three units per side, A moves first, default weights. The resource is at (8,11); A1 (9,11) and
+A3 (7,11) are both next to it, A2 is at (7,8) and the rivals B1 (10,8), B2 (12,11), B3 (12,8) come
+from the south. `GRAB A1` = A1→(8,11); `GRAB A3` = A3→(8,11). Raw data:
+`docs/results/casos_07_10_adversarial.csv`.
 
 | Algorithm | Depth | Order | Action | Value | Generated | Evaluated | Pruned |
 |---|---|---|---|---|---|---|---|
-| Minimax | 1 | default | GRAB | 3 | 5 | 5 | 0 |
-| Minimax | 2 | default | GRAB | 0 | 41 | 36 | 0 |
-| Minimax | 3 | default | GUARD | 3 | 234 | 193 | 0 |
-| Minimax | 4 | default | A1→(0,0) | 0 | 1,616 | 1,388 | 0 |
-| Minimax | 5 | default | A1→(0,0) | 0 | 8,626 | 7,016 | 0 |
-| Alpha-beta | 1 | default | GRAB | 3 | 5 | 5 | 0 |
-| Alpha-beta | 2 | default | GRAB | 0 | 23 | 18 | 18 |
-| Alpha-beta | 3 | default | GUARD | 3 | 80 | 58 | 48 |
-| Alpha-beta | 3 | reversed | GUARD | 3 | 96 | 67 | 78 |
-| Alpha-beta | 4 | default | A1→(0,0) | 0 | 239 | 165 | 271 |
-| Alpha-beta | 4 | reversed | GRAB | 0 | 315 | 239 | 209 |
-| Alpha-beta | 5 | default | A1→(0,0) | 0 | 788 | 577 | 393 |
-| Alpha-beta | 5 | reversed | GRAB | 0 | 1,370 | 996 | 683 |
+| Minimax | 1 | default | GRAB A1 | −2.5 | 11 | 11 | 0 |
+| Minimax | 2 | default | GRAB A1 | −3.5 | 132 | 121 | 0 |
+| Minimax | 3 | default | GRAB A3 | −1.0 | 1,395 | 1,263 | 0 |
+| Minimax | 4 | default | GRAB A3 | −2.0 | 14,896 | 13,501 | 0 |
+| Minimax | 5 | default | GRAB A3 | 0.5 | 155,944 | 141,048 | 0 |
+| Alpha-beta | 1 | default | GRAB A1 | −2.5 | 11 | 11 | 0 |
+| Alpha-beta | 2 | default | GRAB A1 | −3.5 | 36 | 25 | 96 |
+| Alpha-beta | 3 | default | GRAB A3 | −1.0 | 486 | 412 | 273 |
+| Alpha-beta | 3 | reversed | GRAB A3 | −1.0 | 304 | 262 | 153 |
+| Alpha-beta | 4 | default | GRAB A3 | −2.0 | 1,440 | 1,064 | 2,557 |
+| Alpha-beta | 4 | reversed | GRAB A3 | −2.0 | 1,425 | 1,121 | 1,766 |
+| Alpha-beta | 5 | default | GRAB A3 | 0.5 | 8,639 | 7,205 | 6,289 |
+| Alpha-beta | 5 | reversed | GRAB A3 | 0.5 | 11,614 | 10,189 | 4,426 |
 
-- **Case 7:** the best decision is not to grab the resource first (depth 1 and 2 grab; depth 3
-  guards).
+- **Case 7:** depth 1 and 2 grab the resource with A1 (the two grabs tie and the first in order
+  wins); from depth 3 grabbing with A3, which leaves A1 between the carrier and the rivals,
+  is worth −1.0 against −3.5 for every other first move, so the best decision is not the first
+  obvious advance.
 - **Case 8:** at depth 4 alpha-beta chooses the same action and value as Minimax while
-  generating 239 nodes instead of 1,616 (≈ 7×) and evaluating 165 instead of 1,388.
-- **Case 9:** at depth 3 the same decision with `default` order generates 80 nodes and with
-  `reversed` 96: the order changes the amount of pruning but not the decision. At depth 4
-  the reversed order also changes the tie-break among equal values (0), hence a different
-  action with the same value.
-- **Case 10:** depths 1 and 3 end on A's move, so grabbing (1) or guarding (3) looks safe
-  (value 3); from depth 4 B has enough replies to intercept whatever A does and every value
-  flattens to 0, so the first action in order wins the tie. This is the horizon effect
-  mentioned in section 8.
+  generating 1,440 nodes instead of 14,896 (≈ 10×) and evaluating 1,064 instead of 13,501.
+- **Case 9:** at depth 3 the same decision with `default` order generates 486 nodes and with
+  `reversed` 304: the order changes the amount of pruning but not the decision. At depth 5
+  the effect is the opposite (8,639 against 11,614), so no order is better in general.
+- **Case 10:** the value follows the horizon (−2.5, −3.5, −1.0, −2.0, 0.5: even depths let B
+  answer last), the decision settles on A3 from depth 3, and the effort grows about 6× per
+  level (25 / 412 / 1,064 / 7,205 evaluated nodes for alpha-beta).
 
 ### 10.5 Performance (G13)
 
-Scenario `prueba_15x15.json` (15×15, swamp cells and a wall, three units per side); depth
-counted in actions of one side; raw data in `docs/results/rendimiento_15x15*.csv`:
+One decision from the initial state, depth counted in actions of one side; raw data in
+`docs/results/rendimiento_*.csv`.
+
+`prueba_15x15.json` (15×15, swamp cells and a wall, three units per side):
 
 | Algorithm | Depth | Time |
 |---|---|---|
-| Alpha-beta | 5 | 0.02 s |
-| Alpha-beta | 6 | 0.09 s |
-| Alpha-beta | 7 | 0.36 s |
-| Minimax | 5 | 0.34 s |
-| Minimax | 6 | 3.4 s |
+| Alpha-beta | 5 | 0.10 s |
+| Alpha-beta | 6 | 0.38 s |
+| Alpha-beta | 7 | 2.2 s |
+| Minimax | 4 | 0.11 s |
+| Minimax | 5 | 1.0 s |
+| Minimax | 6 | 10.0 s |
 
-On the 20×20 test scenario
-(`prueba_20x20.json`, three units per side) alpha-beta at depth 2…6 takes ≤ 0.10 s
-(`docs/results/rendimiento_20x20.csv`). Conclusion: within the 5 s target, alpha-beta up to
-depth 7 and plain Minimax up to depth 6. Times are from the team's laptop (Windows, Python 3.14).
+`prueba_20x20.json` (20×20, three units per side): alpha-beta 0.006 s at depth 2, 0.03 s at
+depth 4, 0.16 s at depth 5 and 0.61 s at depth 6 (3.3 s at depth 7, measured separately).
+In full self-play games the slowest single move at depth 5 on 20×20 maps was 0.58 s.
+Conclusion: within the 5 s target, alpha-beta up to depth 7 and plain Minimax up to depth 5
+on 15×15 and 20×20 maps (Minimax at depth 6 on 15×15 takes 10 s, over the target). The
+distance tables of the utility cost one BFS per target cell and are reused for the whole
+game. Times are from the team's laptop (Windows, Python 3.14).
 
 ## 11. Verification and testing (RF-42, RE-03)
 
@@ -439,8 +468,8 @@ Every run saved in `docs/results/` was produced with `--verify` and all checks p
 
 Automated tests (`uv run pytest`): domain rules and state, scenario validation (the nine
 validations and the atomic load), search algorithms, heuristics, utility, Minimax / alpha-beta,
-verifier, runner and sweeps, the 10 cases with their expected values, and the GUI session and
-window. `uv run ruff check .` and `uv run mypy src` pass (strict).
+verifier, runner and sweeps, the 10 cases with their expected values, and the GUI (the
+functions that run each algorithm, and the window when a display is available). `uv run ruff check .` and `uv run mypy src` pass (strict).
 
 ## 12. Scenario format and robustness (RF-34 … RF-37)
 
@@ -452,21 +481,22 @@ the team (`juego.limite_turnos`, `utilidad`, `prueba.algoritmo`, `prueba.heurist
 three units per side, because Appendix A has two; the team's own scenarios use three or more
 where the size allows it. Terrain names are read from the catalog (open set); non-passable
 terrains may omit `costo`. Dimensions, costs, bases, obstacles, units and resource may change
-without touching the code; this is exercised by scenarios of 4×4, 5×7, 7×9, 20×20 and a
-generated 15×15.
+without touching the code; this is exercised by scenarios of 3×3, 4×4, 5×5, 7×9, 10×10,
+15×15, 20×20 and 30×30 (`scenarios/`).
 
 ## 13. Limitations
 
 1. **Student validation is pending.** The cross-review fields in the docstrings still say
    "pending cross-review by the other team member"; they will be completed by the reviewer
    after reading and testing each method.
-2. **Utility weights** have the limitation described in section 8; they are configurable per
-   scenario but the defaults were not retuned.
+2. **Utility** estimates distances ignoring units (only blocked base entries are counted),
+   so a wall of units is seen only inside the search horizon; open symmetric maps can end in
+   tackle battles or standoffs that reach the turn limit (section 8).
 3. **Minimax cost** grows exponentially: plain Minimax above depth 5 on 15×15 maps exceeds the
    5 s target; alpha-beta depth 7 and beyond depends heavily on action order.
 4. **Single-unit searches** ignore the adversary and the resource by design (RF-14); they do
    not model a plan of the whole game.
-5. **Only one action** (move); no wait, protect or block actions (decisions of 2026-10-07 and 2026-10-17).
+5. **Two actions** (move and tackle); no wait, protect or block actions (decisions of 2026-10-07, 2026-10-17 and 2026-10-18).
 6. **Explored states** are not displayed in the GUI (RF-41, optional).
 7. **Questions to the professor** (assignment section 19) have no official answer.
 8. **Measured times** come from one machine and are not repeated statistically; deterministic
@@ -486,7 +516,7 @@ Franco Rincón. **Purpose, by area:**
 | Heuristics | **Proposed the second heuristic (`obstacle_aware`, BFS-based)** and drafted both | Accepted it after checking admissibility |
 | Utility, Minimax, alpha-beta | Drafted the code; proposed the formula and weights | Approved the formula; the sign of the rival term was corrected during review (see below) |
 | CLI, runner, sweeps, export | Drafted the code | Decided the option names (G10) and the formats |
-| GUI | Drafted `gui/session.py` and `gui/app.py`, including the Spanish interface and the automatic mode | Requested the features and the language; reviews the behavior |
+| GUI | Drafted `gui/app.py`, including the Spanish interface, the per-algorithm parameter panels, the verification and the click-to-move play | Requested the features and the language; reviews the behavior |
 | Scenarios and experiments | Generated the 15×15 and 20×20 maps with a script; ran the sweeps | Chose the case maps and the expected values |
 | Documentation | Drafted this report, the manual and the case table from the repository and the experiment output | Reviews and takes responsibility for the content |
 

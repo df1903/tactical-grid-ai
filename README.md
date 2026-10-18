@@ -12,7 +12,7 @@ Project 1 of *Sistemas Inteligentes I* (UCALDAS). Team: Jorge Iván Garcia Torre
 uv sync                          # install dependencies
 uv run python -m tactical_grid scenarios/apendice_a.json --algorithm A_STAR --verify
 uv run python -m tactical_grid scenarios/caso_07_decision_adversarial.json --algorithm ALPHA_BETA --depth 3
-uv run python -m tactical_grid.gui scenarios/apendice_a.json   # GUI (omit the path to pick a file)
+uv run python -m tactical_grid.gui scenarios/caso_07_decision_adversarial.json   # GUI (omit the path to pick a file)
 uv run python -m tactical_grid.gui scenarios/prueba_20x20.json   # 20x20 test, 3 units per side
 uv run pytest                    # tests
 uv run ruff check .              # lint
@@ -33,13 +33,14 @@ full reports. Example: `--algorithm MINIMAX,ALPHA_BETA --depth 1,2,3,4 --order d
 | `src/tactical_grid/domain/` | state, actions, successors, costs, game rules |
 | `src/tactical_grid/scenario/` | JSON loading and atomic validation |
 | `src/tactical_grid/algorithms/` | search, heuristics, Minimax, alpha-beta, utility |
-| `src/tactical_grid/gui/` | graphical interface |
+| `src/tactical_grid/gui/` | graphical interface (`app.py`, tkinter) |
 | `src/tactical_grid/experiments/` | metrics, verifier, minimal cases |
 | `tests/` | automated tests |
 | `scenarios/` | JSON scenarios (`apendice_a.json` is the official example) |
 | `docs/` | assignment statement (`enunciado.md`), `technical-report.md`, `user-manual.md`, `cases.md` (10 cases, expected vs. obtained), `results/` (raw CSV/JSON of the experiments) |
 
 ## Status
-All functional requirements are implemented (domain, scenario loader, BFS/DFS/UCS/A*/Beam, Minimax/alpha-beta,
-verifier, CLI with sweeps and export, GUI with automatic mode) and documented. Pending: the *Student validation*
-field of the method docstrings (cross-review). See `.context/state/current.md`.
+All functional requirements are implemented (domain with move and tackle actions, scenario loader, BFS/DFS/UCS/A*/Beam,
+Minimax/alpha-beta with a moves-to-win utility, verifier, CLI with sweeps and export, one GUI with per-algorithm parameter
+panels, manual and automatic play) and documented. All scenarios live in `scenarios/`; the raw results of the experiments
+are in `docs/results/`. See `docs/user-manual.md` to reproduce them and `.context/state/current.md` for the project state.
