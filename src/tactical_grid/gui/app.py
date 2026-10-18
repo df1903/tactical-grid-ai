@@ -1,688 +1,989 @@
-"""Ventana mínima con tkinter (RF-40): cuadrícula, terrenos, obstáculos, bases, recurso,
-unidades, bando, portador, turno y camino encontrado. Las reglas y los algoritmos vienen
-de `Session`; aquí solo se dibuja y se reenvían los clics."""
+"""Interfaz gráfica de TacticalGrid (tkinter): búsqueda de camino, decisión adversarial y partida.
 
-import json
+`python -m tactical_grid.gui [escenario.json]` abre la ventana. Arriba se elige el escenario JSON
+y el algoritmo; al cambiar de algoritmo, el panel «Parámetros» se reconstruye con los controles
+propios de ese algoritmo. La unidad y la meta de las búsquedas salen de la sección `prueba`.
+
+- BFS, DFS, UCS, A* y Beam: «Ejecutar» muestra el camino y «Animar» reproduce la expansión.
+- Minimax y alfa-beta: «Ejecutar» muestra la mejor jugada del bando con el turno; «Aplicar
+  jugada» la juega y deja que el rival responda con el mismo algoritmo. También se puede jugar
+  a mano: clic en una unidad del bando con el turno y luego en una celda a la que pueda ir
+  (o en el portador rival al que pueda placar); el rival responde solo.
+- «Verificar» ejecuta las comprobaciones de RF-42 sobre el resultado.
+
+Para añadir un algoritmo basta registrar un `AlgorithmSpec` en `SPECS`: el layout, los controles,
+las métricas y el panel de traza ya están. Los algoritmos se usan tal cual (`algorithms.*`); el
+orden de expansión se registra envolviendo el problema, sin tocarlos.
+"""
+
 import sys
 import tkinter as tk
-from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
-from typing import Any
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass, field
+from tkinter import filedialog, ttk
 
-from tactical_grid.domain.model import Action, Move, Position, Side
-from tactical_grid.experiments.runner import (
-    ADVERSARIAL_ALGORITHMS,
-    RunError,
-    RunOptions,
-    canonical,
+from tactical_grid.algorithms.adversarial import (
+    ActionOrder,
+    AdversarialResult,
+    alpha_beta,
+    minimax,
 )
-from tactical_grid.gui.session import Session
-from tactical_grid.scenario.loader import ScenarioError, load_scenario
+from tactical_grid.algorithms.common import PathProblem, SearchResult, make_problem
+from tactical_grid.algorithms.heuristics import Heuristic, manhattan, obstacle_aware
+from tactical_grid.algorithms.informed import a_star, beam_search
+from tactical_grid.algorithms.uninformed import bfs, dfs, ucs
+from tactical_grid.algorithms.utility import UtilityWeights, make_utility
+from tactical_grid.domain.model import Action, GameState, Move, Position, Side
+from tactical_grid.domain.rules import apply, is_terminal, legal_actions, skip_turn, winner
+from tactical_grid.experiments.verifier import (
+    VerificationReport,
+    verify_adversarial,
+    verify_search,
+)
+from tactical_grid.scenario.loader import Scenario, ScenarioError, load_scenario
 
-CANVAS_PIXELS = 640
+# Valores elegidos en el panel de parámetros: clave -> texto
+Params = Mapping[str, str]
+
+
+# Un parámetro de un algoritmo: `choice` (lista de (valor, etiqueta)) o `int` (número entero)
+@dataclass(frozen=True)
+class ParamSpec:
+    key: str
+    label: str
+    kind: str  # "choice" | "int" | "float"
+    default: str
+    options: tuple[tuple[str, str], ...] = ()  # solo para "choice"
+    minimum: float = 1  # solo para "int" y "float"
+    maximum: float = 99  # solo para "int" y "float"
+
+
+# Un algoritmo disponible en el selector, con los parámetros que muestra su panel
+@dataclass(frozen=True)
+class AlgorithmSpec:
+    name: str
+    run: Callable[[PathProblem, Params], SearchResult] | None = None  # búsqueda de camino
+    params: tuple[ParamSpec, ...] = ()
+    description: str = ""
+    # decisión adversarial sobre el estado inicial completo (Minimax, alfa-beta)
+    decide: Callable[[Scenario, GameState, Params, bool], AdversarialResult] | None = None
+
+    @property
+    def adversarial(self) -> bool:
+        return self.decide is not None
+
+
+# Heurísticas del selector: valor interno -> (etiqueta, fábrica)
+HEURISTICS: dict[str, tuple[str, Callable[[PathProblem], Heuristic]]] = {
+    "h1": ("h1 · Manhattan", manhattan),
+    "h2": ("h2 · Con obstáculos", obstacle_aware),
+}
+HEURISTIC_PARAM = ParamSpec(
+    "heuristic",
+    "Heurística",
+    "choice",
+    "h1",
+    options=tuple((key, label) for key, (label, _) in HEURISTICS.items()),
+)
+
+
+# Heurística elegida en el panel, construida para el problema (h1 si el valor no se conoce)
+def _heuristic(problem: PathProblem, params: Params) -> tuple[str, Heuristic]:
+    key = params.get("heuristic", "h1")
+    _, factory = HEURISTICS.get(key, HEURISTICS["h1"])
+    return key.upper(), factory(problem)
+
+
+# Ancho del haz leído del panel; error legible si no es un entero >= 1
+def _beam_width(params: Params) -> int:
+    try:
+        k = int(params.get("k", ""))
+    except ValueError:
+        raise ValueError("el ancho k del haz debe ser un entero") from None
+    if k < 1:
+        raise ValueError("el ancho k del haz debe ser al menos 1")
+    return k
+
+
+def _run_a_star(problem: PathProblem, params: Params) -> SearchResult:
+    name, heuristic = _heuristic(problem, params)
+    return a_star(problem, heuristic, f"A_STAR_{name}")
+
+
+def _run_beam(problem: PathProblem, params: Params) -> SearchResult:
+    _, heuristic = _heuristic(problem, params)
+    k = _beam_width(params)
+    return beam_search(problem, heuristic, k, f"BEAM_K{k}")
+
+
+# Parámetros de Minimax y alfa-beta: profundidad, orden de acciones y pesos de la utilidad
+ADVERSARIAL_PARAMS = (
+    ParamSpec("depth", "Profundidad", "int", "3", minimum=1, maximum=12),
+    ParamSpec(
+        "order",
+        "Orden de acciones",
+        "choice",
+        "default",
+        options=(("default", "Por defecto"), ("reversed", "Inverso")),
+    ),
+    ParamSpec("w_delivery", "Peso: entrega", "float", "10.0", minimum=0, maximum=100),
+    ParamSpec("w_carry", "Peso: recurso cargado", "float", "3.0", minimum=0, maximum=100),
+    ParamSpec(
+        "w_goal_distance", "Peso: distancia al objetivo", "float", "1.0", minimum=0, maximum=100
+    ),
+    ParamSpec(
+        "w_rival_distance", "Peso: distancia del rival", "float", "0.5", minimum=0, maximum=100
+    ),
+    ParamSpec(
+        "w_rival_progress", "Peso: progreso del rival", "float", "0.5", minimum=0, maximum=100
+    ),
+)
+
+
+# Lee un número del panel; error legible si no se puede convertir
+def _number(params: Params, key: str, label: str, cast: Callable[[str], float]) -> float:
+    try:
+        return cast(params.get(key, ""))
+    except ValueError:
+        raise ValueError(f"{label} debe ser un número") from None
+
+
+# Decisión de Minimax o alfa-beta sobre el estado inicial; MAX es el lado que tiene el turno
+def _decide(
+    algorithm: Callable[..., AdversarialResult],
+    scenario: Scenario,
+    state: GameState,
+    params: Params,
+    record: bool,
+) -> AdversarialResult:
+    depth = int(_number(params, "depth", "la profundidad", int))
+    if depth < 1:
+        raise ValueError("la profundidad debe ser al menos 1")
+    order: ActionOrder = "reversed" if params.get("order") == "reversed" else "default"
+    weights = UtilityWeights(
+        delivery=_number(params, "w_delivery", "el peso de entrega", float),
+        carry=_number(params, "w_carry", "el peso de recurso cargado", float),
+        goal_distance=_number(params, "w_goal_distance", "el peso de distancia al objetivo", float),
+        rival_distance=_number(params, "w_rival_distance", "el peso de distancia del rival", float),
+        rival_progress=_number(params, "w_rival_progress", "el peso de progreso del rival", float),
+    )
+    utility = make_utility(scenario.board, state.turn, weights)
+    return algorithm(scenario.board, state, depth, utility, order, record=record)
+
+
+def _decide_minimax(
+    scenario: Scenario, state: GameState, params: Params, record: bool
+) -> AdversarialResult:
+    return _decide(minimax, scenario, state, params, record)
+
+
+def _decide_alpha_beta(
+    scenario: Scenario, state: GameState, params: Params, record: bool
+) -> AdversarialResult:
+    return _decide(alpha_beta, scenario, state, params, record)
+
+
+# Algoritmos del selector. Para sumar uno nuevo: añadir su AlgorithmSpec aquí.
+SPECS: dict[str, AlgorithmSpec] = {
+    "BFS": AlgorithmSpec(
+        "BFS", lambda p, _: bfs(p), description="Anchura: óptimo en número de pasos."
+    ),
+    "DFS": AlgorithmSpec(
+        "DFS",
+        lambda p, _: dfs(p),
+        params=(
+            ParamSpec(
+                "neighbor_order",
+                "Orden de expansión de vecinos",
+                "choice",
+                "default",
+                options=(("default", "Por defecto"), ("reversed", "Inverso")),
+            ),
+        ),
+        description="Profundidad: encuentra un camino, no necesariamente el mejor.",
+    ),
+    "UCS": AlgorithmSpec(
+        "UCS", lambda p, _: ucs(p), description="Costo uniforme: óptimo en costo."
+    ),
+    "A*": AlgorithmSpec(
+        "A*",
+        _run_a_star,
+        params=(HEURISTIC_PARAM,),
+        description="Expande el menor f = g + h; óptimo con heurística admisible.",
+    ),
+    "Beam": AlgorithmSpec(
+        "Beam",
+        _run_beam,
+        params=(
+            HEURISTIC_PARAM,
+            ParamSpec("k", "Ancho del haz (k)", "int", "3", minimum=1, maximum=99),
+        ),
+        description="Por niveles, conserva solo los k mejores; memoria acotada, sin garantías.",
+    ),
+    "Minimax": AlgorithmSpec(
+        "Minimax",
+        params=ADVERSARIAL_PARAMS,
+        decide=_decide_minimax,
+        description="Decide el turno del bando que mueve, asumiendo un rival óptimo.",
+    ),
+    "Alfa-beta": AlgorithmSpec(
+        "Alfa-beta",
+        params=ADVERSARIAL_PARAMS,
+        decide=_decide_alpha_beta,
+        description="Misma decisión que Minimax, podando ramas que no la pueden cambiar.",
+    ),
+}
+
+# tamaño máximo del tablero en píxeles, pausa entre pasos y colores
+CANVAS_PIXELS = 560
+STEP_MILLISECONDS = 120
+RESPONSE_MILLISECONDS = 700  # pausa antes de que el rival responda
 SIDE_COLORS = {Side.A: "#1e6fd9", Side.B: "#d9381e"}
 IMPASSABLE = "#3a3a3a"
-GOLD = "#ffc400"
-OVERLAY = "#8000c8"
-SUGGESTION = "#00a050"
+EXPANDED = "#ffd27a"
+PATH = "#8000c8"
+GOAL = "#00a050"
+RESOURCE = "#e0b000"
 CHEAP, DEAR = (196, 232, 170), (150, 110, 60)
 
-# Nombre que ve el usuario -> nombre canónico del algoritmo.
-ALGORITHM_LABELS = {
-    "BFS - Búsqueda en anchura": "BFS",
-    "DFS - Búsqueda en profundidad": "DFS",
-    "UCS - Costo uniforme": "UCS",
-    "A* - Búsqueda informada": "A_STAR",
-    "Beam Search - Haz local": "BEAM",
-    "Minimax": "MINIMAX",
-    "Alfa-beta": "ALPHA_BETA",
-}
-HEURISTIC_LABELS = {"H1 - Manhattan": "H1", "H2 - Esquiva obstáculos": "H2"}
-ORDER_LABELS = {"Normal": "default", "Invertido": "reversed"}
-INFORMED = {"A_STAR", "BEAM"}
-HELP = (
-    "CÓMO USAR\n"
-    "• Jugar: clic en una unidad del bando que tiene el turno y luego en una celda\n"
-    "  verde para moverla.\n"
-    "• Buscar un camino: elige una unidad, fija la meta (modo «Fijar meta» o clic\n"
-    "  derecho), elige BFS/DFS/UCS/A*/Beam y pulsa «Ejecutar».\n"
-    "• Decisión del adversario: elige Minimax o Alfa-beta, pulsa «Ejecutar» y luego\n"
-    "  «Aplicar jugada sugerida», o usa «Jugar turno con la IA».\n"
-)
+
+# Problema de camino que anota la celda de cada nodo que BFS expande, en orden
+@dataclass(frozen=True)
+class _RecordingProblem(PathProblem):
+    expanded_cells: list[Position] = field(default_factory=list, compare=False)
+    reverse_neighbors: bool = False
+
+    # Anota la celda expandida y, si se pide, entrega los vecinos en orden inverso
+    def expand(self, state: GameState) -> list[tuple[GameState, float]]:
+        self.expanded_cells.append(state.position_of(self.unit_id))
+        children = super().expand(state)
+        return children[::-1] if self.reverse_neighbors else children
+
+
+# Resultado de una corrida: unidad, meta, celdas expandidas en orden y resultado de la búsqueda
+@dataclass(frozen=True)
+class SearchTrace:
+    unit: str
+    goal: Position
+    expanded_cells: tuple[Position, ...]
+    result: SearchResult
+    problem: PathProblem
+
+
+# Corre el algoritmo elegido con la unidad y la meta de la sección `prueba` del escenario
+def trace_search(scenario: Scenario, algorithm: str, params: Params | None = None) -> SearchTrace:
+    config = scenario.test_config
+    if config.start_unit is None or config.goal is None:
+        raise ValueError("el escenario no define prueba.unidad_inicio / prueba.objetivo")
+    if config.start_unit not in scenario.board.unit_sides:
+        raise ValueError(f"unidad desconocida: {config.start_unit!r}")
+    if not scenario.board.is_passable(config.goal):
+        raise ValueError(f"la meta ({config.goal.row}, {config.goal.col}) no es transitable")
+    base = make_problem(scenario.board, scenario.initial_state, config.start_unit, config.goal)
+    run = SPECS[algorithm].run
+    if run is None:
+        raise ValueError(f"{algorithm} no es una búsqueda de camino")
+    reverse = (params or {}).get("neighbor_order") == "reversed"
+    problem = _RecordingProblem(
+        base.board, base.initial, base.unit_id, base.goal, reverse_neighbors=reverse
+    )
+    result = run(problem, params or {})
+    return SearchTrace(
+        config.start_unit, config.goal, tuple(problem.expanded_cells), result, problem
+    )
+
+
+# Decisión adversarial del bando que mueve en `state` (por defecto, el estado inicial)
+def trace_decision(
+    scenario: Scenario,
+    algorithm: str,
+    params: Params | None = None,
+    state: GameState | None = None,
+    record: bool = False,
+) -> AdversarialResult:
+    decide = SPECS[algorithm].decide
+    if decide is None:
+        raise ValueError(f"{algorithm} no es un algoritmo adversarial")
+    return decide(scenario, state or scenario.initial_state, params or {}, record)
+
+
+# Texto corto de una acción: "A1 -> (2, 3)" para un movimiento, "A1 placa a B1" para un placaje
+def describe_action(action: Action) -> str:
+    if isinstance(action, Move):
+        return f"{action.unit_id} -> ({action.dest.row}, {action.dest.col})"
+    return f"{action.unit_id} placa a {action.target}"
+
+
+# Celdas de origen y destino de la flecha de una acción (en un placaje, de la unidad al portador)
+def action_arrow(state: GameState, action: Action) -> tuple[Position, Position]:
+    origin = state.position_of(action.unit_id)
+    if isinstance(action, Move):
+        return origin, action.dest
+    return origin, state.position_of(action.target)
+
+
+# Líneas legibles de un reporte de verificación (RF-42)
+def describe_verification(report: VerificationReport) -> str:
+    if not report.checks:
+        return "Verificación: sin solución que verificar"
+    lines = [f"Verificación RF-42: {'todo correcto' if report.ok else 'FALLÓ'}"]
+    for check in report.checks:
+        mark = "ok" if check.passed else "FALLO"
+        lines.append(f"  [{mark}] {check.name}: {check.detail}")
+    return "\n".join(lines)
+
+
+# Color de fondo de una celda según su costo (barato = verde claro, caro = marrón)
+def _terrain_color(scenario: Scenario, pos: Position) -> str:
+    board = scenario.board
+    terrain = board.terrain_at(pos)
+    if not terrain.passable or terrain.cost is None:
+        return IMPASSABLE
+    costs = [t.cost for t in board.terrains.values() if t.passable and t.cost is not None]
+    low, high = min(costs), max(costs)
+    ratio = 0.0 if high == low else (terrain.cost - low) / (high - low)
+    r, g, b = (round(c + (d - c) * ratio) for c, d in zip(CHEAP, DEAR, strict=True))
+    return f"#{r:02x}{g:02x}{b:02x}"
 
 
 class App:
-    def __init__(self, root: tk.Tk, session: Session) -> None:
+    # Construye el layout común: barra superior, tablero, paneles a la derecha y controles abajo
+    def __init__(self, root: tk.Tk) -> None:
         self.root = root
-        self.session = session
-        self.path: list[Position] = []
-        self.suggestion: Action | None = None
-        self.auto_job: str | None = None
-        self.selected: str | None = None
-        self.goal: Position | None = None
         root.title("TacticalGrid")
-        self._build_widgets()
-        self._load_defaults()
-        self.redraw()
+        self.scenario: Scenario | None = None
+        self.trace: SearchTrace | None = None
+        self.decision: AdversarialResult | None = None
+        # partida en curso (Minimax/alfa-beta): estado actual, historial y última jugada
+        self.game_state: GameState | None = None
+        self.history: list[str] = []
+        self.arrow: tuple[Position, Position] | None = None
+        self.busy = False
+        self.selected: str | None = None  # unidad elegida con el clic (juego manual)
+        self.verification = ""
+        self.after_id: str | None = None
+        self.param_vars: dict[str, tk.StringVar] = {}
 
-    # ---- widgets -------------------------------------------------------------------------
-    def _build_widgets(self) -> None:
-        left = ttk.Frame(self.root)
-        left.grid(row=0, column=0, padx=8, pady=8, sticky="n")
-        self.canvas = tk.Canvas(left, width=CANVAS_PIXELS, height=CANVAS_PIXELS, bg="white")
-        self.canvas.pack()
-        self.canvas.bind("<Button-1>", self._on_left_click)
-        self.canvas.bind("<Button-3>", self._on_right_click)
-        self.canvas.bind("<Motion>", self._on_hover)
-        self.hover = tk.StringVar(value="Pasa el ratón sobre una celda para ver sus datos.")
-        ttk.Label(left, textvariable=self.hover).pack(anchor="w", pady=(4, 0))
-        self.legend = tk.Canvas(left, width=CANVAS_PIXELS, height=26, highlightthickness=0)
-        self.legend.pack(anchor="w", pady=(2, 0))
-
-        panel = ttk.Frame(self.root)
-        panel.grid(row=0, column=1, sticky="n", padx=(0, 8), pady=8)
-
-        game = ttk.LabelFrame(panel, text="Partida")
-        game.pack(fill="x")
-        self.turn_label = tk.Label(game, font=("Arial", 13, "bold"), anchor="w", fg="white")
-        self.turn_label.pack(fill="x", padx=4, pady=4)
-        self.status = tk.StringVar()
-        ttk.Label(game, textvariable=self.status, justify="left").pack(anchor="w", padx=4)
-
-        self.click_mode = tk.StringVar(value="mover")
-        mode = ttk.LabelFrame(panel, text="Clic izquierdo sobre el mapa")
-        mode.pack(fill="x", pady=(6, 0))
-        ttk.Radiobutton(
-            mode, text="Seleccionar / mover unidades", variable=self.click_mode, value="mover"
-        ).pack(anchor="w")
-        ttk.Radiobutton(
-            mode, text="Fijar meta de la búsqueda", variable=self.click_mode, value="meta"
-        ).pack(anchor="w")
-
-        actions = ttk.Frame(panel)
-        actions.pack(fill="x", pady=(6, 0))
-        for index, (text, command) in enumerate(
-            [
-                ("Deshacer", self.undo),
-                ("Reiniciar partida", self.reset),
-                ("Abrir escenario...", self.open_scenario),
-            ]
-        ):
-            ttk.Button(actions, text=text, command=command).grid(
-                row=index // 2, column=index % 2, sticky="we", padx=1, pady=1
-            )
-        actions.columnconfigure((0, 1), weight=1)
-
-        algo = ttk.LabelFrame(panel, text="Algoritmo")
-        algo.pack(fill="x", pady=(6, 0))
-        self.algorithm = tk.StringVar()
-        self.heuristic = tk.StringVar(value="H1 - Manhattan")
-        self.beam_k = tk.StringVar(value="3")
-        self.depth = tk.StringVar(value="3")
-        self.order = tk.StringVar(value="Normal")
-        self.verify = tk.BooleanVar(value=False)
-        picker = ttk.Combobox(
-            algo,
+        # Barra superior: escenario y algoritmo
+        bar = ttk.Frame(root, padding=6)
+        bar.pack(fill="x")
+        ttk.Button(bar, text="Seleccionar JSON", command=self.choose_file).pack(side="left")
+        self.file_label = ttk.Label(bar, text="(ningún escenario)")
+        self.file_label.pack(side="left", padx=8)
+        self.algorithm = tk.StringVar(value="BFS")
+        algorithm_box = ttk.Combobox(
+            bar,
             textvariable=self.algorithm,
-            values=list(ALGORITHM_LABELS),
+            values=list(SPECS),
             state="readonly",
-            width=32,
+            width=10,
         )
-        picker.pack(fill="x", padx=4, pady=4)
-        picker.bind("<<ComboboxSelected>>", lambda _e: self._refresh_params())
-        self.params = ttk.Frame(algo)
-        self.params.pack(fill="x", padx=4)
-        self.heuristic_box = self._param(
-            "Heurística",
-            ttk.Combobox,
-            0,
-            self.heuristic,
-            values=list(HEURISTIC_LABELS),
-            state="readonly",
-        )
-        self.k_box = self._param("Ancho k del haz", ttk.Entry, 1, self.beam_k)
-        self.depth_box = self._param("Profundidad", ttk.Entry, 2, self.depth)
-        self.order_box = self._param(
-            "Orden de acciones",
-            ttk.Combobox,
-            3,
-            self.order,
-            values=list(ORDER_LABELS),
-            state="readonly",
-        )
-        ttk.Checkbutton(algo, text="Verificar resultado (RF-42)", variable=self.verify).pack(
-            anchor="w", padx=4
-        )
-        ttk.Button(algo, text="▶ Ejecutar", command=self.run_algorithm).pack(
-            fill="x", padx=4, pady=(4, 2)
-        )
-        self.adv_buttons = ttk.Frame(algo)
-        self.adv_buttons.pack(fill="x", padx=4, pady=(0, 4))
-        ttk.Button(
-            self.adv_buttons, text="Aplicar jugada sugerida", command=self.apply_suggestion
-        ).pack(fill="x", pady=1)
-        ttk.Button(self.adv_buttons, text="Jugar turno con la IA", command=self.play_ai_turn).pack(
-            fill="x", pady=1
-        )
+        algorithm_box.pack(side="right")
+        ttk.Label(bar, text="Algoritmo:").pack(side="right", padx=(0, 4))
+        algorithm_box.bind("<<ComboboxSelected>>", lambda _event: self.on_algorithm_changed())
 
-        auto = ttk.LabelFrame(panel, text="Modo automático (IA contra IA)")
-        auto.pack(fill="x", pady=(6, 0))
-        self.speed = tk.IntVar(value=600)
-        row = ttk.Frame(auto)
-        row.pack(fill="x", padx=4, pady=4)
-        ttk.Label(row, text="Pausa entre jugadas (ms)").pack(side="left")
-        ttk.Scale(row, from_=0, to=2000, variable=self.speed, orient="horizontal", length=130).pack(
-            side="left", padx=4
-        )
-        self.auto_button = ttk.Button(
-            auto, text="▶ Iniciar partida automática", command=self.toggle_auto
-        )
-        self.auto_button.pack(fill="x", padx=4, pady=(0, 4))
+        # Centro: tablero a la izquierda, paneles a la derecha
+        body = ttk.Frame(root, padding=(6, 0))
+        body.pack(fill="both", expand=True)
+        self.canvas = tk.Canvas(body, width=CANVAS_PIXELS, height=CANVAS_PIXELS, bg="white")
+        self.canvas.pack(side="left")
+        self.canvas.bind("<Button-1>", self._on_click)
+        side = ttk.Frame(body, padding=(8, 0, 0, 0))
+        side.pack(side="left", fill="both", expand=True)
 
-        self.hint = tk.StringVar()
-        ttk.Label(panel, textvariable=self.hint, wraplength=330, foreground="#a02020").pack(
-            anchor="w", pady=(6, 0)
-        )
-        notebook = ttk.Notebook(panel)
-        notebook.pack(fill="both", pady=(4, 0))
-        self.output = self._text_tab(notebook, "Resultados", 12)
-        self.history = self._text_tab(notebook, "Jugadas", 12)
-
-    def _param(
-        self, label: str, widget_type: type, row: int, var: tk.StringVar, **options: Any
-    ) -> list[tk.Widget]:
-        name = ttk.Label(self.params, text=label)
-        name.grid(row=row, column=0, sticky="w")
-        field = widget_type(self.params, textvariable=var, width=24, **options)
-        field.grid(row=row, column=1, sticky="we", pady=1)
-        return [name, field]
-
-    @staticmethod
-    def _text_tab(notebook: ttk.Notebook, title: str, height: int) -> tk.Text:
-        frame = ttk.Frame(notebook)
-        text = tk.Text(frame, width=48, height=height, wrap="word", state="disabled")
-        text.pack(fill="both")
-        notebook.add(frame, text=title)
-        return text
-
-    def _refresh_params(self) -> None:
-        """Show only the options that apply to the chosen algorithm."""
-        name = self._algorithm_name()
-        for widgets, visible in (
-            (self.heuristic_box, name in INFORMED),
-            (self.k_box, name == "BEAM"),
-            (self.depth_box, name in ADVERSARIAL_ALGORITHMS),
-            (self.order_box, name in ADVERSARIAL_ALGORITHMS),
+        # Estado de la partida: turno, jugada, portador y leyenda de colores
+        status_frame = ttk.LabelFrame(side, text="Estado", padding=6)
+        status_frame.pack(fill="x", pady=(0, 6))
+        self.turn_label = ttk.Label(status_frame, text="", justify="left", width=44)
+        self.turn_label.pack(fill="x")
+        legend = ttk.Frame(status_frame)
+        legend.pack(fill="x", pady=(4, 0))
+        for text, color in (
+            ("● bando A", SIDE_COLORS[Side.A]),
+            ("● bando B", SIDE_COLORS[Side.B]),
+            ("◆ recurso", RESOURCE),
+            ("▭ base", "#555555"),
+            ("■ muro", IMPASSABLE),
         ):
-            for widget in widgets:
-                widget.grid() if visible else widget.grid_remove()
-        if name in ADVERSARIAL_ALGORITHMS:
-            self.adv_buttons.pack(fill="x", padx=4, pady=(0, 4))
-        else:
-            self.adv_buttons.pack_forget()
+            ttk.Label(legend, text=text, foreground=color).pack(side="left", padx=(0, 10))
 
-    def _algorithm_name(self) -> str:
-        return ALGORITHM_LABELS.get(self.algorithm.get(), "A_STAR")
+        # Panel de parámetros: se reconstruye según el algoritmo elegido
+        self.params_frame = ttk.LabelFrame(side, text="Parámetros", padding=6)
+        self.params_frame.pack(fill="x")
+        # Panel de métricas del resultado
+        metrics_frame = ttk.LabelFrame(side, text="Métricas", padding=6)
+        metrics_frame.pack(fill="x", pady=6)
+        self.summary = ttk.Label(metrics_frame, text="", justify="left", width=44)
+        self.summary.pack(fill="x")
+        # Panel de traza: orden de expansión (aquí irán frontera, g/h/f, árbol...)
+        trace_frame = ttk.LabelFrame(side, text="Traza", padding=6)
+        trace_frame.pack(fill="both", expand=True)
+        self.trace_text = tk.Text(trace_frame, width=44, height=12, state="disabled")
+        self.trace_text.pack(side="left", fill="both", expand=True)
+        scroll = ttk.Scrollbar(trace_frame, command=self.trace_text.yview)
+        scroll.pack(side="right", fill="y")
+        self.trace_text.configure(yscrollcommand=scroll.set)
 
-    def _load_defaults(self) -> None:
-        config = self.session.scenario.test_config
-        self.path, self.suggestion = [], None
-        self.goal = config.goal
-        self.selected = config.start_unit
-        name = canonical(config.algorithm) if config.algorithm else "A_STAR"
-        self.algorithm.set(next(k for k, v in ALGORITHM_LABELS.items() if v == name))
-        if config.heuristic:
-            self.heuristic.set(
-                next(
-                    (k for k, v in HEURISTIC_LABELS.items() if v == config.heuristic.upper()),
-                    "H1 - Manhattan",
-                )
-            )
-        if config.beam_width is not None:
-            self.beam_k.set(str(config.beam_width))
-        if config.minimax_depth is not None:
-            self.depth.set(str(config.minimax_depth))
-        if config.action_order == "reversed":
-            self.order.set("Invertido")
-        self.hint.set("")
-        self.click_mode.set("mover")
-        self._refresh_params()
-        self._write(self.output, HELP)
-        self._write(self.history, "")
-
-    # ---- drawing -------------------------------------------------------------------------
-    def _cell_size(self) -> float:
-        board = self.session.scenario.board
-        return CANVAS_PIXELS / max(board.rows, board.cols)
-
-    def _center(self, pos: Position) -> tuple[float, float]:
-        cell = self._cell_size()
-        return (pos.col + 0.5) * cell, (pos.row + 0.5) * cell
-
-    def _cost_range(self) -> tuple[float, float]:
-        terrains = self.session.scenario.board.terrains.values()
-        costs = [t.cost for t in terrains if t.passable and t.cost is not None]
-        return (min(costs), max(costs)) if costs else (0.0, 0.0)
-
-    def _terrain_color(self, pos: Position) -> str:
-        """Passable terrains go from light green (cheap) to brown (expensive); read from JSON."""
-        terrain = self.session.scenario.board.terrain_at(pos)
-        if not terrain.passable or terrain.cost is None:
-            return IMPASSABLE
-        low, high = self._cost_range()
-        share = 0.0 if high == low else (terrain.cost - low) / (high - low)
-        red, green, blue = (int(a + (b - a) * share) for a, b in zip(CHEAP, DEAR, strict=True))
-        return f"#{red:02x}{green:02x}{blue:02x}"
-
-    def redraw(self) -> None:
-        canvas = self.canvas
-        board, state = self.session.scenario.board, self.session.state
-        canvas.delete("all")
-        cell = self._cell_size()
-        for row in range(board.rows):
-            for col in range(board.cols):
-                x0, y0 = col * cell, row * cell
-                terrain = board.terrain_at(Position(row, col))
-                canvas.create_rectangle(
-                    x0,
-                    y0,
-                    x0 + cell,
-                    y0 + cell,
-                    fill=self._terrain_color(Position(row, col)),
-                    outline="#777",
-                )
-                if cell >= 30 and terrain.passable:
-                    canvas.create_text(
-                        x0 + 3, y0 + 2, anchor="nw", text=f"{terrain.cost:g}", font=("Arial", 7)
-                    )
-        self._draw_reachable()
-        for side, base in board.bases.items():
-            x0, y0 = base.col * cell, base.row * cell
-            canvas.create_rectangle(
-                x0 + 2,
-                y0 + 2,
-                x0 + cell - 2,
-                y0 + cell - 2,
-                outline=SIDE_COLORS[side],
-                width=3,
-            )
-            canvas.create_text(
-                x0 + cell - 4,
-                y0 + cell - 3,
-                anchor="se",
-                text=f"Base {side.value}" if cell >= 48 else side.value,
-                fill=SIDE_COLORS[side],
-                font=("Arial", max(7, int(cell / 4)), "bold"),
-            )
-        if len(self.path) > 1:
-            points = [c for p in self.path for c in self._center(p)]
-            canvas.create_line(*points, fill=OVERLAY, width=3, arrow=tk.LAST)
-        if self.goal is not None:
-            gx, gy = self._center(self.goal)
-            canvas.create_oval(
-                gx - cell / 3,
-                gy - cell / 3,
-                gx + cell / 3,
-                gy + cell / 3,
-                outline=OVERLAY,
-                width=3,
-                dash=(3, 2),
-            )
-            canvas.create_text(
-                gx,
-                gy - cell / 2 + 6,
-                text="meta",
-                fill=OVERLAY,
-                font=("Arial", max(7, int(cell / 4)), "bold"),
-            )
-        if state.resource is not None:
-            rx, ry = self._center(state.resource)
-            r = cell / 4
-            canvas.create_polygon(
-                rx, ry - r, rx + r, ry, rx, ry + r, rx - r, ry, fill=GOLD, outline="black"
-            )
-        for uid, pos in state.positions:
-            ux, uy = self._center(pos)
-            r = cell * 0.36
-            carrying = uid == state.carrier
-            canvas.create_oval(
-                ux - r,
-                uy - r,
-                ux + r,
-                uy + r,
-                fill=SIDE_COLORS[board.unit_sides[uid]],
-                outline=GOLD if carrying else "white",
-                width=4 if carrying else 2,
-            )
-            if uid == self.selected:
-                canvas.create_oval(
-                    ux - r - 3,
-                    uy - r - 3,
-                    ux + r + 3,
-                    uy + r + 3,
-                    outline="black",
-                    width=2,
-                    dash=(4, 2),
-                )
-            canvas.create_text(
-                ux, uy, text=uid, fill="white", font=("Arial", max(7, int(cell / 3.5)), "bold")
-            )
-        self._draw_suggestion()
-        self._draw_legend()
-        self._update_status()
-
-    def _draw_reachable(self) -> None:
-        """Mark the cells the selected unit can move to (only on its side's turn)."""
-        if self.selected is None or self.click_mode.get() != "mover":
-            return
-        cell = self._cell_size()
-        for dest in self.session.destinations(self.selected):
-            x, y = self._center(dest)
-            self.canvas.create_oval(
-                x - cell / 6,
-                y - cell / 6,
-                x + cell / 6,
-                y + cell / 6,
-                fill=SUGGESTION,
-                outline="white",
-                width=1,
-            )
-
-    def _draw_suggestion(self) -> None:
-        action = self.suggestion
-        if isinstance(action, Move):
-            start = self._center(self.session.state.position_of(action.unit_id))
-            end = self._center(action.dest)
-            self.canvas.create_line(*start, *end, fill=SUGGESTION, width=5, arrow=tk.LAST)
-
-    def _draw_legend(self) -> None:
-        legend = self.legend
-        legend.delete("all")
-        low, high = self._cost_range()
-        x = 2
-        for label, color in (
-            (f"terreno barato ({low:g})", f"#{CHEAP[0]:02x}{CHEAP[1]:02x}{CHEAP[2]:02x}"),
-            (f"terreno caro ({high:g})", f"#{DEAR[0]:02x}{DEAR[1]:02x}{DEAR[2]:02x}"),
-            ("obstáculo", IMPASSABLE),
-        ):
-            legend.create_rectangle(x, 6, x + 14, 20, fill=color, outline="#777")
-            legend.create_text(x + 18, 13, anchor="w", text=label, font=("Arial", 8))
-            x += 32 + 6 * len(label)
-        legend.create_polygon(x + 7, 5, x + 14, 13, x + 7, 21, x, 13, fill=GOLD, outline="black")
-        legend.create_text(x + 18, 13, anchor="w", text="recurso", font=("Arial", 8))
-        x += 80
-        for side in Side:
-            legend.create_oval(x, 5, x + 16, 21, fill=SIDE_COLORS[side], outline="white")
-            legend.create_text(
-                x + 20, 13, anchor="w", text=f"bando {side.value}", font=("Arial", 8)
-            )
-            x += 78
-        legend.create_oval(x, 5, x + 16, 21, fill="#888", outline=GOLD, width=3)
-        legend.create_text(x + 20, 13, anchor="w", text="portador", font=("Arial", 8))
-
-    def _update_status(self) -> None:
-        state, board = self.session.state, self.session.scenario.board
-        carrier = state.carrier
-        if carrier:
-            carrier_text = f"{carrier} (bando {board.unit_sides[carrier].value})"
-        else:
-            carrier_text = "nadie (el recurso está en el mapa)"
-        goal = "sin fijar" if self.goal is None else f"({self.goal.row}, {self.goal.col})"
-        outcome = self.session.outcome()
-        self.turn_label.configure(
-            text=outcome or f"Turno del bando {state.turn.value}",
-            bg=SIDE_COLORS[state.turn] if not outcome else "#444",
+        # Controles de ejecución, comunes a todos los algoritmos
+        controls = ttk.Frame(root, padding=6)
+        controls.pack(fill="x")
+        self.run_button = ttk.Button(controls, text="Ejecutar", command=self.run_all_at_once)
+        self.run_button.pack(side="left")
+        self.step_button = ttk.Button(controls, text="Animar", command=self.run_step_by_step)
+        self.step_button.pack(side="left", padx=6)
+        self.apply_button = ttk.Button(controls, text="Aplicar jugada", command=self.apply_move)
+        self.apply_button.pack(side="left")
+        self.reset_button = ttk.Button(controls, text="Reiniciar", command=self.reset)
+        self.reset_button.pack(side="left", padx=6)
+        self.verify = tk.BooleanVar(value=False)
+        ttk.Checkbutton(controls, text="Verificar (RF-42)", variable=self.verify).pack(
+            side="left", padx=6
         )
-        self.status.set(
-            f"Movimiento {state.turn_number} de {board.turn_limit}\n"
-            f"Portador del recurso: {carrier_text}\n"
-            f"Unidad elegida: {self.selected or 'ninguna'}\n"
-            f"Meta de la búsqueda: {goal}"
-        )
-        self._write(self.history, "\n".join(self.session.log))
-        self.history.see("end")
+        self.speed = tk.IntVar(value=STEP_MILLISECONDS)
+        ttk.Scale(
+            controls, from_=400, to=10, variable=self.speed, orient="horizontal", length=140
+        ).pack(side="right")
+        ttk.Label(controls, text="Velocidad:").pack(side="right", padx=(0, 4))
 
-    # ---- events --------------------------------------------------------------------------
-    def _cell_at(self, event: Any) -> Position | None:
-        board = self.session.scenario.board
-        cell = self._cell_size()
-        row, col = int(event.y // cell), int(event.x // cell)
-        if event.x < 0 or event.y < 0 or row >= board.rows or col >= board.cols:
-            return None
-        return Position(row, col)
+        self.enabled = False
+        self._build_params()
+        self._set_buttons(False)
 
-    def _on_hover(self, event: Any) -> None:
-        pos = self._cell_at(event)
-        if pos is None:
-            return
-        board = self.session.scenario.board
-        terrain = board.terrain_at(pos)
-        name = board.grid[pos.row][pos.col]
-        cost = f"costo {terrain.cost:g}" if terrain.passable else "no transitable"
-        extra = ""
-        unit = self.session.state.unit_at(pos)
-        if unit:
-            extra = f" · unidad {unit} (bando {board.unit_sides[unit].value})"
-        if self.session.state.resource == pos:
-            extra += " · recurso"
-        self.hover.set(f"Celda ({pos.row}, {pos.col}): {name}, {cost}{extra}")
+    # Habilita los controles si hay escenario válido; "Animar" solo existe para búsquedas de camino
+    def _set_buttons(self, enabled: bool) -> None:
+        self.enabled = enabled
+        state = "normal" if enabled else "disabled"
+        for button in (self.run_button, self.reset_button):
+            button.configure(state=state)
+        adversarial = SPECS[self.algorithm.get()].adversarial
+        animate = enabled and not adversarial
+        self.step_button.configure(state="normal" if animate else "disabled")
+        playable = enabled and adversarial and not self.busy and not self._game_over()
+        self.apply_button.configure(state="normal" if playable else "disabled")
+        if self.busy:  # mientras el rival responde no se puede ejecutar nada más
+            self.run_button.configure(state="disabled")
 
-    def _on_left_click(self, event: Any) -> None:
-        pos = self._cell_at(event)
-        if pos is None:
-            return
-        if self.click_mode.get() == "meta":
-            self._set_goal(pos)
-            return
-        occupant = self.session.state.unit_at(pos)
-        if occupant is not None:
-            self.selected = occupant
-            self._clear_overlays()
-            mine = self.session.scenario.board.unit_sides[occupant] is self.session.state.turn
-            self.hint.set("" if mine else "Esa unidad es del otro bando: no es su turno.")
-        elif self.selected is not None:
-            action = self.session.move_for_click(self.selected, pos)
-            if action is not None:
-                self._play(action)
-                return
-            self.hint.set("Movimiento no permitido: elige una celda marcada en verde.")
-        self.redraw()
+    # Reconstruye el panel de parámetros con los controles del algoritmo elegido
+    def _build_params(self) -> None:
+        for child in self.params_frame.winfo_children():
+            child.destroy()
+        self.param_vars = {}
+        spec = SPECS[self.algorithm.get()]
+        if spec.description:
+            ttk.Label(self.params_frame, text=spec.description, wraplength=320).pack(anchor="w")
+        if not spec.params:
+            ttk.Label(self.params_frame, text="Sin parámetros.").pack(anchor="w", pady=(4, 0))
+        for param in spec.params:
+            row = ttk.Frame(self.params_frame)
+            row.pack(fill="x", pady=(4, 0))
+            ttk.Label(row, text=param.label + ":").pack(side="left")
+            default = self._default_for(param)
+            var = tk.StringVar(value=default)
+            self.param_vars[param.key] = var
+            if param.kind == "choice":
+                labels = {label: value for value, label in param.options}
+                shown = tk.StringVar(
+                    value=next(lbl for val, lbl in param.options if val == default)
+                )
+                box = ttk.Combobox(
+                    row, textvariable=shown, values=list(labels), state="readonly", width=14
+                )
+                box.pack(side="right")
 
-    def _on_right_click(self, event: Any) -> None:
-        pos = self._cell_at(event)
-        if pos is not None:
-            self._set_goal(pos)
+                # traduce la etiqueta mostrada al valor interno del parámetro
+                def on_pick(
+                    _event: object,
+                    v: tk.StringVar = var,
+                    s: tk.StringVar = shown,
+                    m: dict[str, str] = labels,
+                ) -> None:
+                    self._on_param_changed(v, m[s.get()])
 
-    def _set_goal(self, pos: Position) -> None:
-        if not self.session.scenario.board.is_passable(pos):
-            self.hint.set("La meta debe ser una celda transitable.")
-            return
-        self.goal, self.path = pos, []
-        self.hint.set("")
-        self.redraw()
-
-    def _clear_overlays(self) -> None:
-        self.path, self.suggestion = [], None
-
-    def _play(self, action: Action) -> None:
-        self.session.play(action)
-        self._clear_overlays()
-        self.hint.set("")
-        self.redraw()
-        outcome = self.session.outcome()
-        if outcome:
-            messagebox.showinfo("Fin de la partida", outcome)
-
-    # ---- commands ------------------------------------------------------------------------
-    def run_algorithm(self) -> None:
-        name = self._algorithm_name()
-        try:
-            if name in ADVERSARIAL_ALGORITHMS:
-                self._run_adversarial(name)
+                box.bind("<<ComboboxSelected>>", on_pick)
             else:
-                self._run_search(name)
-        except (RunError, ValueError) as exc:
-            self.hint.set(f"Error: {exc}")
+                ttk.Spinbox(
+                    row,
+                    from_=param.minimum,
+                    to=param.maximum,
+                    increment=0.5 if param.kind == "float" else 1,
+                    textvariable=var,
+                    width=6,
+                    command=self._clear_result,
+                ).pack(side="right")
 
-    def _run_search(self, name: str) -> None:
-        if self.selected is None:
-            raise RunError("elige una unidad de inicio (clic sobre ella)")
-        if self.goal is None:
-            raise RunError("fija la meta (modo «Fijar meta» o clic derecho)")
-        options = RunOptions(
-            algorithm=name,
-            heuristic=HEURISTIC_LABELS.get(self.heuristic.get(), "H1"),
-            k=self._int(self.beam_k, "El ancho k") if name == "BEAM" else None,
-            unit=self.selected,
-            goal=self.goal,
-            verify=self.verify.get(),
-        )
-        report = self.session.search(options)
-        self.path = [Position(r, c) for r, c in report["camino"]]
-        self.suggestion = None
-        self.hint.set("" if report["exito"] else "El algoritmo no encontró camino a la meta.")
-        self._write(self.output, json.dumps(report, indent=1, ensure_ascii=False))
-        self.redraw()
+    # Estado que se dibuja y sobre el que se decide: el de la partida o el inicial
+    def _state(self) -> GameState:
+        assert self.scenario is not None
+        return self.game_state or self.scenario.initial_state
 
-    def _run_adversarial(self, name: str) -> None:
-        result = self.session.decide(
-            name,
-            self._int(self.depth, "La profundidad"),
-            ORDER_LABELS.get(self.order.get(), "default"),
-            record=self.verify.get(),
-        )
-        self.path, self.suggestion = [], result.action
-        self.hint.set("Jugada sugerida en verde. Pulsa «Aplicar jugada sugerida» para jugarla.")
-        lines = [
-            f"{result.algorithm}  valor {result.value:g}",
-            f"jugada: {result.action!r}",
-            f"nodos generados {result.generated}, evaluados {result.evaluated}, "
-            f"podados {result.pruned}",
-            f"profundidad alcanzada {result.depth_reached}, tiempo {result.time_seconds:.4f} s",
-            "valores en la raíz:",
-        ]
-        lines += [f"  {action!r}: {value:g}" for action, value in result.root_values]
-        self._write(self.output, "\n".join(lines))
-        self.redraw()
+    # La partida terminó: hay ganador o se agotaron los turnos
+    def _game_over(self) -> bool:
+        return self.scenario is not None and is_terminal(self.scenario.board, self._state())
 
-    def apply_suggestion(self) -> None:
-        if self.suggestion is None:
-            self.hint.set("Primero pulsa «Ejecutar» con Minimax o Alfa-beta.")
-            return
-        self._play(self.suggestion)
+    # Vuelve la partida al estado inicial del escenario
+    def _reset_game(self) -> None:
+        self._cancel_animation()
+        self.game_state, self.arrow, self.busy = None, None, False
+        self.selected = None
+        self.history = []
 
-    # ---- automatic mode ------------------------------------------------------------------
-    def toggle_auto(self) -> None:
-        if self.auto_job is not None:
-            self.stop_auto()
-        elif self.session.outcome() is None:
-            self.auto_button.configure(text="⏸ Pausar partida automática")
-            self.hint.set("")
-            self.auto_job = self.root.after(0, self._auto_step)
-
-    def stop_auto(self) -> None:
-        if self.auto_job is not None:
-            self.root.after_cancel(self.auto_job)
-            self.auto_job = None
-        self.auto_button.configure(text="▶ Iniciar partida automática")
-
-    def _auto_step(self) -> None:
-        """Both sides play with the chosen algorithm, depth and order until the game ends."""
-        self.auto_job = None
-        if self.session.outcome() is not None:
-            self.stop_auto()
-            return
-        self.play_ai_turn()
-        if self.hint.get().startswith("Error") or self.session.outcome() is not None:
-            self.stop_auto()
-            return
-        self.auto_job = self.root.after(int(self.speed.get()), self._auto_step)
-
-    def play_ai_turn(self) -> None:
-        name = self._algorithm_name()
-        if name not in ADVERSARIAL_ALGORITHMS:
-            name = "ALPHA_BETA"
-        try:
-            result = self.session.decide(
-                name,
-                self._int(self.depth, "La profundidad"),
-                ORDER_LABELS.get(self.order.get(), "default"),
+    # Valor inicial de un parámetro: el de la sección `prueba` del escenario si lo trae
+    def _default_for(self, param: ParamSpec) -> str:
+        if self.scenario is None:
+            return param.default
+        config = self.scenario.test_config
+        if param.key == "heuristic" and config.heuristic is not None:
+            key = {"H1": "h1", "MANHATTAN": "h1", "H2": "h2", "OBSTACLE_AWARE": "h2"}.get(
+                config.heuristic.upper()
             )
-        except (RunError, ValueError) as exc:
-            self.hint.set(f"Error: {exc}")
-            return
-        if result.action is None:
-            self.hint.set("La partida ya terminó.")
-            return
-        self._play(result.action)
+            return key or param.default
+        if param.key == "k" and config.beam_width is not None:
+            return str(config.beam_width)
+        if param.key == "depth" and config.minimax_depth is not None:
+            return str(config.minimax_depth)
+        if param.key == "order" and config.action_order in ("default", "reversed"):
+            return config.action_order
+        if param.key.startswith("w_"):
+            return str(self.scenario.utility_weights.get(param.key[2:], param.default))
+        return param.default
 
-    def undo(self) -> None:
-        self.stop_auto()
-        if self.session.undo():
-            self._clear_overlays()
-            self.redraw()
+    # Guarda el valor elegido en un parámetro y descarta el resultado anterior
+    def _on_param_changed(self, var: tk.StringVar, value: str) -> None:
+        var.set(value)
+        self._clear_result()
 
+    # Cambio de algoritmo: nuevo panel de parámetros y se descarta el resultado anterior
+    def on_algorithm_changed(self) -> None:
+        self._build_params()
+        self._reset_game()
+        self._clear_result()
+        self._set_buttons(self.enabled)
+
+    # Descarta el resultado mostrado y vuelve a dibujar el tablero limpio
+    def _clear_result(self) -> None:
+        self._cancel_animation()
+        self.trace = None
+        self.decision = None
+        self.busy = False
+        self.verification = ""
+        self.summary.configure(text="")
+        self._write_trace("\n".join(self.history))
+        if self.scenario is not None:
+            self.draw(0)
+        self._set_buttons(self.enabled)
+
+    # Botón Reiniciar
     def reset(self) -> None:
-        self.stop_auto()
-        self.session.reset()
-        self._clear_overlays()
-        self.redraw()
+        self._reset_game()
+        self._clear_result()
+        self._set_buttons(self.enabled)
 
-    def open_scenario(self) -> None:
+    # Abre el selector de archivo y carga el escenario elegido
+    def choose_file(self) -> None:
         path = filedialog.askopenfilename(
-            title="Abrir escenario",
-            filetypes=[("Escenario JSON", "*.json")],
-            initialdir=Path("scenarios") if Path("scenarios").is_dir() else None,
+            title="Seleccionar escenario", filetypes=[("Escenario JSON", "*.json")]
         )
         if path:
-            self.load(Path(path))
+            self.load(path)
 
-    def load(self, path: Path) -> None:
-        """Atomic: an invalid scenario leaves the current game untouched (RF-34)."""
+    def load(self, path: str) -> None:
+        self._cancel_animation()
+        self._write_trace("")
         try:
-            scenario = load_scenario(path)
+            self.scenario = load_scenario(path)
         except ScenarioError as exc:
-            messagebox.showerror("Escenario inválido", "\n".join(exc.errors))
+            self.scenario = None
+            self.file_label.configure(text=path)
+            self.canvas.delete("all")
+            self.summary.configure(text="Escenario inválido:\n" + "\n".join(exc.errors))
+            self._set_buttons(False)
             return
-        self.stop_auto()
-        self.session = Session.start(scenario)
-        self._load_defaults()
-        self.root.title(f"TacticalGrid - {path.name}")
-        self.redraw()
+        self.file_label.configure(text=path)
+        self.summary.configure(text="")
+        self._build_params()
+        self._reset_game()
+        self._set_buttons(True)
+        self.trace = None
+        self.decision = None
+        self._write_trace("")
+        self.draw(0)
 
-    # ---- helpers -------------------------------------------------------------------------
-    @staticmethod
-    def _int(var: tk.StringVar, label: str) -> int:
+    # Ejecuta el algoritmo elegido y muestra el resultado final de una vez
+    def run_all_at_once(self) -> None:
+        if self._compute():
+            if self.decision is not None:
+                self.draw(0)
+            else:
+                assert self.trace is not None
+                self.draw(len(self.trace.expanded_cells), show_path=True)
+            self._show_summary()
+
+    # Ejecuta el algoritmo elegido y lo reproduce celda por celda
+    def run_step_by_step(self) -> None:
+        if self._compute():
+            assert self.trace is not None
+            self.summary.configure(text="")
+            self._animate(0)
+
+    # Aplica la jugada que decide el algoritmo para el bando con el turno y luego deja que
+    # el rival responda con el mismo algoritmo y parámetros
+    def apply_move(self) -> None:
+        assert self.scenario is not None
+        self._cancel_animation()
+        params = {key: var.get() for key, var in self.param_vars.items()}
+        name = self.algorithm.get()
+        if self._game_over() or not self._play_turn(name, params):
+            self._set_buttons(self.enabled)
+            return
+        self.draw(0)
+        if self._game_over():
+            self._announce_result()
+        else:
+            self.busy = True
+            self.after_id = self.root.after(RESPONSE_MILLISECONDS, self._respond, name, params)
+        self._set_buttons(self.enabled)
+
+    # Celda del tablero bajo el clic, o None si cae fuera
+    def _cell_at(self, event: tk.Event[tk.Misc]) -> Position | None:
+        assert self.scenario is not None
+        board = self.scenario.board
+        size = CANVAS_PIXELS / max(board.rows, board.cols)
+        cell = Position(int(event.y // size), int(event.x // size))
+        return cell if board.in_bounds(cell) else None
+
+    # Acciones legales de la unidad elegida, con la celda del tablero donde se hace clic
+    def _targets(self) -> dict[Position, Action]:
+        assert self.scenario is not None and self.selected is not None
+        state = self._state()
+        targets: dict[Position, Action] = {}
+        for action in legal_actions(self.scenario.board, state):
+            if action.unit_id != self.selected:
+                continue
+            cell = action.dest if isinstance(action, Move) else state.position_of(action.target)
+            targets[cell] = action
+        return targets
+
+    # Clic en el tablero: elige una unidad del bando con el turno o juega la acción elegida
+    def _on_click(self, event: tk.Event[tk.Misc]) -> None:
+        if self.scenario is None or self.busy or not SPECS[self.algorithm.get()].adversarial:
+            return
+        if self._game_over():
+            return
+        cell = self._cell_at(event)
+        if cell is None:
+            return
+        state = self._state()
+        if self.selected is not None:
+            action = self._targets().get(cell)
+            if action is not None:
+                self._play_manual(action)
+                return
+        occupant = state.unit_at(cell)
+        mine = occupant is not None and self.scenario.board.unit_sides[occupant] is state.turn
+        self.selected = occupant if mine else None
+        self.draw(0)
+
+    # Aplica la jugada del usuario y deja que el rival responda con el algoritmo elegido
+    def _play_manual(self, action: Action) -> None:
+        assert self.scenario is not None
+        self._cancel_animation()
+        state = self._state()
+        self.decision = None
+        self.verification = ""
+        self.arrow = action_arrow(state, action)
+        self.game_state, _ = apply(self.scenario.board, state, action)
+        self.history.append(
+            f"{state.turn_number + 1}. {state.turn.value}: {describe_action(action)}  (manual)"
+        )
+        self.selected = None
+        self.summary.configure(text=f"Jugada manual: {describe_action(action)}")
+        self._write_trace("\n".join(self.history))
+        self.draw(0)
+        if self._game_over():
+            self._announce_result()
+        else:
+            params = {key: var.get() for key, var in self.param_vars.items()}
+            self.busy = True
+            name = self.algorithm.get()
+            self.after_id = self.root.after(RESPONSE_MILLISECONDS, self._respond, name, params)
+        self._set_buttons(self.enabled)
+
+    # Respuesta del rival tras la jugada aplicada
+    def _respond(self, name: str, params: Params) -> None:
+        self.after_id = None
+        self.busy = False
+        self._play_turn(name, params)
+        self.draw(0)
+        if self._game_over():
+            self._announce_result()
+        self._set_buttons(self.enabled)
+
+    # Decide y aplica una jugada del bando con el turno; False si la decisión falla
+    def _play_turn(self, name: str, params: Params) -> bool:
+        assert self.scenario is not None
+        board, state = self.scenario.board, self._state()
         try:
-            return int(var.get())
+            result = trace_decision(self.scenario, name, params, state, self.verify.get())
         except ValueError as exc:
-            raise RunError(f"{label} debe ser un número entero") from exc
+            self.summary.configure(text=f"Error: {exc}")
+            return False
+        self.verification = ""
+        if self.verify.get():
+            self.verification = describe_verification(verify_adversarial(board, state, result))
+        side, number = state.turn, state.turn_number + 1
+        self.decision = result
+        action = result.action
+        if action is None:  # sin jugadas legales: el turno se salta solo
+            self.arrow = None
+            self.game_state = skip_turn(state)
+            self.history.append(f"{number}. {side.value}: sin jugadas, pasa el turno")
+        else:
+            self.arrow = action_arrow(state, action)
+            self.game_state, _ = apply(board, state, action)
+            self.history.append(
+                f"{number}. {side.value}: {describe_action(action)}  valor {result.value:g}"
+            )
+        self._write_trace("\n".join(self.history))
+        self._show_summary()
+        return True
 
-    @staticmethod
-    def _write(widget: tk.Text, text: str) -> None:
-        widget.configure(state="normal")
-        widget.delete("1.0", "end")
-        widget.insert("1.0", text)
-        widget.configure(state="disabled")
+    # Anuncia al final de la partida quién ganó o si hubo empate
+    def _announce_result(self) -> None:
+        assert self.scenario is not None
+        won = winner(self.scenario.board, self._state())
+        text = f"Ganó el bando {won.value}" if won else "Empate: se agotaron los turnos"
+        self.history.append(text)
+        self._write_trace("\n".join(self.history))
+        self.summary.configure(text=self.summary.cget("text") + "\n" + text)
+
+    def _compute(self) -> bool:
+        self._cancel_animation()
+        assert self.scenario is not None
+        params = {key: var.get() for key, var in self.param_vars.items()}
+        name = self.algorithm.get()
+        self.trace, self.decision = None, None
+        try:
+            if SPECS[name].adversarial:
+                state = self._state()
+                self.decision = trace_decision(
+                    self.scenario, name, params, state, self.verify.get()
+                )
+                action = self.decision.action
+                self.arrow = None if action is None else action_arrow(state, action)
+            else:
+                self.trace = trace_search(self.scenario, name, params)
+        except ValueError as exc:
+            self.draw(0)
+            self.summary.configure(text=f"Error: {exc}")
+            self._write_trace("")
+            return False
+        self.verification = self._verification_for()
+        if self.decision is not None:
+            self._write_trace(
+                "\n".join([self._decision_lines(self.decision), "", *self.history]).rstrip()
+            )
+        else:
+            assert self.trace is not None
+            self._write_trace(
+                "\n".join(
+                    f"{i}. ({cell.row}, {cell.col})"
+                    for i, cell in enumerate(self.trace.expanded_cells, start=1)
+                )
+            )
+        return True
+
+    # Texto de la verificación RF-42 del resultado actual (vacío si no se pidió)
+    def _verification_for(self) -> str:
+        if not self.verify.get():
+            return ""
+        assert self.scenario is not None
+        if self.decision is not None:
+            report = verify_adversarial(self.scenario.board, self._state(), self.decision)
+        else:
+            assert self.trace is not None
+            report = verify_search(self.trace.problem, self.trace.result)
+        return describe_verification(report)
+
+    # Una línea por acción de la raíz con su valor; la elegida va marcada con *
+    def _decision_lines(self, result: AdversarialResult) -> str:
+        if not result.root_values:
+            return "Sin acciones: la raíz es terminal."
+        return "\n".join(
+            f"{'*' if action == result.action else ' '} {describe_action(action)}   valor {value:g}"
+            for action, value in result.root_values
+        )
+
+    # Reemplaza el contenido del panel de traza
+    def _write_trace(self, text: str) -> None:
+        self.trace_text.configure(state="normal")
+        self.trace_text.delete("1.0", "end")
+        self.trace_text.insert("1.0", text)
+        self.trace_text.configure(state="disabled")
+
+    def _animate(self, step: int) -> None:
+        assert self.trace is not None
+        total = len(self.trace.expanded_cells)
+        self.draw(step, show_path=step >= total)
+        if step >= total:
+            self.after_id = None
+            self._show_summary()
+            return
+        self.after_id = self.root.after(self.speed.get(), self._animate, step + 1)
+
+    def _cancel_animation(self) -> None:
+        if self.after_id is not None:
+            self.root.after_cancel(self.after_id)
+            self.after_id = None
+
+    def _show_summary(self) -> None:
+        if self.decision is not None:
+            d = self.decision
+            move = "sin acción (estado terminal)" if d.action is None else describe_action(d.action)
+            self.summary.configure(
+                text=f"{d.algorithm}: juega {move}, valor {d.value:g}\n"
+                f"generados {d.generated} · evaluados {d.evaluated} · podados {d.pruned} · "
+                f"profundidad {d.depth_reached} · {d.time_seconds * 1000:.2f} ms"
+                + (f"\n{self.verification}" if self.verification else "")
+            )
+            return
+        assert self.trace is not None
+        r = self.trace.result
+        head = (
+            f"{r.algorithm}: camino encontrado, {r.length} movimientos, costo {r.cost}"
+            if r.success
+            else f"{r.algorithm} no encontró camino"
+        )
+        self.summary.configure(
+            text=f"{head}\nexpandidos {r.expanded} · generados {r.generated} · "
+            f"frontera máx. {r.max_frontier} · {r.time_seconds * 1000:.2f} ms"
+            + (f"\n{self.verification}" if self.verification else "")
+        )
+
+    # Recurso (rombo dorado), portador (aro dorado) y flecha de la acción elegida
+    def _draw_decision_layer(
+        self, size: float, box: Callable[[Position], tuple[float, float, float, float]]
+    ) -> None:
+        assert self.scenario is not None
+        state = self._state()
+        if state.resource is not None:
+            x0, y0, x1, y1 = box(state.resource)
+            cx, cy, r = (x0 + x1) / 2, (y0 + y1) / 2, size * 0.3
+            self.canvas.create_polygon(
+                cx, cy - r, cx + r, cy, cx, cy + r, cx - r, cy, fill=RESOURCE, outline="black"
+            )
+        if state.carrier is not None:
+            x0, y0, x1, y1 = box(state.position_of(state.carrier))
+            self.canvas.create_oval(x0 + 2, y0 + 2, x1 - 2, y1 - 2, outline=RESOURCE, width=3)
+        if self.arrow is not None:
+            origin, dest = self.arrow
+            x0, y0, x1, y1 = box(origin)
+            tx0, ty0, tx1, ty1 = box(dest)
+            self.canvas.create_rectangle(tx0, ty0, tx1, ty1, outline=PATH, width=4)
+            self.canvas.create_line(
+                (x0 + x1) / 2,
+                (y0 + y1) / 2,
+                (tx0 + tx1) / 2,
+                (ty0 + ty1) / 2,
+                fill=PATH,
+                width=4,
+                arrow=tk.LAST,
+            )
+
+    # Texto del panel «Estado»: turno, jugada y portador (o la búsqueda de camino en curso)
+    def _update_status(self) -> None:
+        assert self.scenario is not None
+        if not SPECS[self.algorithm.get()].adversarial:
+            config = self.scenario.test_config
+            goal = "" if config.goal is None else f" → ({config.goal.row}, {config.goal.col})"
+            self.turn_label.configure(text=f"Búsqueda de camino: unidad {config.start_unit}{goal}")
+            return
+        state = self._state()
+        board = self.scenario.board
+        won = winner(board, state)
+        if won is not None:
+            head = f"Terminó: ganó el bando {won.value}"
+        elif is_terminal(board, state):
+            head = "Terminó: empate por límite de turnos"
+        else:
+            head = f"Turno del bando {state.turn.value}"
+        if state.carrier is not None:
+            carrier = f"{state.carrier} (bando {board.unit_sides[state.carrier].value})"
+        else:
+            where = state.resource
+            carrier = f"nadie (recurso en {where.row}, {where.col})" if where else "nadie"
+        self.turn_label.configure(
+            text=f"{head}\nJugada {state.turn_number} de {board.turn_limit} · portador: {carrier}"
+        )
+
+    # Dibuja el tablero con las primeras `step` celdas expandidas (y el camino si se pide)
+    def draw(self, step: int, show_path: bool = False) -> None:
+        assert self.scenario is not None
+        board = self.scenario.board
+        size = CANVAS_PIXELS / max(board.rows, board.cols)
+        self.canvas.delete("all")
+        expanded = set(self.trace.expanded_cells[:step]) if self.trace else set()
+
+        def box(pos: Position) -> tuple[float, float, float, float]:
+            return pos.col * size, pos.row * size, (pos.col + 1) * size, (pos.row + 1) * size
+
+        for row in range(board.rows):
+            for col in range(board.cols):
+                pos = Position(row, col)
+                fill = EXPANDED if pos in expanded else _terrain_color(self.scenario, pos)
+                self.canvas.create_rectangle(*box(pos), fill=fill, outline="#999999")
+        for side, pos in board.bases.items():
+            self.canvas.create_rectangle(*box(pos), outline=SIDE_COLORS[side], width=3)
+        if SPECS[self.algorithm.get()].adversarial:
+            self._draw_decision_layer(size, box)
+        if self.trace and show_path and self.trace.result.success:
+            points = [
+                coord
+                for cell in self.trace.result.path
+                for coord in ((cell.col + 0.5) * size, (cell.row + 0.5) * size)
+            ]
+            if len(points) >= 4:
+                self.canvas.create_line(*points, fill=PATH, width=3)
+        if self.trace:
+            self.canvas.create_rectangle(*box(self.trace.goal), outline=GOAL, width=4)
+        for unit_id, pos in self._state().positions:
+            x0, y0, x1, y1 = box(pos)
+            pad = size * 0.2
+            self.canvas.create_oval(
+                x0 + pad,
+                y0 + pad,
+                x1 - pad,
+                y1 - pad,
+                fill=SIDE_COLORS[board.unit_sides[unit_id]],
+                outline="white",
+            )
+            if size >= 24:
+                self.canvas.create_text((x0 + x1) / 2, (y0 + y1) / 2, text=unit_id, fill="white")
+        if self.selected is not None and SPECS[self.algorithm.get()].adversarial:
+            x0, y0, x1, y1 = box(self._state().position_of(self.selected))
+            self.canvas.create_rectangle(x0, y0, x1, y1, outline="#00a050", width=3)
+            for cell in self._targets():
+                tx0, ty0, tx1, ty1 = box(cell)
+                cx, cy, r = (tx0 + tx1) / 2, (ty0 + ty1) / 2, size * 0.14
+                self.canvas.create_oval(
+                    cx - r, cy - r, cx + r, cy + r, fill="#00a050", outline="white"
+                )
+        self._update_status()
+        # la meta de la configuración se marca aunque aún no se haya ejecutado
+        if self.trace is None and not SPECS[self.algorithm.get()].adversarial:
+            goal = self.scenario.test_config.goal
+            if goal is not None and board.in_bounds(goal):
+                self.canvas.create_rectangle(*box(goal), outline=GOAL, width=4)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = sys.argv[1:] if argv is None else argv
     root = tk.Tk()
-    path = (
-        args[0]
-        if args
-        else filedialog.askopenfilename(
-            title="Abrir escenario", filetypes=[("Escenario JSON", "*.json")]
-        )
-    )
-    if not path:
-        return 0
-    try:
-        scenario = load_scenario(path)
-    except ScenarioError as exc:
-        print("\n".join(exc.errors), file=sys.stderr)
-        return 2
-    App(root, Session.start(scenario))
+    app = App(root)
+    if args:
+        app.load(args[0])
     root.mainloop()
     return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
