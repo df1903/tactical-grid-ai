@@ -18,8 +18,14 @@ uv run pytest    # optional: check the installation (all tests should pass)
 
 ## 2. Quick start
 
+Default way to run it: `uv run python -m tactical_grid.gui`. The window opens empty; press
+*Seleccionar JSON*, pick a file of `scenarios/`, choose the algorithm and press *Ejecutar*.
+
 ```bash
-# graphical interface with the 20x20 test map (three units per side)
+# default: open the window and choose the scenario and the algorithm there
+uv run python -m tactical_grid.gui
+
+# graphical interface already loaded with the 20x20 test map (three units per side)
 uv run python -m tactical_grid.gui scenarios/prueba_20x20.json
 
 # one search from the command line (prints a JSON report)

@@ -7,6 +7,15 @@ Project 1 of *Sistemas Inteligentes I* (UCALDAS). Team: Jorge Iván Garcia Torre
 ## Requirements
 - [uv](https://docs.astral.sh/uv/) (it provisions Python 3.14)
 
+## Run (default)
+```bash
+uv sync                                  # once: install dependencies
+uv run python -m tactical_grid.gui       # open the window
+```
+The window opens empty: press **Seleccionar JSON** (pick any file of `scenarios/`), choose the
+**Algoritmo** (BFS, DFS, UCS, A*, Beam, Minimax, Alfa-beta), adjust its parameters if you want and
+press **Ejecutar**, **Animar** or **Aplicar jugada**. Everything else below is optional.
+
 ## Usage
 ```bash
 uv sync                          # install dependencies
