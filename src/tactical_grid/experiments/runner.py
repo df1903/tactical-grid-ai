@@ -84,7 +84,9 @@ def run(scenario: Scenario, options: RunOptions) -> dict[str, Any]:
     Complexity: that of the chosen algorithm.
     AI usage: Yes. Claude Code (Sonnet 5.5) drafted the module.
     AI intervention: none after the draft; option names are the team's G10 proposal.
-    Student validation: reviewed in meeting.
+    Student validation: tests/test_runner.py checks that the JSON prueba section drives the
+        search, the CLI overrides, invalid options, scenario errors and the 15x15 and 20x20
+        scenarios.
     """
     config = scenario.test_config
     # la opción explícita gana; si falta se usa la del escenario

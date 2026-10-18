@@ -21,7 +21,9 @@ def bfs(problem: PathProblem) -> SearchResult:
     Complexity: O(S) time and space over S reachable states (position-only state space).
     AI usage: Yes. Claude Code (Sonnet 5.5) drafted the function.
     AI intervention: none after the draft; goal-at-expansion is a team convention.
-    Student validation: reviewed in meeting.
+    Student validation: tests/test_bfs.py checks fewest moves, contiguous path with matching cost,
+        unreachable goal, start == goal and the official example; the corridor counts (case 1)
+        were derived by hand before running.
     """
     # se guarda la hora de inicio para medir el tiempo
     started = time.perf_counter()
@@ -71,7 +73,8 @@ def dfs(problem: PathProblem) -> SearchResult:
     Complexity: O(S) time and space over S reachable states.
     AI usage: Yes. Claude Code (Sonnet 5.5) drafted the function.
     AI intervention: none after the draft; successor order is a team convention.
-    Student validation: reviewed in meeting.
+    Student validation: tests/test_dfs.py checks a valid path, that it goes deep first and differs
+        from BFS (case 1), unreachable goal, start == goal and the official example.
     """
     started = time.perf_counter()
     start = problem.initial
@@ -120,7 +123,9 @@ def ucs(problem: PathProblem) -> SearchResult:
     Complexity: O(S log S) time and O(S) space over S reachable states.
     AI usage: Yes. Claude Code (Sonnet 5.5) drafted the function.
     AI intervention: none after the draft; tie-break and update rules come from RF-19.
-    Student validation: reviewed in meeting.
+    Student validation: tests/test_ucs.py checks that the cheaper longer route beats the short
+        expensive one (case 2), cost not worse than BFS, FIFO tie-break, unreachable goal and
+        start == goal; every result also passes the verifier.
     """
     started = time.perf_counter()
     start = problem.initial

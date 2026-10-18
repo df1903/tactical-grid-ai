@@ -26,7 +26,9 @@ def a_star(problem: PathProblem, heuristic: Heuristic, name: str = "A_STAR") -> 
     AI usage: Yes. Claude Code (Sonnet 5.5) drafted the function.
     AI intervention: none after the draft; reopening was added to stay correct if a custom
         heuristic is admissible but not consistent.
-    Student validation: reviewed in meeting.
+    Student validation: tests/test_astar.py checks that h = 0 behaves like UCS, optimality with
+        both heuristics, that the better heuristic never expands more (case 4), no solution behind
+        a wall (case 3) and the reopening of an inconsistent heuristic.
     """
     # se guarda la hora de inicio para medir el tiempo de la búsqueda
     started = time.perf_counter()
@@ -105,7 +107,9 @@ def beam_search(
     AI usage: Yes. Claude Code (Sonnet 5.5) drafted the function.
     AI intervention: none after the draft; ranking by f and by-level pruning are team
         decisions (G9, 2026-10-16).
-    Student validation: reviewed in meeting.
+    Student validation: tests/test_beam.py checks the width guard (k >= 1), that unbounded k finds
+        the fewest moves, at most k states per level, an unreachable goal and determinism; the k =
+        1, 2, 4, 8 sweep is case 5.
     """
     if k < 1:
         raise ValueError(f"beam width k must be at least 1, got {k}")

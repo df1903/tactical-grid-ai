@@ -97,7 +97,10 @@ def make_utility(board: Board, max_side: Side, weights: UtilityWeights) -> Utili
     AI usage: Yes. Claude Code (Opus 5.5) redesigned the function on 2026-10-18 after full-game
         simulations: the previous version ended every game on a 20x20 map in a draw.
     AI intervention: none after the redesign.
-    Student validation: reviewed in meeting.
+    Student validation: tests/test_utility.py checks the free-resource comparison, the pick-up
+        bonus, distances around walls, the uncrossable rival base, zero-sum with equal weights,
+        win/draw values and that the weights change the value; the earlier version was discarded
+        after full-game simulations ended in draws.
     """
     steps = _StepDistances(board)
     entries = {

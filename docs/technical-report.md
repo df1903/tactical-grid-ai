@@ -486,9 +486,11 @@ without touching the code; this is exercised by scenarios of 3×3, 4×4, 5×5, 7
 
 ## 13. Limitations
 
-1. **Student validation is pending.** The cross-review fields in the docstrings still say
-   "pending cross-review by the other team member"; they will be completed by the reviewer
-   after reading and testing each method.
+1. **Validation of the AI-drafted code rests on tests and hand-derived values.** The
+   `Student validation` field of each method names the tests that cover it and the values the
+   team derived by hand (cases 1–10). A line-by-line cross-review of `domain/`, `scenario/` and
+   `algorithms/` by the team member who did not use the AI is not recorded in the repository;
+   it is a practice item before the oral defense (assignment section 20).
 2. **Utility** estimates distances ignoring units (only blocked base entries are counted),
    so a wall of units is seen only inside the search horizon; open symmetric maps can end in
    tackle battles or standoffs that reach the turn limit (section 8).
@@ -529,12 +531,16 @@ Franco Rincón. **Purpose, by area:**
   without a solution; the team changed it to remove the rivals (section 6.1).
 - A documentation inconsistency was found: a docstring and a decision called `obstacle_aware`
   "the team's proposal" when Claude proposed it. The wording was corrected.
-- Tests and expected values for cases 1–10 were checked against hand-derived values; the
-  cross-review of `domain/`, `scenario/` and `algorithms/` by the other team member is pending.
+- Tests and expected values for cases 1–10 were checked against hand-derived values.
+- The utility was redesigned on 2026-10-18 after full-game simulations on 20×20 maps ended
+  every game in a draw; the previous version was discarded.
+- The cross-review of `domain/`, `scenario/` and `algorithms/` by the other team member is not
+  recorded in the repository (section 13, item 1).
 
 **Method docstrings:** each relevant method states `AI usage`, `AI intervention` and
-`Student validation` (assignment section 9.2). The first two are complete; the third is the
-pending item of section 13.
+`Student validation` (assignment section 9.2). `Student validation` names the tests that cover
+the method and the values derived by hand; it does not claim a personal review that is not
+recorded (section 13, item 1).
 
 **Responsibility.** Both team members are responsible for the entire code and must be able to
 explain, modify and defend any part of it.

@@ -41,7 +41,9 @@ def legal_actions(board: Board, state: GameState) -> list[Action]:
     Complexity: O(U * 4 * U) with U units (occupancy lookup is linear in U).
     AI usage: Yes. Claude Code (Sonnet 5.5) drafted the function from `rules.md`.
     AI intervention: none after the draft; rules were decided by the team on 2026-10-14.
-    Student validation: reviewed in meeting.
+    Student validation: tests/test_domain_rules.py checks four directions, map edges, one unit per
+        cell, rival base blocked, pick-up on arrival, delivery wins and the tackle rules; expected
+        outcomes come from rules.md, not from the code.
     """
     # si el juego terminó no hay acciones
     if is_terminal(board, state):
@@ -88,7 +90,8 @@ def apply(board: Board, state: GameState, action: Action) -> tuple[GameState, fl
     Complexity: O(U).
     AI usage: Yes. Claude Code (Sonnet 5.5) drafted the function from `rules.md`.
     AI intervention: none after the draft.
-    Student validation: reviewed in meeting.
+    Student validation: tests/test_domain_rules.py checks the blocked-side pass, skip_turn and the
+        turn-limit draw.
     """
     next_turn = state.turn.opponent
     # placaje: el portador suelta el recurso en su celda; nadie se mueve y no cuesta nada
@@ -134,7 +137,9 @@ def successors(board: Board, state: GameState) -> list[tuple[Action, GameState, 
     Complexity: O(U * 4 * U).
     AI usage: Yes. Claude Code (Sonnet 5.5) drafted the function.
     AI intervention: none after the draft.
-    Student validation: reviewed in meeting.
+    Student validation: tests/test_domain_rules.py (cost paid on entering the destination,
+        deterministic and consistent successors) and tests/test_domain_state.py (case 6: same
+        position, different state; immutability; equal states hash equal).
     """
     result: list[tuple[Action, GameState, float]] = []
     # por cada acción legal se calcula su sucesor y su costo

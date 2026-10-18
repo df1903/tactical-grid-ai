@@ -35,7 +35,9 @@ def manhattan(problem: PathProblem) -> Heuristic:
     Complexity: O(1) per evaluation.
     AI usage: Yes. Claude Code (Sonnet 5.5) drafted the function.
     AI intervention: none after the draft; scaling by the minimum cost follows enunciado 18.4.
-    Student validation: reviewed in meeting.
+    Student validation: tests/test_heuristics.py checks distance times the minimum cost, value 0
+        at the goal and the cheapest-terrain lookup; admissibility was checked against UCS costs
+        in tests/test_astar.py.
     """
     # el costo mínimo sirve de escala para que la heurística nunca sobrestime
     scale = min_step_cost(problem.board)
@@ -65,7 +67,10 @@ def obstacle_aware(problem: PathProblem) -> Heuristic:
     AI usage: Yes. Claude Code (Sonnet 5.5) drafted the function; the idea is the team's second
         heuristic (RF-21).
     AI intervention: none after the draft.
-    Student validation: reviewed in meeting.
+    Student validation: tests/test_heuristics.py checks that it sees the wall Manhattan ignores,
+        dominates Manhattan on every reachable cell and returns infinity for cells walled off from
+        the goal; admissibility was checked by hand (it is the exact step count times the minimum
+        cost).
     """
     board = problem.board
     scale = min_step_cost(board)

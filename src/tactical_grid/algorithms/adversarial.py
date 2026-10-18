@@ -53,7 +53,10 @@ def minimax(
     Complexity: O(b^d) time with branching b and depth d; O(d) space.
     AI usage: Yes. Claude Code (Sonnet 5.5) drafted the function.
     AI intervention: none after the draft.
-    Student validation: reviewed in meeting.
+    Student validation: tests/test_adversarial.py checks depth 1 picks the best immediate
+        successor, a delivery is valued above everything else, a terminal root has no action,
+        depth >= 1, only legal actions are considered and a blocked side passes; the verifier
+        rejects illegal actions.
     """
     return _decide("MINIMAX", board, state, depth, utility, order, record, prune=False)
 
@@ -78,7 +81,9 @@ def alpha_beta(
     Complexity: O(b^(d/2)) time at best with good ordering, O(b^d) at worst; O(d) space.
     AI usage: Yes. Claude Code (Sonnet 5.5) drafted the function.
     AI intervention: none after the draft.
-    Student validation: reviewed in meeting.
+    Student validation: tests/test_adversarial.py checks that it returns the same value and action
+        as Minimax on small and large maps; the pruning gain by depth and by action order is cases
+        8-10.
     """
     return _decide("ALPHA_BETA", board, state, depth, utility, order, record, prune=True)
 

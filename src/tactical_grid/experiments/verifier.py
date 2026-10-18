@@ -40,7 +40,9 @@ def verify_search(problem: PathProblem, result: SearchResult) -> VerificationRep
     Complexity: O(L * U) for a path of L cells and U units.
     AI usage: Yes. Claude Code (Sonnet 5.5) drafted the function from RF-42.
     AI intervention: none after the draft.
-    Student validation: reviewed in meeting.
+    Student validation: tests/test_verifier.py checks that every algorithm's result passes and
+        that a teleport, a path through a wall, a wrong cost and a path not ending at the goal are
+        rejected.
     """
     # sin solución no hay camino que verificar
     if not result.success:
@@ -134,7 +136,8 @@ def verify_adversarial(
     Complexity: O(N * U^2) for N recorded actions and U units.
     AI usage: Yes. Claude Code (Sonnet 5.5) drafted the function from RF-42.
     AI intervention: none after the draft.
-    Student validation: reviewed in meeting.
+    Student validation: tests/test_adversarial.py checks that it rejects an illegal action and
+        requires recorded actions.
     """
     # posiciones de las acciones consideradas que no eran legales en su estado
     illegal = [

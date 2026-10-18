@@ -78,7 +78,9 @@ def load_scenario(path: str | Path) -> Scenario:
     Complexity: O(R * C + U).
     AI usage: Yes. Claude Code (Sonnet 5.5) drafted the loader from RF-34/RF-35.
     AI intervention: added a check that two units cannot share a cell.
-    Student validation: reviewed in meeting.
+    Student validation: tests/test_scenario_validation.py covers the nine validations V1-V9 one by
+        one, shared cells, normalization, a missing file, all errors reported together and atomic
+        rejection of an invalid file (no partial state).
     """
     # se lee el archivo; si no existe o el JSON está mal formado, se reporta como error de escenario
     try:

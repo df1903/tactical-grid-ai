@@ -40,7 +40,8 @@ def expand(scenario: Scenario, sweep: Sweep) -> list[RunOptions]:
     Complexity: O(product of the list lengths).
     AI usage: Yes. Claude Code (Sonnet 5.5) drafted the function.
     AI intervention: none after the draft.
-    Student validation: reviewed in meeting.
+    Student validation: tests/test_sweep.py checks that only applicable combinations are expanded,
+        the depth x order grid, that the depth sweep reproduces case 10 and the CSV/JSON exports.
     """
     config = scenario.test_config
     mode = (sweep.base.mode or config.mode or "").lower()
