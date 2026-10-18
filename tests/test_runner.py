@@ -42,7 +42,7 @@ def test_adversarial_mode_uses_the_depth_of_the_json() -> None:
     scenario = load_scenario(CASE_7)  # juego.profundidad_maxima_minimax = 3
     report = run(scenario, RunOptions(mode="adversarial", algorithm="MINIMAX", verify=True))
     assert report["profundidad"] == 3 and report["valor"] == 3.0
-    assert report["nodos_generados"] == 538 and report["nodos_podados"] == 0
+    assert report["nodos_generados"] == 234 and report["nodos_podados"] == 0
     assert all(check["ok"] for check in report["verificacion"])
     deeper = run(scenario, RunOptions(mode="adversarial", algorithm="ALPHA_BETA", depth=4))
     assert deeper["profundidad_alcanzada"] == 4 and deeper["nodos_podados"] > 0

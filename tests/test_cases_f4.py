@@ -49,8 +49,8 @@ def test_case_8_alpha_beta_same_action_fewer_nodes() -> None:
     pruned = alpha_beta(board, state, 4, utility, record=True)
 
     assert (pruned.action, pruned.value) == (plain.action, plain.value)
-    assert (plain.generated, plain.evaluated, plain.pruned) == (4826, 4296, 0)
-    assert (pruned.generated, pruned.evaluated, pruned.pruned) == (431, 299, 757)
+    assert (plain.generated, plain.evaluated, plain.pruned) == (1616, 1388, 0)
+    assert (pruned.generated, pruned.evaluated, pruned.pruned) == (239, 165, 271)
     assert verify_adversarial(board, state, pruned).ok
 
 
@@ -61,13 +61,14 @@ def test_case_9_action_order_changes_the_amount_of_pruning() -> None:
 
     assert default.action == reverse.action == GUARD  # the decision does not depend on order
     assert default.value == reverse.value == 3.0
-    assert (default.generated, default.evaluated, default.pruned) == (142, 110, 106)
-    assert (reverse.generated, reverse.evaluated, reverse.pruned) == (191, 148, 145)
+    assert (default.generated, default.evaluated, default.pruned) == (80, 58, 48)
+    assert (reverse.generated, reverse.evaluated, reverse.pruned) == (96, 67, 78)
 
 
 def test_case_10_depth_changes_effort_value_and_decision() -> None:
-    # Odd depths end on A's move, so the guard looks safe; at even depths B gets one more reply
-    # and every value flattens to 0, so the first action in order wins the tie.
+    # Depths 1 and 3 end on A's move, so grabbing (1) or guarding (3) looks safe; from depth 4 B
+    # has enough replies to intercept whatever A does and every value flattens to 0, so the
+    # first action in order wins the tie.
     board, state, utility = _case()
     runs = {depth: alpha_beta(board, state, depth, utility) for depth in (1, 2, 3, 4, 5)}
 
@@ -76,13 +77,13 @@ def test_case_10_depth_changes_effort_value_and_decision() -> None:
         (0.0, 2),
         (3.0, 3),
         (0.0, 4),
-        (3.0, 5),
+        (0.0, 5),
     ]
     assert [r.action for r in runs.values()] == [
         GRAB,
         GRAB,
         GUARD,
         Move("A1", Position(0, 0)),
-        GUARD,
+        Move("A1", Position(0, 0)),
     ]
-    assert [r.evaluated for r in runs.values()] == [7, 24, 110, 299, 1583]
+    assert [r.evaluated for r in runs.values()] == [5, 18, 58, 165, 577]

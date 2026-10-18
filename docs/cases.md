@@ -134,10 +134,10 @@ U = 3 − 1 + 0.5·2 = 3.
 
 | Depth 4 | Action | Value | Generated | Evaluated | Pruned | Match |
 |---|---|---|---|---|---|---|
-| Minimax | A1 → (0,0) | 0 | 4,826 | 4,296 | 0 | yes |
-| Alpha-beta | A1 → (0,0) | 0 | 431 | 299 | 757 | yes |
+| Minimax | A1 → (0,0) | 0 | 1,616 | 1,388 | 0 | yes |
+| Alpha-beta | A1 → (0,0) | 0 | 239 | 165 | 271 | yes |
 
-Same decision with about 11× fewer generated nodes.
+Same decision with about 7× fewer generated nodes.
 
 ## Case 9 — Action order
 
@@ -145,27 +145,28 @@ Same decision with about 11× fewer generated nodes.
 
 | Depth 3 | Action | Value | Generated | Evaluated | Pruned | Match |
 |---|---|---|---|---|---|---|
-| `default` order | A1 → (1,1) | 3 | 142 | 110 | 106 | yes |
-| `reversed` order | A1 → (1,1) | 3 | 191 | 148 | 145 | yes |
+| `default` order | A1 → (1,1) | 3 | 80 | 58 | 48 | yes |
+| `reversed` order | A1 → (1,1) | 3 | 96 | 67 | 78 | yes |
 
-Reversing the order changed the generated nodes from 142 to 191.
+Reversing the order changed the generated nodes from 80 to 96.
 
 ## Case 10 — Depth
 
-**Expectation.** Odd depths end on A's move, so the guard looks safe (value 3). At even depths B
-gets one more reply and every value flattens to 0, so the first action in order wins the tie.
+**Expectation.** Depths 1 and 3 end on A's move, so grabbing or guarding looks safe (value 3).
+From depth 4 B has enough replies to intercept whatever A does and every value flattens to 0, so
+the first action in order wins the tie.
 More depth costs exponentially more nodes.
 
 | Depth | Action | Value | Evaluated | Max depth reached | Match |
 |---|---|---|---|---|---|
-| 1 | A2 → (0,1) | 3 | 7 | 1 | yes |
-| 2 | A2 → (0,1) | 0 | 24 | 2 | yes |
-| 3 | A1 → (1,1) | 3 | 110 | 3 | yes |
-| 4 | A1 → (0,0) | 0 | 299 | 4 | yes |
-| 5 | A1 → (1,1) | 3 | 1,583 | 5 | yes |
+| 1 | A2 → (0,1) | 3 | 5 | 1 | yes |
+| 2 | A2 → (0,1) | 0 | 18 | 2 | yes |
+| 3 | A1 → (1,1) | 3 | 58 | 3 | yes |
+| 4 | A1 → (0,0) | 0 | 165 | 4 | yes |
+| 5 | A1 → (0,0) | 0 | 577 | 5 | yes |
 
-(Alpha-beta, `default` order. With Minimax the evaluated nodes are 7 / 64 / 467 / 4,296 /
-30,994.)
+(Alpha-beta, `default` order. With Minimax the evaluated nodes are 5 / 36 / 193 / 1,388 /
+7,016.)
 
 ---
 

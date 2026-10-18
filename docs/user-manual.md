@@ -45,7 +45,7 @@ file. The window is in Spanish.
 | Search goal | dashed purple circle labeled *meta* |
 | Path found | purple line with an arrow |
 | Cells the selected unit can move to | green dots |
-| Suggested action | green arrow (or the word *esperar*) |
+| Suggested action | green arrow |
 
 Move the mouse over a cell to see its row, column, terrain, cost and any unit or resource on it.
 The legend under the map explains the colors.
@@ -58,7 +58,7 @@ The legend under the map explains the colors.
   - *Seleccionar / mover unidades:* click a unit to select it; click a green dot to move it.
   - *Fijar meta de la búsqueda:* click the goal cell for a search (a right click always sets
     the goal, in any mode).
-- **Buttons:** *Esperar* (selected unit waits), *Deshacer* (undo the last move), *Reiniciar
+- **Buttons:** *Deshacer* (undo the last move), *Reiniciar
   partida*, *Abrir escenario...*. An invalid JSON is rejected with a list of every error and
   the current game stays untouched.
 - **Algoritmo:** choose BFS, DFS, UCS, A\*, Beam Search, Minimax or Alfa-beta. Only the
@@ -191,7 +191,7 @@ $U scenarios/prueba_15x15.json --algorithm MINIMAX --depth 4,5,6 --csv $R/rendim
 $U scenarios/apendice_a.json --algorithm BFS,DFS,UCS,A_STAR,BEAM --heuristic H1,H2 --k 1,2,4,8 --verify --csv $R/apendice_a.csv
 ```
 
-(Minimax at depth 6 on the 15×15 map takes about 16 s.) The expected values of the 10 cases are
+(Minimax at depth 6 on the 15×15 map takes about 3.4 s.) The expected values of the 10 cases are
 asserted by the tests: `uv run pytest tests/test_cases_f2.py tests/test_cases_f3.py
 tests/test_case_6.py tests/test_cases_f4.py`.
 

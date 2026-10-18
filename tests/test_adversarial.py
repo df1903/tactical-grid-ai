@@ -1,3 +1,4 @@
+import math
 from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
@@ -10,7 +11,8 @@ from tactical_grid.algorithms.utility import Utility, UtilityWeights, make_utili
 from tactical_grid.domain.model import Move, Position
 from tactical_grid.domain.rules import legal_actions
 from tactical_grid.experiments.verifier import verify_adversarial
-from tactical_grid.scenario.loader import Scenario, load_scenario
+from tactical_grid.scenario.loader import Scenario, TestConfig, load_scenario
+from test_domain_rules import make
 
 CASE_7 = SCENARIOS / "caso_07_decision_adversarial.json"
 FILES = [APENDICE_A, CASE_7]
@@ -94,3 +96,16 @@ def test_verifier_requires_recorded_actions() -> None:
     board, state, utility = scenario.board, scenario.initial_state, _utility(scenario)
     report = verify_adversarial(board, state, minimax(board, state, 2, utility))
     assert not report.checks[0].passed
+
+
+def test_blocked_side_node_is_evaluated_as_a_leaf() -> None:
+    # After any A move, B1 (cornered by A2 and A3) has no move: its turn is skipped.
+    board, state = make(
+        [("A1", "A", 2, 2), ("A2", "A", 0, 1), ("A3", "A", 1, 0), ("B1", "B", 0, 0)],
+        resource=(3, 3),
+    )
+    scenario = Scenario(board, state, TestConfig(None, None, None, None))
+    for algorithm in (minimax, alpha_beta):
+        result = algorithm(board, state, 3, _utility(scenario))
+        assert result.action is not None
+        assert math.isfinite(result.value)

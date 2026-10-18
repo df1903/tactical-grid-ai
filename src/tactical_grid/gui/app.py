@@ -9,7 +9,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from typing import Any
 
-from tactical_grid.domain.model import Action, Move, Position, Side, Wait
+from tactical_grid.domain.model import Action, Move, Position, Side
 from tactical_grid.experiments.runner import (
     ADVERSARIAL_ALGORITHMS,
     RunError,
@@ -103,7 +103,6 @@ class App:
         actions.pack(fill="x", pady=(6, 0))
         for index, (text, command) in enumerate(
             [
-                ("Esperar (unidad elegida)", self.wait_selected),
                 ("Deshacer", self.undo),
                 ("Reiniciar partida", self.reset),
                 ("Abrir escenario...", self.open_scenario),
@@ -395,11 +394,6 @@ class App:
             start = self._center(self.session.state.position_of(action.unit_id))
             end = self._center(action.dest)
             self.canvas.create_line(*start, *end, fill=SUGGESTION, width=5, arrow=tk.LAST)
-        elif isinstance(action, Wait):
-            x, y = self._center(self.session.state.position_of(action.unit_id))
-            self.canvas.create_text(
-                x, y - 18, text="esperar", fill=SUGGESTION, font=("Arial", 9, "bold")
-            )
 
     def _draw_legend(self) -> None:
         legend = self.legend
@@ -621,13 +615,6 @@ class App:
             self.hint.set("La partida ya terminó.")
             return
         self._play(result.action)
-
-    def wait_selected(self) -> None:
-        action = self.session.wait_for(self.selected) if self.selected else None
-        if action is None:
-            self.hint.set("Elige primero una unidad del bando que tiene el turno.")
-        else:
-            self._play(action)
 
     def undo(self) -> None:
         self.stop_auto()

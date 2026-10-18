@@ -105,9 +105,12 @@ def _decide(
         if level == depth or is_terminal(board, node):
             counters["evaluated"] += 1
             return utility(node)
+        actions = ordered(node)
+        if not actions:  # side to move is blocked: its turn is skipped, evaluate as a leaf
+            counters["evaluated"] += 1
+            return utility(node)
         maximizing = node.turn is max_side
         best = -math.inf if maximizing else math.inf
-        actions = ordered(node)
         for index, action in enumerate(actions):
             if record:
                 considered.append((node, action))

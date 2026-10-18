@@ -72,7 +72,7 @@ is used by the game and by Minimax / alpha-beta.
 | Valid actions | `domain.rules.legal_actions(board, state)` |
 | Successors | `domain.rules.successors(board, state)` → `(action, next state, cost)` |
 | Goal condition | single-unit search: unit on the goal cell; game: `domain.rules.winner` |
-| Action cost | `domain.rules.apply` (terrain cost of the destination cell; wait = 0) |
+| Action cost | `domain.rules.apply` (terrain cost of the destination cell) |
 
 ## 3. Game rules (RF-09)
 
@@ -85,9 +85,10 @@ playing for its own side.
   passability come from the `tipos_terreno` catalog of the JSON, never from the code.
 - **Occupation:** one unit per cell. Bases and the resource cell may be stepped on when free;
   the **rival base cannot** be entered.
-- **Turns:** the side to move chooses one of its units and performs one action: *move* or
-  *wait*. Wait is always legal and costs 0.
-- **Pickup:** a unit picks the resource up when it *arrives* at its cell (waiting does not).
+- **Turns:** the side to move chooses one of its units and moves one of its units
+  to a neighboring cell. There is no *wait* action: moving one unit leaves the others in place.
+- **Pickup:** a unit picks the resource up when it *arrives* at its cell (a unit that stays
+  put does not pick it up again).
 - **Delivery:** the side whose carrier reaches its own base wins. Delivery beats interception
   in the same move.
 - **Interception (loss of the carrier):** after *any* move that leaves a rival adjacent to the
@@ -96,7 +97,8 @@ playing for its own side.
   other unit picks it up on arrival.
 - **End of game:** victory on delivery; draw when `turn_number` reaches the turn limit
   (`juego.limite_turnos`, default 100). A finished game has no legal actions. A side with no
-  movement passes through *wait*, which is always available.
+  legal move (all its units blocked) passes its turn; the pass is not an action, and Minimax
+  evaluates such a node as a leaf.
 
 Order of resolution inside a move: (1) pickup, (2) delivery check, (3) interception.
 
@@ -140,7 +142,7 @@ is therefore:
 
 - rival units are removed from the search problem (the rival base still cannot be entered);
 - only the start unit moves; its teammates stay put and block their cells;
-- the turn does not alternate, the resource is ignored and *wait* is not used;
+- the turn does not alternate and the resource is ignored;
 - the search state is therefore equivalent to the unit's position, and successors and costs
   still come from `domain.successors`, so the verifier checks the real rules.
 
@@ -174,7 +176,7 @@ model, `k` beam width, `L` number of levels, `U` units per side, `D` Minimax dep
 | UCS | yes (positive costs) | yes | O(V log V) | O(V) |
 | A\* | yes | yes with an admissible and consistent h | O(V log V) worst case; fewer expansions with a good h | O(V) |
 | Beam (k) | **no** | no | O(L · k · b · log(k·b)) | O(k · b) |
-| Minimax | with depth limit | exact for the horizon | O(B^D), B ≤ 5U (four moves + wait per unit) | O(D) |
+| Minimax | with depth limit | exact for the horizon | O(B^D), B ≤ 4U (four moves per unit) | O(D) |
 | Alpha-beta | same decision as Minimax | same | O(B^(D/2)) best case, O(B^D) worst | O(D) |
 
 The `log` factors come from the binary heap used for the priority queues. The single-unit
@@ -207,7 +209,7 @@ experimented (RF-23); the result is in section 10.3.
 - The values reported for root actions after the best one in alpha-beta may be bounds, not
   exact values.
 - The assignment suggests extra adversarial actions (block, protect...). The team chose
-  *move* and *wait* only; interception is a consequence of movement, not an action, which
+  *move* only; interception is a consequence of movement, not an action, which
   keeps the branching factor low.
 
 ## 7. Heuristics (RF-21, RF-22)
@@ -287,10 +289,10 @@ scenario that needs another behavior sets, for example, `recurso_cargado ≥ 8` 
 |---|---|---|
 | G1 | Python 3.14 with `uv`; `pytest`, `ruff`, `mypy --strict`; GUI with `tkinter` (standard library, no new dependency) | decisions 2026-10-07, 2026-10-16 |
 | G2 | Four directions; Manhattan is admissible | 2026-10-07 |
-| G3 | Cost paid on entering the destination cell; start cell free; wait costs 0 | 2026-10-07, 2026-10-14 |
+| G3 | Cost paid on entering the destination cell; start cell free | 2026-10-07, 2026-10-14 |
 | G4 | One unit per cell; the rival base cannot be entered; bases and the resource cell can be stepped on when free. Interception = a rival adjacent to the carrier after any move | 2026-10-07, 2026-10-14 |
 | G5 | The carrier drops the resource on its own cell when intercepted (no transfer) | 2026-10-14 |
-| G6 | Draw at the turn limit (`juego.limite_turnos`, default 100); a side without moves waits | 2026-10-07, 2026-10-14 |
+| G6 | Draw at the turn limit (`juego.limite_turnos`, default 100); a side without moves passes its turn | 2026-10-07, 2026-10-14 |
 | G7 | Graph search with visited set; DFS without depth limit | 2026-10-14 |
 | G8 | Expansion order up/down/left/right; first-in-first-out tie-break for every algorithm | 2026-10-14 |
 | G9 | Beam by levels, keeps the `k` smallest `f = g + h` | 2026-10-16 |
@@ -375,31 +377,32 @@ Scenario `caso_07_decision_adversarial.json`: 5×7 open map, two units per side,
 
 | Algorithm | Depth | Order | Action | Value | Generated | Evaluated | Pruned |
 |---|---|---|---|---|---|---|---|
-| Minimax | 1 | default | GRAB | 3 | 7 | 7 | 0 |
-| Minimax | 2 | default | GRAB | 0 | 71 | 64 | 0 |
-| Minimax | 3 | default | GUARD | 3 | 538 | 467 | 0 |
-| Minimax | 4 | default | A1→(0,0) | 0 | 4,826 | 4,296 | 0 |
-| Minimax | 5 | default | GUARD | 3 | 35,812 | 30,994 | 0 |
-| Alpha-beta | 1 | default | GRAB | 3 | 7 | 7 | 0 |
-| Alpha-beta | 2 | default | GRAB | 0 | 31 | 24 | 40 |
-| Alpha-beta | 3 | default | GUARD | 3 | 142 | 110 | 106 |
-| Alpha-beta | 3 | reversed | GUARD | 3 | 191 | 148 | 145 |
-| Alpha-beta | 4 | default | A1→(0,0) | 0 | 431 | 299 | 757 |
-| Alpha-beta | 4 | reversed | A2 waits | 0 | 465 | 345 | 619 |
-| Alpha-beta | 5 | default | GUARD | 3 | 2,058 | 1,583 | 1,608 |
-| Alpha-beta | 5 | reversed | GUARD | 3 | 3,362 | 2,493 | 3,325 |
+| Minimax | 1 | default | GRAB | 3 | 5 | 5 | 0 |
+| Minimax | 2 | default | GRAB | 0 | 41 | 36 | 0 |
+| Minimax | 3 | default | GUARD | 3 | 234 | 193 | 0 |
+| Minimax | 4 | default | A1→(0,0) | 0 | 1,616 | 1,388 | 0 |
+| Minimax | 5 | default | A1→(0,0) | 0 | 8,626 | 7,016 | 0 |
+| Alpha-beta | 1 | default | GRAB | 3 | 5 | 5 | 0 |
+| Alpha-beta | 2 | default | GRAB | 0 | 23 | 18 | 18 |
+| Alpha-beta | 3 | default | GUARD | 3 | 80 | 58 | 48 |
+| Alpha-beta | 3 | reversed | GUARD | 3 | 96 | 67 | 78 |
+| Alpha-beta | 4 | default | A1→(0,0) | 0 | 239 | 165 | 271 |
+| Alpha-beta | 4 | reversed | GRAB | 0 | 315 | 239 | 209 |
+| Alpha-beta | 5 | default | A1→(0,0) | 0 | 788 | 577 | 393 |
+| Alpha-beta | 5 | reversed | GRAB | 0 | 1,370 | 996 | 683 |
 
 - **Case 7:** the best decision is not to grab the resource first (depth 1 and 2 grab; depth 3
   guards).
 - **Case 8:** at depth 4 alpha-beta chooses the same action and value as Minimax while
-  generating 431 nodes instead of 4,826 (≈ 11×) and evaluating 299 instead of 4,296.
-- **Case 9:** at depth 3 the same decision with `default` order generates 142 nodes and with
-  `reversed` 191: the order changes the amount of pruning but not the decision. At depth 4
+  generating 239 nodes instead of 1,616 (≈ 7×) and evaluating 165 instead of 1,388.
+- **Case 9:** at depth 3 the same decision with `default` order generates 80 nodes and with
+  `reversed` 96: the order changes the amount of pruning but not the decision. At depth 4
   the reversed order also changes the tie-break among equal values (0), hence a different
   action with the same value.
-- **Case 10:** odd depths end on A's move, so the guard looks safe (value 3); at even depths
-  B answers last and every value flattens to 0, so the first action in order wins the tie.
-  This is the horizon effect mentioned in section 8.
+- **Case 10:** depths 1 and 3 end on A's move, so grabbing (1) or guarding (3) looks safe
+  (value 3); from depth 4 B has enough replies to intercept whatever A does and every value
+  flattens to 0, so the first action in order wins the tie. This is the horizon effect
+  mentioned in section 8.
 
 ### 10.5 Performance (G13)
 
@@ -408,16 +411,16 @@ counted in actions of one side; raw data in `docs/results/rendimiento_15x15*.csv
 
 | Algorithm | Depth | Time |
 |---|---|---|
-| Alpha-beta | 5 | 0.04 s |
-| Alpha-beta | 6 | 0.18 s |
-| Alpha-beta | 7 | 0.86 s |
-| Minimax | 5 | 1.2 s |
-| Minimax | 6 | 15.7 s (above the 5 s target) |
+| Alpha-beta | 5 | 0.02 s |
+| Alpha-beta | 6 | 0.09 s |
+| Alpha-beta | 7 | 0.36 s |
+| Minimax | 5 | 0.34 s |
+| Minimax | 6 | 3.4 s |
 
-An ad-hoc variant with five units per side (not saved as a scenario) gave 0.85 s for alpha-beta at depth 6. On the 20×20 test scenario
-(`prueba_20x20.json`, three units per side) alpha-beta at depth 2…6 takes ≤ 0.22 s
+On the 20×20 test scenario
+(`prueba_20x20.json`, three units per side) alpha-beta at depth 2…6 takes ≤ 0.10 s
 (`docs/results/rendimiento_20x20.csv`). Conclusion: within the 5 s target, alpha-beta up to
-depth 7 and plain Minimax up to depth 5. Times are from the team's laptop (Windows, Python 3.14).
+depth 7 and plain Minimax up to depth 6. Times are from the team's laptop (Windows, Python 3.14).
 
 ## 11. Verification and testing (RF-42, RE-03)
 
@@ -463,7 +466,7 @@ generated 15×15.
    5 s target; alpha-beta depth 7 and beyond depends heavily on action order.
 4. **Single-unit searches** ignore the adversary and the resource by design (RF-14); they do
    not model a plan of the whole game.
-5. **Only two actions** (move, wait); no protect / block actions (decision of 2026-10-07).
+5. **Only one action** (move); no wait, protect or block actions (decisions of 2026-10-07 and 2026-10-17).
 6. **Explored states** are not displayed in the GUI (RF-41, optional).
 7. **Questions to the professor** (assignment section 19) have no official answer.
 8. **Measured times** come from one machine and are not repeated statistically; deterministic

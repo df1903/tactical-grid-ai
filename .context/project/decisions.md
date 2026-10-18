@@ -14,7 +14,7 @@
 
 ## 2026-10-07 — Unidades, acciones, pérdida del portador y fin de partida
 - Contexto: el enunciado exige reglas deterministas (RF-09) sin definir el mecanismo.
-- Decisión: un solo tipo de unidad; acciones mover y esperar; si un rival intercepta al portador (adyacente), el recurso cae en su celda; límite de turnos configurable que da empate; el bando sin movimientos pasa turno.
+- Decisión: un solo tipo de unidad; acciones mover y esperar *(esperar eliminado el 2026-10-17)*; si un rival intercepta al portador (adyacente), el recurso cae en su celda; límite de turnos configurable que da empate; el bando sin movimientos pasa turno.
 - Alternativas descartadas: tipos de unidad distintos y acciones de bloqueo o protección (complejidad innecesaria).
 
 ## 2026-10-07 — Arquitectura en cinco componentes
@@ -54,7 +54,7 @@
 
 ## 2026-10-14 — Supuestos de F1: costo de espera, límite de turnos y orden de resolución
 - Contexto: implementar `domain/` y `scenario/` exigió fijar detalles que `rules.md` no cubría.
-- Decisión: `Wait` cuesta 0; `juego.limite_turnos` es un campo propio opcional (default 100, definido en `scenario/`); en un mismo movimiento la entrega gana sobre la interceptación; recoger solo ocurre al llegar a la celda (`Wait` no recoge); `Wait` siempre es legal. No se exige el mínimo de 3 unidades por bando al cargar porque el Apéndice A trae 2; sí se rechaza que dos unidades compartan celda (validación extra a las 9).
+- Decisión: `Wait` cuesta 0 *(eliminado el 2026-10-17)*; `juego.limite_turnos` es un campo propio opcional (default 100, definido en `scenario/`); en un mismo movimiento la entrega gana sobre la interceptación; recoger solo ocurre al llegar a la celda (`Wait` no recoge) *(Wait eliminado el 2026-10-17)*. No se exige el mínimo de 3 unidades por bando al cargar porque el Apéndice A trae 2; sí se rechaza que dos unidades compartan celda (validación extra a las 9).
 - Alternativas descartadas: costo de espera 1 (penaliza quedarse quieto en UCS sin necesidad); exigir 3 unidades (rechazaría el ejemplo oficial).
 
 ## 2026-10-14 — Atribución de commits de F1 y saltos de línea fijos
@@ -64,7 +64,7 @@
 
 ## 2026-10-14 — Modelo de la búsqueda de un solo agente (F2)
 - Contexto: RF-14 ignora al adversario; el Apéndice A pone a B1 sobre la celda objetivo, así que tratar a los rivales como obstáculos dejaba el ejemplo sin solución.
-- Decisión: el problema de búsqueda quita las unidades rivales (la base rival sigue sin poder pisarse), mueve solo la unidad de inicio (sus compañeros quedan quietos), no alterna turno, ignora el recurso y no usa `Wait`. El estado de búsqueda equivale a la posición de la unidad. Reglas y costos salen de `domain.successors`.
+- Decisión: el problema de búsqueda quita las unidades rivales (la base rival sigue sin poder pisarse), mueve solo la unidad de inicio (sus compañeros quedan quietos), no alterna turno, ignora el recurso. El estado de búsqueda equivale a la posición de la unidad. Reglas y costos salen de `domain.successors`.
 - Alternativas descartadas: rivales quietos como obstáculos (ejemplo oficial sin solución); estado compuesto completo con recurso y turno (infla estados sin aportar a un problema de camino).
 
 ## 2026-10-14 — Convenciones de BFS, DFS y UCS (F2)
@@ -114,7 +114,7 @@
 
 ## 2026-10-17 — Convenciones de Minimax, alfa-beta y utilidad (F4)
 - Contexto: RF-25 a RF-33 y G11; la fórmula decidida el 2026-10-16 dejaba abiertos el signo del término del rival, la profundidad y los empates.
-- Decisión: MAX es el bando que mueve en la raíz; una unidad de profundidad es una acción de un bando (los bandos alternan por ply, `Wait` siempre es legal). Se evalúa utilidad en hojas de profundidad y en estados terminales. Utilidad: ±entrega (±10 si gana MAX/MIN) ± recurso cargado (±3), −1·distancia Manhattan al objetivo (base propia si MAX carga; el portador si MIN carga; el recurso si nadie carga; desde la unidad MAX más cercana o desde el portador) y +0.5·distancia del rival más cercano al portador solo cuando MAX carga (un rival cerca baja U). Los pesos salen de la sección opcional `utilidad` del JSON (`entrega`, `recurso_cargado`, `distancia_objetivo`, `distancia_rival`); los valores 10/3/1/0.5 solo aplican si falta la clave. En la raíz gana la primera acción (en el orden dado) con valor estrictamente mayor, así alfa-beta y Minimax coinciden en empates. `generated` cuenta cada estado hijo producido (alfa-beta genera perezosamente), `pruned` las acciones hermanas omitidas por un corte. Orden de acciones configurable: `default` (arriba, abajo, izquierda, derecha por unidad) o `reversed`. Profundidad mínima 1. Chequeo 6 del verificador: re-ejecución con `record=True` y comprobación de legalidad de cada acción considerada y de la elegida.
+- Decisión: MAX es el bando que mueve en la raíz; una unidad de profundidad es una acción de un bando (los bandos alternan por ply; sin movimientos, el nodo se evalúa como hoja desde el 2026-10-17). Se evalúa utilidad en hojas de profundidad y en estados terminales. Utilidad: ±entrega (±10 si gana MAX/MIN) ± recurso cargado (±3), −1·distancia Manhattan al objetivo (base propia si MAX carga; el portador si MIN carga; el recurso si nadie carga; desde la unidad MAX más cercana o desde el portador) y +0.5·distancia del rival más cercano al portador solo cuando MAX carga (un rival cerca baja U). Los pesos salen de la sección opcional `utilidad` del JSON (`entrega`, `recurso_cargado`, `distancia_objetivo`, `distancia_rival`); los valores 10/3/1/0.5 solo aplican si falta la clave. En la raíz gana la primera acción (en el orden dado) con valor estrictamente mayor, así alfa-beta y Minimax coinciden en empates. `generated` cuenta cada estado hijo producido (alfa-beta genera perezosamente), `pruned` las acciones hermanas omitidas por un corte. Orden de acciones configurable: `default` (arriba, abajo, izquierda, derecha por unidad) o `reversed`. Profundidad mínima 1. Chequeo 6 del verificador: re-ejecución con `record=True` y comprobación de legalidad de cada acción considerada y de la elegida.
 - Alternativas descartadas: término del rival siempre negativo (premiaba al rival cerca del portador propio); pesos fijos en el código (viola RNF-03).
 - Limitación conocida: con estos pesos un recurso soltado bajo una unidad propia (U = 0) vale más que cargarlo a más de 3 pasos de la base (U < 0), y el efecto de horizonte hace que las profundidades pares aplanen valores (caso 10). Se resuelve ajustando los pesos en el JSON si se quiere otro comportamiento.
 
@@ -149,3 +149,8 @@
 - Decisión: GUI en `gui/app.py` (tkinter) sobre `gui/session.py` (sin tkinter, probado en `tests/test_gui_session.py`); se abre con `python -m tactical_grid.gui [escenario.json]`. Clic izquierdo selecciona o mueve, clic derecho fija la meta de la búsqueda; ejecuta los 7 algoritmos, dibuja el camino o la acción sugerida, permite jugar turnos (a mano o con IA), deshacer y reiniciar. Los colores de terreno salen del costo leído del JSON, no de nombres. No hay vista de estados explorados (RF-41, opcional).
 - Alternativas descartadas: reutilizar `describe` del runner como estado de la GUI (no sirve para jugar); colores por nombre de terreno (viola RNF-03).
 - Autoría: los commits de F5 los firma Daniel (continúa la decisión del 2026-10-17).
+
+## 2026-10-17 — Se elimina la acción Wait
+- Contexto: el enunciado no define la acción de esperar (la fijamos nosotros el 2026-10-07 / 2026-10-14). Con varias unidades por bando, mover una ya deja a las demás esperando, así que `Wait` sobra.
+- Decisión: la única acción es `Move`. Si el bando activo no tiene ningún movimiento legal y la partida no terminó, pasa turno de forma implícita (`rules.skip_turn`, no es una acción): la sesión/GUI salta el turno y Minimax evalúa el nodo como hoja. Ramificación de Minimax: B ≤ 4U.
+- Alternativas descartadas: empate si un bando queda bloqueado (cambia la regla de fin de partida); no manejar el caso (Minimax devolvería ±inf). Reemplaza lo dicho sobre `Wait` en las decisiones del 2026-10-07 y 2026-10-14.

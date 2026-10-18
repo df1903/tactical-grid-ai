@@ -9,8 +9,15 @@ from typing import Any
 
 from tactical_grid.algorithms.adversarial import ActionOrder, AdversarialResult, alpha_beta, minimax
 from tactical_grid.algorithms.utility import UtilityWeights, make_utility
-from tactical_grid.domain.model import Action, GameState, Move, Position, Side, Wait
-from tactical_grid.domain.rules import apply, is_draw, legal_actions, winner
+from tactical_grid.domain.model import Action, GameState, Move, Position, Side
+from tactical_grid.domain.rules import (
+    apply,
+    is_draw,
+    is_terminal,
+    legal_actions,
+    skip_turn,
+    winner,
+)
 from tactical_grid.experiments.runner import (
     ADVERSARIAL_ALGORITHMS,
     SEARCH_ALGORITHMS,
@@ -69,6 +76,10 @@ class Session:
         self.log.append(
             f"{self.state.turn_number}. Bando {mover.value}: {_describe(action)} (costo {cost:g})"
         )
+        board = self.scenario.board
+        while not is_terminal(board, self.state) and not legal_actions(board, self.state):
+            self.log[-1] += f"; bando {self.state.turn.value} sin movimientos: pasa"
+            self.state = skip_turn(self.state)
 
     def move_for_click(self, unit_id: str, dest: Position) -> Action | None:
         """The legal move of `unit_id` to `dest`, or None if there is none."""
@@ -84,12 +95,6 @@ class Session:
             for action in legal_actions(self.scenario.board, self.state)
             if isinstance(action, Move) and action.unit_id == unit_id
         ]
-
-    def wait_for(self, unit_id: str) -> Action | None:
-        for action in legal_actions(self.scenario.board, self.state):
-            if isinstance(action, Wait) and action.unit_id == unit_id:
-                return action
-        return None
 
     def search(self, options: RunOptions) -> dict[str, Any]:
         """Run a single-agent search from the current state; returns the runner report."""
@@ -120,6 +125,4 @@ class Session:
 
 
 def _describe(action: Action) -> str:
-    if isinstance(action, Move):
-        return f"{action.unit_id} -> ({action.dest.row},{action.dest.col})"
-    return f"{action.unit_id} espera"
+    return f"{action.unit_id} -> ({action.dest.row},{action.dest.col})"

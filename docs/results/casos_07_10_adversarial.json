@@ -5,8 +5,8 @@
     "orden_acciones": "default",
     "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
     "valor": 3.0,
-    "nodos_generados": 7,
-    "nodos_evaluados": 7,
+    "nodos_generados": 5,
+    "nodos_evaluados": 5,
     "nodos_podados": 0,
     "profundidad_alcanzada": 1,
     "valores_raiz": [
@@ -23,23 +23,15 @@
         "valor": -1.0
       },
       {
-        "accion": "Wait(unit_id='A1')",
-        "valor": -1.0
-      },
-      {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
         "valor": 3.0
       },
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
         "valor": -2.0
-      },
-      {
-        "accion": "Wait(unit_id='A2')",
-        "valor": -1.0
       }
     ],
-    "tiempo_segundos": 9.479999425821006e-05,
+    "tiempo_segundos": 7.740000728517771e-05,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -59,15 +51,11 @@
     "orden_acciones": "reversed",
     "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
     "valor": 3.0,
-    "nodos_generados": 7,
-    "nodos_evaluados": 7,
+    "nodos_generados": 5,
+    "nodos_evaluados": 5,
     "nodos_podados": 0,
     "profundidad_alcanzada": 1,
     "valores_raiz": [
-      {
-        "accion": "Wait(unit_id='A2')",
-        "valor": -1.0
-      },
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
         "valor": -2.0
@@ -75,10 +63,6 @@
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
         "valor": 3.0
-      },
-      {
-        "accion": "Wait(unit_id='A1')",
-        "valor": -1.0
       },
       {
         "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
@@ -93,7 +77,7 @@
         "valor": -1.0
       }
     ],
-    "tiempo_segundos": 4.719999560620636e-05,
+    "tiempo_segundos": 3.91000066883862e-05,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -113,8 +97,8 @@
     "orden_acciones": "default",
     "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
     "valor": 0.0,
-    "nodos_generados": 71,
-    "nodos_evaluados": 64,
+    "nodos_generados": 41,
+    "nodos_evaluados": 36,
     "nodos_podados": 0,
     "profundidad_alcanzada": 2,
     "valores_raiz": [
@@ -131,23 +115,15 @@
         "valor": -1.0
       },
       {
-        "accion": "Wait(unit_id='A1')",
-        "valor": -1.0
-      },
-      {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
         "valor": 0.0
       },
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
         "valor": -2.0
-      },
-      {
-        "accion": "Wait(unit_id='A2')",
-        "valor": -1.0
       }
     ],
-    "tiempo_segundos": 0.0003463000030023977,
+    "tiempo_segundos": 0.0002125000028172508,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -167,15 +143,11 @@
     "orden_acciones": "reversed",
     "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
     "valor": 0.0,
-    "nodos_generados": 71,
-    "nodos_evaluados": 64,
+    "nodos_generados": 41,
+    "nodos_evaluados": 36,
     "nodos_podados": 0,
     "profundidad_alcanzada": 2,
     "valores_raiz": [
-      {
-        "accion": "Wait(unit_id='A2')",
-        "valor": -1.0
-      },
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
         "valor": -2.0
@@ -183,10 +155,6 @@
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
         "valor": 0.0
-      },
-      {
-        "accion": "Wait(unit_id='A1')",
-        "valor": -1.0
       },
       {
         "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
@@ -201,7 +169,7 @@
         "valor": -1.0
       }
     ],
-    "tiempo_segundos": 0.00033989999792538583,
+    "tiempo_segundos": 0.00019770000653807074,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -221,8 +189,8 @@
     "orden_acciones": "default",
     "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
     "valor": 3.0,
-    "nodos_generados": 538,
-    "nodos_evaluados": 467,
+    "nodos_generados": 234,
+    "nodos_evaluados": 193,
     "nodos_podados": 0,
     "profundidad_alcanzada": 3,
     "valores_raiz": [
@@ -239,23 +207,15 @@
         "valor": 3.0
       },
       {
-        "accion": "Wait(unit_id='A1')",
-        "valor": 0.0
-      },
-      {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
         "valor": 0.0
       },
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
         "valor": -1.0
-      },
-      {
-        "accion": "Wait(unit_id='A2')",
-        "valor": 0.0
       }
     ],
-    "tiempo_segundos": 0.002691899993806146,
+    "tiempo_segundos": 0.0013154000043869019,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -275,25 +235,17 @@
     "orden_acciones": "reversed",
     "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
     "valor": 3.0,
-    "nodos_generados": 538,
-    "nodos_evaluados": 467,
+    "nodos_generados": 234,
+    "nodos_evaluados": 193,
     "nodos_podados": 0,
     "profundidad_alcanzada": 3,
     "valores_raiz": [
-      {
-        "accion": "Wait(unit_id='A2')",
-        "valor": 0.0
-      },
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
         "valor": -1.0
       },
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Wait(unit_id='A1')",
         "valor": 0.0
       },
       {
@@ -309,7 +261,7 @@
         "valor": 0.0
       }
     ],
-    "tiempo_segundos": 0.002636199991684407,
+    "tiempo_segundos": 0.0012796999944839627,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -329,8 +281,8 @@
     "orden_acciones": "default",
     "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
     "valor": 0.0,
-    "nodos_generados": 4826,
-    "nodos_evaluados": 4296,
+    "nodos_generados": 1616,
+    "nodos_evaluados": 1388,
     "nodos_podados": 0,
     "profundidad_alcanzada": 4,
     "valores_raiz": [
@@ -347,23 +299,15 @@
         "valor": 0.0
       },
       {
-        "accion": "Wait(unit_id='A1')",
-        "valor": 0.0
-      },
-      {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
         "valor": 0.0
       },
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
         "valor": -1.0
-      },
-      {
-        "accion": "Wait(unit_id='A2')",
-        "valor": 0.0
       }
     ],
-    "tiempo_segundos": 0.02429840000695549,
+    "tiempo_segundos": 0.009072000000742264,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -381,27 +325,19 @@
     "algoritmo": "MINIMAX",
     "profundidad": 4,
     "orden_acciones": "reversed",
-    "accion": "Wait(unit_id='A2')",
+    "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
     "valor": 0.0,
-    "nodos_generados": 4826,
-    "nodos_evaluados": 4296,
+    "nodos_generados": 1616,
+    "nodos_evaluados": 1388,
     "nodos_podados": 0,
     "profundidad_alcanzada": 4,
     "valores_raiz": [
       {
-        "accion": "Wait(unit_id='A2')",
-        "valor": 0.0
-      },
-      {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
         "valor": -1.0
       },
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Wait(unit_id='A1')",
         "valor": 0.0
       },
       {
@@ -417,7 +353,7 @@
         "valor": 0.0
       }
     ],
-    "tiempo_segundos": 0.022275099996477365,
+    "tiempo_segundos": 0.008106199995381758,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -427,7 +363,7 @@
       {
         "chequeo": "selected action legal",
         "ok": true,
-        "detalle": "selected Wait(unit_id='A2')"
+        "detalle": "selected Move(unit_id='A2', dest=Position(row=0, col=1))"
       }
     ]
   },
@@ -435,10 +371,10 @@
     "algoritmo": "MINIMAX",
     "profundidad": 5,
     "orden_acciones": "default",
-    "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-    "valor": 3.0,
-    "nodos_generados": 35812,
-    "nodos_evaluados": 30994,
+    "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
+    "valor": 0.0,
+    "nodos_generados": 8626,
+    "nodos_evaluados": 7016,
     "nodos_podados": 0,
     "profundidad_alcanzada": 5,
     "valores_raiz": [
@@ -452,10 +388,6 @@
       },
       {
         "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-        "valor": 3.0
-      },
-      {
-        "accion": "Wait(unit_id='A1')",
         "valor": 0.0
       },
       {
@@ -465,13 +397,9 @@
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
         "valor": -1.0
-      },
-      {
-        "accion": "Wait(unit_id='A2')",
-        "valor": 0.0
       }
     ],
-    "tiempo_segundos": 0.17890489999263082,
+    "tiempo_segundos": 0.047195599996484816,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -481,7 +409,7 @@
       {
         "chequeo": "selected action legal",
         "ok": true,
-        "detalle": "selected Move(unit_id='A1', dest=Position(row=1, col=1))"
+        "detalle": "selected Move(unit_id='A1', dest=Position(row=0, col=0))"
       }
     ]
   },
@@ -489,17 +417,13 @@
     "algoritmo": "MINIMAX",
     "profundidad": 5,
     "orden_acciones": "reversed",
-    "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-    "valor": 3.0,
-    "nodos_generados": 35812,
-    "nodos_evaluados": 30994,
+    "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
+    "valor": 0.0,
+    "nodos_generados": 8626,
+    "nodos_evaluados": 7016,
     "nodos_podados": 0,
     "profundidad_alcanzada": 5,
     "valores_raiz": [
-      {
-        "accion": "Wait(unit_id='A2')",
-        "valor": 0.0
-      },
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
         "valor": -1.0
@@ -509,12 +433,8 @@
         "valor": 0.0
       },
       {
-        "accion": "Wait(unit_id='A1')",
-        "valor": 0.0
-      },
-      {
         "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-        "valor": 3.0
+        "valor": 0.0
       },
       {
         "accion": "Move(unit_id='A1', dest=Position(row=2, col=0))",
@@ -525,7 +445,7 @@
         "valor": 0.0
       }
     ],
-    "tiempo_segundos": 0.17657169999438338,
+    "tiempo_segundos": 0.05131390001042746,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -535,7 +455,7 @@
       {
         "chequeo": "selected action legal",
         "ok": true,
-        "detalle": "selected Move(unit_id='A1', dest=Position(row=1, col=1))"
+        "detalle": "selected Move(unit_id='A2', dest=Position(row=0, col=1))"
       }
     ]
   },
@@ -545,8 +465,8 @@
     "orden_acciones": "default",
     "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
     "valor": 3.0,
-    "nodos_generados": 7,
-    "nodos_evaluados": 7,
+    "nodos_generados": 5,
+    "nodos_evaluados": 5,
     "nodos_podados": 0,
     "profundidad_alcanzada": 1,
     "valores_raiz": [
@@ -563,23 +483,15 @@
         "valor": -1.0
       },
       {
-        "accion": "Wait(unit_id='A1')",
-        "valor": -1.0
-      },
-      {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
         "valor": 3.0
       },
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
         "valor": -2.0
-      },
-      {
-        "accion": "Wait(unit_id='A2')",
-        "valor": -1.0
       }
     ],
-    "tiempo_segundos": 7.469998672604561e-05,
+    "tiempo_segundos": 4.8300003982149065e-05,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -599,15 +511,11 @@
     "orden_acciones": "reversed",
     "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
     "valor": 3.0,
-    "nodos_generados": 7,
-    "nodos_evaluados": 7,
+    "nodos_generados": 5,
+    "nodos_evaluados": 5,
     "nodos_podados": 0,
     "profundidad_alcanzada": 1,
     "valores_raiz": [
-      {
-        "accion": "Wait(unit_id='A2')",
-        "valor": -1.0
-      },
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
         "valor": -2.0
@@ -615,10 +523,6 @@
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
         "valor": 3.0
-      },
-      {
-        "accion": "Wait(unit_id='A1')",
-        "valor": -1.0
       },
       {
         "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
@@ -633,7 +537,7 @@
         "valor": -1.0
       }
     ],
-    "tiempo_segundos": 4.410000110510737e-05,
+    "tiempo_segundos": 3.3499993151053786e-05,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -653,9 +557,9 @@
     "orden_acciones": "default",
     "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
     "valor": 0.0,
-    "nodos_generados": 31,
-    "nodos_evaluados": 24,
-    "nodos_podados": 40,
+    "nodos_generados": 23,
+    "nodos_evaluados": 18,
+    "nodos_podados": 18,
     "profundidad_alcanzada": 2,
     "valores_raiz": [
       {
@@ -671,23 +575,15 @@
         "valor": -1.0
       },
       {
-        "accion": "Wait(unit_id='A1')",
-        "valor": -1.0
-      },
-      {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
         "valor": 0.0
       },
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
         "valor": -2.0
-      },
-      {
-        "accion": "Wait(unit_id='A2')",
-        "valor": -1.0
       }
     ],
-    "tiempo_segundos": 0.00021639998885802925,
+    "tiempo_segundos": 0.00016830000095069408,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -707,15 +603,11 @@
     "orden_acciones": "reversed",
     "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
     "valor": 0.0,
-    "nodos_generados": 31,
-    "nodos_evaluados": 24,
-    "nodos_podados": 40,
+    "nodos_generados": 24,
+    "nodos_evaluados": 19,
+    "nodos_podados": 17,
     "profundidad_alcanzada": 2,
     "valores_raiz": [
-      {
-        "accion": "Wait(unit_id='A2')",
-        "valor": -1.0
-      },
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
         "valor": -2.0
@@ -723,10 +615,6 @@
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
         "valor": 0.0
-      },
-      {
-        "accion": "Wait(unit_id='A1')",
-        "valor": -1.0
       },
       {
         "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
@@ -741,7 +629,7 @@
         "valor": -1.0
       }
     ],
-    "tiempo_segundos": 0.00021349999587982893,
+    "tiempo_segundos": 0.00015530000382568687,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -761,9 +649,9 @@
     "orden_acciones": "default",
     "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
     "valor": 3.0,
-    "nodos_generados": 142,
-    "nodos_evaluados": 110,
-    "nodos_podados": 106,
+    "nodos_generados": 80,
+    "nodos_evaluados": 58,
+    "nodos_podados": 48,
     "profundidad_alcanzada": 3,
     "valores_raiz": [
       {
@@ -779,23 +667,15 @@
         "valor": 3.0
       },
       {
-        "accion": "Wait(unit_id='A1')",
-        "valor": 0.0
-      },
-      {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
         "valor": 0.0
       },
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
         "valor": -1.0
-      },
-      {
-        "accion": "Wait(unit_id='A2')",
-        "valor": 0.0
       }
     ],
-    "tiempo_segundos": 0.0008159000135492533,
+    "tiempo_segundos": 0.0004923999949824065,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -815,25 +695,17 @@
     "orden_acciones": "reversed",
     "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
     "valor": 3.0,
-    "nodos_generados": 191,
-    "nodos_evaluados": 148,
-    "nodos_podados": 145,
+    "nodos_generados": 96,
+    "nodos_evaluados": 67,
+    "nodos_podados": 78,
     "profundidad_alcanzada": 3,
     "valores_raiz": [
-      {
-        "accion": "Wait(unit_id='A2')",
-        "valor": 0.0
-      },
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
         "valor": -1.0
       },
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-        "valor": 0.0
-      },
-      {
-        "accion": "Wait(unit_id='A1')",
         "valor": 0.0
       },
       {
@@ -849,7 +721,7 @@
         "valor": 3.0
       }
     ],
-    "tiempo_segundos": 0.0011299000034341589,
+    "tiempo_segundos": 0.0006133999995654449,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -869,9 +741,9 @@
     "orden_acciones": "default",
     "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
     "valor": 0.0,
-    "nodos_generados": 431,
-    "nodos_evaluados": 299,
-    "nodos_podados": 757,
+    "nodos_generados": 239,
+    "nodos_evaluados": 165,
+    "nodos_podados": 271,
     "profundidad_alcanzada": 4,
     "valores_raiz": [
       {
@@ -887,23 +759,15 @@
         "valor": 0.0
       },
       {
-        "accion": "Wait(unit_id='A1')",
-        "valor": 0.0
-      },
-      {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
         "valor": 0.0
       },
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
         "valor": -1.0
-      },
-      {
-        "accion": "Wait(unit_id='A2')",
-        "valor": 0.0
       }
     ],
-    "tiempo_segundos": 0.0029089000017847866,
+    "tiempo_segundos": 0.0016216000076383352,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -921,17 +785,13 @@
     "algoritmo": "ALPHA_BETA",
     "profundidad": 4,
     "orden_acciones": "reversed",
-    "accion": "Wait(unit_id='A2')",
+    "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
     "valor": 0.0,
-    "nodos_generados": 465,
-    "nodos_evaluados": 345,
-    "nodos_podados": 619,
+    "nodos_generados": 315,
+    "nodos_evaluados": 239,
+    "nodos_podados": 209,
     "profundidad_alcanzada": 4,
     "valores_raiz": [
-      {
-        "accion": "Wait(unit_id='A2')",
-        "valor": 0.0
-      },
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
         "valor": -1.0
@@ -941,10 +801,6 @@
         "valor": 0.0
       },
       {
-        "accion": "Wait(unit_id='A1')",
-        "valor": 0.0
-      },
-      {
         "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
         "valor": 0.0
       },
@@ -957,7 +813,7 @@
         "valor": 0.0
       }
     ],
-    "tiempo_segundos": 0.0030083000019658357,
+    "tiempo_segundos": 0.0018642000068211928,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -967,7 +823,7 @@
       {
         "chequeo": "selected action legal",
         "ok": true,
-        "detalle": "selected Wait(unit_id='A2')"
+        "detalle": "selected Move(unit_id='A2', dest=Position(row=0, col=1))"
       }
     ]
   },
@@ -975,11 +831,11 @@
     "algoritmo": "ALPHA_BETA",
     "profundidad": 5,
     "orden_acciones": "default",
-    "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-    "valor": 3.0,
-    "nodos_generados": 2058,
-    "nodos_evaluados": 1583,
-    "nodos_podados": 1608,
+    "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
+    "valor": 0.0,
+    "nodos_generados": 788,
+    "nodos_evaluados": 577,
+    "nodos_podados": 393,
     "profundidad_alcanzada": 5,
     "valores_raiz": [
       {
@@ -992,26 +848,18 @@
       },
       {
         "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-        "valor": 3.0
-      },
-      {
-        "accion": "Wait(unit_id='A1')",
         "valor": 0.0
       },
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
-        "valor": 3.0
+        "valor": 0.0
       },
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
-        "valor": 3.0
-      },
-      {
-        "accion": "Wait(unit_id='A2')",
-        "valor": 0.0
+        "valor": -1.0
       }
     ],
-    "tiempo_segundos": 0.015470499987713993,
+    "tiempo_segundos": 0.0045959999988554046,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -1021,7 +869,7 @@
       {
         "chequeo": "selected action legal",
         "ok": true,
-        "detalle": "selected Move(unit_id='A1', dest=Position(row=1, col=1))"
+        "detalle": "selected Move(unit_id='A1', dest=Position(row=0, col=0))"
       }
     ]
   },
@@ -1029,43 +877,35 @@
     "algoritmo": "ALPHA_BETA",
     "profundidad": 5,
     "orden_acciones": "reversed",
-    "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-    "valor": 3.0,
-    "nodos_generados": 3362,
-    "nodos_evaluados": 2493,
-    "nodos_podados": 3325,
+    "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
+    "valor": 0.0,
+    "nodos_generados": 1370,
+    "nodos_evaluados": 996,
+    "nodos_podados": 683,
     "profundidad_alcanzada": 5,
     "valores_raiz": [
       {
-        "accion": "Wait(unit_id='A2')",
-        "valor": 0.0
-      },
-      {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=3))",
-        "valor": 0.0
+        "valor": -1.0
       },
       {
         "accion": "Move(unit_id='A2', dest=Position(row=0, col=1))",
         "valor": 0.0
       },
       {
-        "accion": "Wait(unit_id='A1')",
+        "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
         "valor": 0.0
       },
       {
-        "accion": "Move(unit_id='A1', dest=Position(row=1, col=1))",
-        "valor": 3.0
-      },
-      {
         "accion": "Move(unit_id='A1', dest=Position(row=2, col=0))",
-        "valor": 3.0
+        "valor": 0.0
       },
       {
         "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
-        "valor": 3.0
+        "valor": 0.0
       }
     ],
-    "tiempo_segundos": 0.01993959999526851,
+    "tiempo_segundos": 0.0079004999861354,
     "verificacion": [
       {
         "chequeo": "legal actions",
@@ -1075,7 +915,7 @@
       {
         "chequeo": "selected action legal",
         "ok": true,
-        "detalle": "selected Move(unit_id='A1', dest=Position(row=1, col=1))"
+        "detalle": "selected Move(unit_id='A2', dest=Position(row=0, col=1))"
       }
     ]
   }

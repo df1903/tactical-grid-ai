@@ -101,9 +101,4 @@ class Move:
     dest: Position
 
 
-@dataclass(frozen=True)
-class Wait:
-    unit_id: str
-
-
-Action = Move | Wait
+Action = Move

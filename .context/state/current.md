@@ -3,7 +3,7 @@
 > Foto del momento: fase, tareas activas y avance. **Se sobrescribe en cada cierre de sesión**; el histórico va en `handoffs/`.
 
 ## Fase actual
-F4 y F5 cerradas, F6 casi cerrada. Hecho en `main`: algoritmos, CLI, exportación/barridos, GUI mínima tkinter (`643dbf8`), medición de rendimiento, informe técnico, manual de usuario y tabla de casos (`docs/`). Siguiente: "Student validation", revisión cruzada, tag. Entrega: 2026-10-21 (quedan 4 días).
+F4 y F5 cerradas, F6 casi cerrada. Hecho y publicado en `main` (`f145f55`): algoritmos, CLI, exportación/barridos, GUI mínima tkinter (`643dbf8`), medición de rendimiento, informe técnico, manual de usuario y tabla de casos (`docs/`). Siguiente: "Student validation", revisión cruzada, tag. Entrega: 2026-10-21 (quedan 4 días).
 
 ## Tareas activas
 - [ ] Probar la GUI a mano con los escenarios del equipo

@@ -1,10 +1,11 @@
 import pytest
 
 from helpers import APENDICE_A, SCENARIOS
-from tactical_grid.domain.model import Move, Position, Wait
+from tactical_grid.domain.model import Move, Position
 from tactical_grid.experiments.runner import RunError, RunOptions
 from tactical_grid.gui.session import Session
-from tactical_grid.scenario.loader import load_scenario
+from tactical_grid.scenario.loader import Scenario, TestConfig, load_scenario
+from test_domain_rules import make
 
 
 def _session(path=APENDICE_A) -> Session:
@@ -31,7 +32,6 @@ def test_illegal_clicks_and_actions_are_rejected() -> None:
     assert session.move_for_click("A1", Position(3, 0)) is None  # two cells away
     with pytest.raises(ValueError):
         session.play(Move("A1", Position(4, 4)))
-    assert isinstance(session.wait_for("A1"), Wait)
 
 
 def test_search_starts_from_the_current_state() -> None:
@@ -65,3 +65,17 @@ def test_destinations_match_legal_moves() -> None:
     session = _session(SCENARIOS / "caso_07_decision_adversarial.json")
     assert set(session.destinations("A1")) == {Position(0, 0), Position(2, 0), Position(1, 1)}
     assert session.destinations("B1") == []  # not B's turn
+
+
+def test_blocked_side_passes_its_turn_automatically() -> None:
+    board, state = make(
+        [("A1", "A", 2, 2), ("A2", "A", 0, 1), ("A3", "A", 1, 0), ("B1", "B", 0, 0)],
+        resource=(3, 3),
+    )
+    session = Session.start(Scenario(board, state, TestConfig(None, None, None, None)))
+    action = session.move_for_click("A1", Position(2, 3))
+    assert isinstance(action, Move)
+    session.play(action)
+    assert session.state.turn.value == "A" and session.state.turn_number == 2
+    assert "sin movimientos: pasa" in session.log[-1]
+    assert session.undo() and session.state == state

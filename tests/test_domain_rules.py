@@ -1,12 +1,13 @@
 from dataclasses import replace
 from typing import Any
 
-from tactical_grid.domain.model import Board, GameState, Move, Position, Side, Wait
+from tactical_grid.domain.model import Board, GameState, Move, Position, Side
 from tactical_grid.domain.rules import (
     apply,
     is_draw,
     is_terminal,
     legal_actions,
+    skip_turn,
     successors,
     winner,
 )
@@ -52,7 +53,7 @@ def moves_of(board: Board, state: GameState, unit_id: str) -> set[Position]:
     }
 
 
-def test_four_directions_and_wait() -> None:
+def test_four_directions_only() -> None:
     board, state = make([("A1", "A", 2, 2), ("B1", "B", 4, 0)], resource=(0, 4))
     actions = legal_actions(board, state)
     assert moves_of(board, state, "A1") == {
@@ -61,16 +62,14 @@ def test_four_directions_and_wait() -> None:
         Position(2, 1),
         Position(2, 3),
     }
-    assert Wait("A1") in actions
-    assert len(actions) == 5  # only the active side acts
+    assert len(actions) == 4  # only the active side acts
 
 
 def test_cost_is_paid_on_entering_destination() -> None:
     board, state = make([("A1", "A", 2, 2), ("B1", "B", 4, 0)], resource=(0, 4), pasto_at=(2, 3))
     _, to_pasto = apply(board, state, Move("A1", Position(2, 3)))
     _, to_camino = apply(board, state, Move("A1", Position(2, 1)))
-    _, waiting = apply(board, state, Wait("A1"))
-    assert (to_pasto, to_camino, waiting) == (2.0, 1.0, 0.0)
+    assert (to_pasto, to_camino) == (2.0, 1.0)
 
 
 def test_one_unit_per_cell() -> None:
@@ -132,14 +131,27 @@ def test_no_transfer_to_interceptor() -> None:
     assert nxt.carrier != "B1"
 
 
-def test_wait_does_not_repick_resource_under_the_unit() -> None:
+def test_other_unit_moving_does_not_repick_resource_under_the_dropper() -> None:
     board, state = make(
-        [("A1", "A", 2, 2), ("B1", "B", 2, 4)], resource=(2, 2), carrier="A1", turn="B"
+        [("A1", "A", 2, 2), ("A2", "A", 0, 3), ("B1", "B", 2, 4)],
+        resource=(2, 2),
+        carrier="A1",
+        turn="B",
     )
     dropped, _ = apply(board, state, Move("B1", Position(2, 3)))
-    after_wait, _ = apply(board, dropped, Wait("A1"))
-    assert after_wait.carrier is None
-    assert after_wait.resource == Position(2, 2)
+    after_other, _ = apply(board, dropped, Move("A2", Position(0, 2)))
+    assert after_other.carrier is None
+    assert after_other.resource == Position(2, 2)
+
+
+def test_blocked_side_has_no_actions_and_skip_turn_passes() -> None:
+    board, state = make([("A1", "A", 0, 0), ("B1", "B", 0, 1), ("B2", "B", 1, 0)], resource=(3, 3))
+    assert not is_terminal(board, state)
+    assert legal_actions(board, state) == []
+    after = skip_turn(state)
+    assert after.turn is Side.B
+    assert after.turn_number == state.turn_number + 1
+    assert after.positions == state.positions
 
 
 def test_leaving_and_returning_picks_up_again() -> None:
