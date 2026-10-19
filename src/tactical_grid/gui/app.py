@@ -16,8 +16,10 @@ las métricas y el panel de traza ya están. Los algoritmos se usan tal cual (`a
 orden de expansión se registra envolviendo el problema, sin tocarlos.
 """
 
+import random
 import sys
 import tkinter as tk
+import unicodedata
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from tkinter import filedialog, ttk
@@ -244,7 +246,8 @@ EXPANDED = "#ffd27a"
 PATH = "#8000c8"
 GOAL = "#00a050"
 RESOURCE = "#e0b000"
-CHEAP, DEAR = (196, 232, 170), (150, 110, 60)
+# colores de terreno de barato a caro; se reparten por el orden de costo de los tipos del escenario
+TERRAIN_PALETTE = ("#e6d3a3", "#b5e07a", "#3f9b57", "#7a6aa8", "#b8693d", "#2f7fa8")
 
 
 # Problema de camino que anota la celda de cada nodo que BFS expande, en orden
@@ -333,17 +336,115 @@ def describe_verification(report: VerificationReport) -> str:
     return "\n".join(lines)
 
 
-# Color de fondo de una celda según su costo (barato = verde claro, caro = marrón)
-def _terrain_color(scenario: Scenario, pos: Position) -> str:
-    board = scenario.board
-    terrain = board.terrain_at(pos)
-    if not terrain.passable or terrain.cost is None:
-        return IMPASSABLE
-    costs = [t.cost for t in board.terrains.values() if t.passable and t.cost is not None]
-    low, high = min(costs), max(costs)
-    ratio = 0.0 if high == low else (terrain.cost - low) / (high - low)
-    r, g, b = (round(c + (d - c) * ratio) for c, d in zip(CHEAP, DEAR, strict=True))
-    return f"#{r:02x}{g:02x}{b:02x}"
+# Aspecto de los terrenos conocidos por su nombre: nombre -> clase de textura. Un tipo con otro
+# nombre se dibuja liso con un color de TERRAIN_PALETTE según el orden de su costo.
+TERRAIN_KINDS = {
+    "camino": "road",
+    "pasto": "grass",
+    "bosque": "forest",
+    "pantano": "swamp",
+    "muro": "wall",
+}
+KIND_COLORS = {
+    "road": "#a3a3a3",
+    "grass": "#98d86e",
+    "forest": "#2e7d3e",
+    "swamp": "#7d9b62",
+    "wall": "#2a2a2a",
+}
+
+
+# Clase de textura y color de fondo de cada tipo de terreno del escenario (clase None = liso)
+def terrain_styles(scenario: Scenario) -> dict[str, tuple[str | None, str]]:
+    terrains = scenario.board.terrains
+    ranked = sorted({t.cost for t in terrains.values() if t.passable and t.cost is not None})
+    last = len(TERRAIN_PALETTE) - 1
+    styles: dict[str, tuple[str | None, str]] = {}
+    for name, terrain in terrains.items():
+        if not terrain.passable or terrain.cost is None:
+            styles[name] = ("wall", KIND_COLORS["wall"])
+            continue
+        plain = unicodedata.normalize("NFD", name.lower()).encode("ascii", "ignore").decode()
+        kind = TERRAIN_KINDS.get(plain)
+        if kind is not None and kind != "wall":
+            styles[name] = (kind, KIND_COLORS[kind])
+            continue
+        rank = ranked.index(terrain.cost)
+        index = rank if len(ranked) > last else round(rank * last / max(len(ranked) - 1, 1))
+        styles[name] = (None, TERRAIN_PALETTE[min(index, last)])
+    return styles
+
+
+# Dibuja la textura de una clase de terreno dentro de la celda; la semilla fija repite el dibujo
+def _draw_texture(
+    canvas: tk.Canvas, kind: str | None, box: tuple[float, float, float, float], seed: int
+) -> None:
+    x0, y0, x1, y1 = box
+    size = x1 - x0
+    if kind is None or size < 14:
+        return
+    rnd = random.Random(seed)
+
+    def point() -> tuple[float, float]:
+        return x0 + size * rnd.uniform(0.12, 0.88), y0 + size * rnd.uniform(0.12, 0.88)
+
+    if kind == "road":  # piedritas sobre el empedrado
+        for _ in range(7):
+            cx, cy = point()
+            r = size * rnd.uniform(0.03, 0.06)
+            shade = rnd.choice(("#8a8a8a", "#bdbdbd", "#7a7a7a"))
+            canvas.create_oval(cx - r, cy - r, cx + r, cy + r, fill=shade, outline="")
+    elif kind == "grass":  # briznas de pasto
+        for _ in range(8):
+            cx, cy = point()
+            h, w = size * 0.13, size * 0.05
+            canvas.create_line(cx, cy, cx - w, cy - h, fill="#4f9c32")
+            canvas.create_line(cx, cy, cx + w, cy - h, fill="#4f9c32")
+    elif kind == "forest":  # dos árboles: tronco y dos capas de copa
+        for fx, fy, scale in ((0.32, 0.88, 0.8), (0.68, 0.8, 1.0)):
+            cx, base, s = x0 + size * fx, y0 + size * fy, size * 0.42 * scale
+            canvas.create_rectangle(
+                cx - s * 0.07, base - s * 0.25, cx + s * 0.07, base, fill="#5b3a1e", outline=""
+            )
+            canvas.create_polygon(
+                cx - s * 0.4, base - s * 0.2, cx + s * 0.4, base - s * 0.2, cx, base - s * 0.75,
+                fill="#14532d", outline="",
+            )  # fmt: skip
+            canvas.create_polygon(
+                cx - s * 0.32, base - s * 0.5, cx + s * 0.32, base - s * 0.5, cx, base - s * 1.0,
+                fill="#1f7a3a", outline="",
+            )  # fmt: skip
+    elif kind == "swamp":  # charcos de agua, ondas y juncos
+        for _ in range(3):
+            cx, cy = point()
+            rx, ry = size * rnd.uniform(0.12, 0.2), size * rnd.uniform(0.06, 0.1)
+            canvas.create_oval(cx - rx, cy - ry, cx + rx, cy + ry, fill="#4f8088", outline="")
+            canvas.create_arc(
+                cx - rx * 0.6, cy - ry * 0.6, cx + rx * 0.6, cy + ry * 0.6,
+                start=20, extent=140, style="arc", outline="#a9d0d3",
+            )  # fmt: skip
+        for _ in range(3):
+            cx, cy = point()
+            canvas.create_line(cx, cy, cx, cy - size * 0.2, fill="#44663a", width=2)
+            canvas.create_oval(
+                cx - 2, cy - size * 0.27, cx + 2, cy - size * 0.17, fill="#6b4423", outline=""
+            )
+    elif kind == "wall":  # ladrillos: hiladas con las juntas desfasadas
+        rows = 4
+        h = size / rows
+        for i in range(rows):
+            y = y0 + i * h
+            canvas.create_line(x0, y, x1, y, fill="#5a5a5a")
+            offset = (size / 2) if i % 2 else (size / 4)
+            for k in range(2):
+                x = x0 + offset + k * size / 2
+                if x < x1:
+                    canvas.create_line(x, y, x, y + h, fill="#5a5a5a")
+
+
+# Costo para mostrar en la celda: «3» si es entero, «1.5» si no
+def _cost_text(cost: float) -> str:
+    return f"{cost:g}"
 
 
 class App:
@@ -396,6 +497,9 @@ class App:
         status_frame.pack(fill="x", pady=(0, 6))
         self.turn_label = ttk.Label(status_frame, text="", justify="left", width=44)
         self.turn_label.pack(fill="x")
+        # terrenos del escenario cargado: cuadro de color, nombre y costo
+        self.terrain_legend = ttk.Frame(status_frame)
+        self.terrain_legend.pack(fill="x", pady=(4, 0))
         legend = ttk.Frame(status_frame)
         legend.pack(fill="x", pady=(4, 0))
         for text, color in (
@@ -600,6 +704,7 @@ class App:
             return
         self.file_label.configure(text=path)
         self.summary.configure(text="")
+        self._build_terrain_legend()
         self._build_params()
         self._reset_game()
         self._set_buttons(True)
@@ -915,6 +1020,24 @@ class App:
             text=f"{head}\nJugada {state.turn_number} de {board.turn_limit} · portador: {carrier}"
         )
 
+    # Leyenda de terrenos: un cuadro con el color, el nombre y el costo de cada tipo
+    def _build_terrain_legend(self) -> None:
+        for child in self.terrain_legend.winfo_children():
+            child.destroy()
+        if self.scenario is None:
+            return
+        styles = terrain_styles(self.scenario)
+        for name, terrain in self.scenario.board.terrains.items():
+            cost = "muro" if terrain.cost is None else f"costo {_cost_text(terrain.cost)}"
+            kind, fill = styles[name]
+            item = ttk.Frame(self.terrain_legend)
+            item.pack(side="left", padx=(0, 10))
+            swatch = tk.Canvas(item, width=24, height=24, highlightthickness=1)
+            swatch.pack(side="left", padx=(0, 3))
+            swatch.create_rectangle(0, 0, 24, 24, fill=fill, outline="")
+            _draw_texture(swatch, kind, (0, 0, 24, 24), 7)
+            ttk.Label(item, text=f"{name} ({cost})").pack(side="left")
+
     # Dibuja el tablero con las primeras `step` celdas expandidas (y el camino si se pide)
     def draw(self, step: int, show_path: bool = False) -> None:
         assert self.scenario is not None
@@ -922,6 +1045,7 @@ class App:
         size = CANVAS_PIXELS / max(board.rows, board.cols)
         self.canvas.delete("all")
         expanded = set(self.trace.expanded_cells[:step]) if self.trace else set()
+        styles = terrain_styles(self.scenario)
 
         def box(pos: Position) -> tuple[float, float, float, float]:
             return pos.col * size, pos.row * size, (pos.col + 1) * size, (pos.row + 1) * size
@@ -929,8 +1053,32 @@ class App:
         for row in range(board.rows):
             for col in range(board.cols):
                 pos = Position(row, col)
-                fill = EXPANDED if pos in expanded else _terrain_color(self.scenario, pos)
-                self.canvas.create_rectangle(*box(pos), fill=fill, outline="#999999")
+                kind, fill = styles[board.grid[row][col]]
+                x0, y0, x1, y1 = box(pos)
+                self.canvas.create_rectangle(x0, y0, x1, y1, fill=fill, outline="#6a6a6a")
+                _draw_texture(self.canvas, kind, (x0, y0, x1, y1), row * 1000 + col)
+                terrain = board.terrain_at(pos)
+                if terrain.cost is None:  # muro: sin costo ni velo de expansión
+                    continue
+                if pos in expanded:  # velo naranja: deja ver el terreno de debajo
+                    self.canvas.create_rectangle(
+                        x0, y0, x1, y1, fill=EXPANDED, stipple="gray50", outline=""
+                    )
+                if size >= 24:  # insignia con el costo en la esquina, sin tapar a las unidades
+                    text = _cost_text(terrain.cost)
+                    font_size = max(8, int(size * 0.22))
+                    width = font_size * (0.75 * len(text) + 0.9)
+                    self.canvas.create_rectangle(
+                        x0 + 2, y0 + 2, x0 + 2 + width, y0 + 2 + font_size * 1.9,
+                        fill="#fffbe6", outline="#444444",
+                    )  # fmt: skip
+                    self.canvas.create_text(
+                        x0 + 2 + width / 2,
+                        y0 + 2 + font_size * 0.95,
+                        text=text,
+                        fill="black",
+                        font=("TkDefaultFont", font_size, "bold"),
+                    )
         for side, pos in board.bases.items():
             self.canvas.create_rectangle(*box(pos), outline=SIDE_COLORS[side], width=3)
         if SPECS[self.algorithm.get()].adversarial:
@@ -942,7 +1090,8 @@ class App:
                 for coord in ((cell.col + 0.5) * size, (cell.row + 0.5) * size)
             ]
             if len(points) >= 4:
-                self.canvas.create_line(*points, fill=PATH, width=3)
+                self.canvas.create_line(*points, fill="white", width=7, capstyle="round")
+                self.canvas.create_line(*points, fill=PATH, width=4, capstyle="round")
         if self.trace:
             self.canvas.create_rectangle(*box(self.trace.goal), outline=GOAL, width=4)
         for unit_id, pos in self._state().positions:
