@@ -3,11 +3,11 @@
 > Componentes del sistema y cómo se comunican. Estable: **solo cambia si cambia una decisión estructural**, no en cada feature.
 
 ## Componentes
-- `domain` — estado compuesto, acciones, generación de sucesores, costos y reglas del juego.
+- `domain` — estado compuesto, acciones, generación de sucesores, costos y reglas del juego; variante dinámica opcional en `dynamic.py` (envuelve el estado base, no modifica `rules.py`).
 - `scenario` — carga del JSON, validación atómica (9 validaciones mínimas) y traducción a objetos de `domain`.
-- `algorithms` — búsqueda (BFS, DFS, UCS, A*, Beam) y decisión adversarial (Minimax, alfa-beta); heurísticas y función de utilidad. No conoce la GUI.
+- `algorithms` — búsqueda (BFS, DFS, UCS, A*, Beam) y decisión adversarial (Minimax, alfa-beta); heurísticas y función de utilidad; versiones dinámicas de utilidad y de Minimax/alfa-beta. No conoce la GUI.
 - `gui` — visualización y control; mínima obligatoria (RF-40), avanzada opcional.
-- `experiments` — métricas, verificador de soluciones y casos mínimos reproducibles.
+- `experiments` — runner de modos, barridos, exportación, verificador de soluciones y partida completa (`game.py`: persona contra IA o IA contra IA, sin tkinter).
 
 ## Comunicación
 - `scenario` → `domain`: devuelve un estado inicial y un catálogo de terrenos ya validados.
