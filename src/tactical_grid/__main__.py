@@ -7,7 +7,7 @@ from collections.abc import Callable, Sequence
 from typing import Any
 
 from tactical_grid.domain.model import Position
-from tactical_grid.experiments.runner import MODES, RunError, RunOptions
+from tactical_grid.experiments.runner import MODES, VARIANTS, RunError, RunOptions
 from tactical_grid.experiments.sweep import Sweep, run_sweep, write_csv, write_json
 from tactical_grid.scenario.loader import ScenarioError, load_scenario
 
@@ -54,6 +54,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--order", type=_list_of(str), help="(list) action order: default or reversed"
     )
+    parser.add_argument(
+        "--variant",
+        choices=VARIANTS,
+        help="adversarial rules: base or dinamica (default: scenario)",
+    )
     parser.add_argument("--unit", help="start unit of a search")
     parser.add_argument("--goal", type=_goal, help="goal cell of a search, as row,col")
     parser.add_argument("--verify", action="store_true", help="run the RF-42 checks")
@@ -75,7 +80,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         scenario = load_scenario(args.scenario)
         # las opciones de la terminal se agrupan en un barrido (una sola corrida si no hay listas)
         sweep = Sweep(
-            base=RunOptions(mode=args.mode, unit=args.unit, goal=args.goal, verify=args.verify),
+            base=RunOptions(
+                mode=args.mode,
+                unit=args.unit,
+                goal=args.goal,
+                verify=args.verify,
+                variant=args.variant,
+            ),
             algorithms=args.algorithm or (),
             heuristics=args.heuristic or (),
             ks=args.k or (),

@@ -14,15 +14,23 @@ from tactical_grid.algorithms.adversarial import (
     alpha_beta,
     minimax,
 )
+from tactical_grid.algorithms.adversarial_dynamic import (
+    DynamicAdversarialResult,
+    alpha_beta_dynamic,
+    minimax_dynamic,
+)
 from tactical_grid.algorithms.common import PathProblem, SearchResult, make_problem
 from tactical_grid.algorithms.heuristics import Heuristic, manhattan, obstacle_aware
 from tactical_grid.algorithms.informed import a_star, beam_search
 from tactical_grid.algorithms.uninformed import bfs, dfs, ucs
 from tactical_grid.algorithms.utility import UtilityWeights, make_utility
+from tactical_grid.algorithms.utility_dynamic import make_dynamic_utility
+from tactical_grid.domain.dynamic import initial_dynamic_state
 from tactical_grid.domain.model import Position
 from tactical_grid.experiments.verifier import (
     VerificationReport,
     verify_adversarial,
+    verify_adversarial_dynamic,
     verify_search,
 )
 from tactical_grid.scenario.loader import Scenario
@@ -34,6 +42,8 @@ _ALIASES = {"A*": "A_STAR", "A_ESTRELLA": "A_STAR", "ASTAR": "A_STAR", "BEAM_SEA
 # algoritmos de búsqueda de camino y algoritmos adversariales disponibles
 SEARCH_ALGORITHMS = ("BFS", "DFS", "UCS", "A_STAR", "BEAM")
 ADVERSARIAL_ALGORITHMS = ("MINIMAX", "ALPHA_BETA")
+# variantes de reglas del juego adversarial
+VARIANTS = ("base", "dinamica")
 # heurísticas disponibles por nombre (H1 = Manhattan, H2 = con obstáculos)
 _HEURISTICS: dict[str, Callable[[PathProblem], Heuristic]] = {
     "H1": manhattan,
@@ -64,6 +74,7 @@ class RunOptions:
     unit: str | None = None
     goal: Position | None = None
     verify: bool = False
+    variant: str | None = None  # base o dinamica; si falta se usa `juego.variante` del escenario
 
 
 # Pasa un nombre a su forma oficial: mayúsculas, guiones bajos y sin alias
@@ -182,12 +193,30 @@ def _run_adversarial(scenario: Scenario, options: RunOptions, name: str) -> dict
     order = (options.order or config.action_order or "default").lower()
     if order not in ("default", "reversed"):
         raise RunError(f"action order must be default or reversed, got {order!r}")
+    variant = (options.variant or scenario.variant).lower()
+    if variant not in VARIANTS:
+        raise RunError(f"variant must be one of {VARIANTS}, got {variant!r}")
     board, state = scenario.board, scenario.initial_state
     # la utilidad se mide desde el lado que tiene el turno, con los pesos del escenario
     weights = UtilityWeights.from_mapping(scenario.utility_weights)
     utility = make_utility(board, state.turn, weights)
-    algorithm = minimax if name == "MINIMAX" else alpha_beta
     action_order: ActionOrder = "reversed" if order == "reversed" else "default"
+    if variant == "dinamica":
+        dynamic_state = initial_dynamic_state(state)
+        dynamic_algorithm = minimax_dynamic if name == "MINIMAX" else alpha_beta_dynamic
+        rules = scenario.dynamic_rules
+        dynamic_utility = make_dynamic_utility(board, state.turn, weights)
+        dynamic_result = dynamic_algorithm(
+            board, dynamic_state, depth, dynamic_utility, rules, action_order, record=options.verify
+        )
+        report = _adversarial_report(dynamic_result, depth, order)
+        report["variante"] = "dinamica"
+        if options.verify:
+            report["verificacion"] = _checks(
+                verify_adversarial_dynamic(board, dynamic_state, dynamic_result)
+            )
+        return report
+    algorithm = minimax if name == "MINIMAX" else alpha_beta
     # con verify se registran las acciones consideradas para poder revisarlas después
     result = algorithm(board, state, depth, utility, action_order, record=options.verify)
     report = _adversarial_report(result, depth, order)
@@ -217,7 +246,9 @@ def _search_report(result: SearchResult) -> dict[str, Any]:
 
 
 # Reporte (con claves en español) del resultado de una decisión adversarial
-def _adversarial_report(result: AdversarialResult, depth: int, order: str) -> dict[str, Any]:
+def _adversarial_report(
+    result: AdversarialResult | DynamicAdversarialResult, depth: int, order: str
+) -> dict[str, Any]:
     return {
         "algoritmo": result.algorithm,
         "profundidad": depth,
