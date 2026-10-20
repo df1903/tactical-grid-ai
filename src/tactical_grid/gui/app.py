@@ -301,6 +301,8 @@ SPECS: dict[str, AlgorithmSpec] = {
 CANVAS_PIXELS = 560
 STEP_MILLISECONDS = 120
 RESPONSE_MILLISECONDS = 700  # pausa antes de que el rival responda
+# bando de la persona contra la IA: el que abre la partida (por defecto) o uno fijo
+HUMAN_CHOICES = (("opener", "Bando que abre"), ("A", "Bando A"), ("B", "Bando B"))
 SIDE_COLORS = {Side.A: "#1e6fd9", Side.B: "#d9381e"}
 IMPASSABLE = "#3a3a3a"
 EXPANDED = "#ffd27a"
@@ -527,6 +529,7 @@ class App:
         self.history: list[str] = []
         self.arrow: tuple[Position, Position] | None = None
         self.busy = False
+        self.auto = False  # partida automática IA contra IA en curso
         self.selected: str | None = None  # unidad elegida con el clic (juego manual)
         self.verification = ""
         self.after_id: str | None = None
@@ -610,6 +613,20 @@ class App:
         ttk.Checkbutton(controls, text="Verificar (RF-42)", variable=self.verify).pack(
             side="left", padx=6
         )
+        # Partida: bando de la persona contra la IA, o la IA contra sí misma
+        self.human = tk.StringVar(value=HUMAN_CHOICES[0][0])
+        labels = {label: code for code, label in HUMAN_CHOICES}
+        shown = tk.StringVar(value=HUMAN_CHOICES[0][1])
+        ttk.Label(controls, text="Juegas:").pack(side="left", padx=(6, 4))
+        human_box = ttk.Combobox(
+            controls, textvariable=shown, values=list(labels), state="readonly", width=14
+        )
+        human_box.pack(side="left")
+        human_box.bind(
+            "<<ComboboxSelected>>", lambda _event: self._on_human_changed(labels[shown.get()])
+        )
+        self.auto_button = ttk.Button(controls, text="Partida automática", command=self.toggle_auto)
+        self.auto_button.pack(side="left", padx=6)
         self.speed = tk.IntVar(value=STEP_MILLISECONDS)
         ttk.Scale(
             controls, from_=400, to=10, variable=self.speed, orient="horizontal", length=140
@@ -631,6 +648,14 @@ class App:
         self.step_button.configure(state="normal" if animate else "disabled")
         playable = enabled and adversarial and not self.busy and not self._game_over()
         self.apply_button.configure(state="normal" if playable else "disabled")
+        # la partida automática se puede pausar mientras corre; si no, solo arrancar con juego vivo
+        can_auto = (
+            enabled and adversarial and (self.auto or (not self.busy and not self._game_over()))
+        )
+        self.auto_button.configure(
+            text="Pausar" if self.auto else "Partida automática",
+            state="normal" if can_auto else "disabled",
+        )
         if self.busy:  # mientras el rival responde no se puede ejecutar nada más
             self.run_button.configure(state="disabled")
 
@@ -735,6 +760,7 @@ class App:
     def _reset_game(self) -> None:
         self._cancel_animation()
         self.game_state, self.dyn_state, self.arrow, self.busy = None, None, None, False
+        self.auto = False
         self.selected = None
         self.history = []
 
@@ -769,6 +795,7 @@ class App:
         self._reset_game()
         self._clear_result()
         self._set_buttons(self.enabled)
+        self._ai_opens()
 
     # Descarta el resultado mostrado y vuelve a dibujar el tablero limpio
     def _clear_result(self) -> None:
@@ -776,6 +803,7 @@ class App:
         self.trace = None
         self.decision = None
         self.busy = False
+        self.auto = False
         self.verification = ""
         self.summary.configure(text="")
         self._write_trace("\n".join(self.history))
@@ -788,6 +816,7 @@ class App:
         self._reset_game()
         self._clear_result()
         self._set_buttons(self.enabled)
+        self._ai_opens()
 
     # Abre el selector de archivo y carga el escenario elegido
     def choose_file(self) -> None:
@@ -822,6 +851,7 @@ class App:
         self.decision = None
         self._write_trace("")
         self.draw(0)
+        self._ai_opens()
 
     # Ejecuta el algoritmo elegido y muestra el resultado final de una vez
     def run_all_at_once(self) -> None:
@@ -888,6 +918,8 @@ class App:
         if cell is None:
             return
         state = self._state()
+        if state.turn is not self._human_side():  # no es tu turno
+            return
         if self.selected is not None:
             action = self._targets().get(cell)
             if action is not None:
@@ -921,6 +953,76 @@ class App:
             self.busy = True
             name = self.algorithm.get()
             self.after_id = self.root.after(RESPONSE_MILLISECONDS, self._respond, name, params)
+        self._set_buttons(self.enabled)
+
+    # Bando de la persona: el elegido, o por defecto el que abre la partida
+    def _human_side(self) -> Side:
+        assert self.scenario is not None
+        choice = self.human.get()
+        if choice in ("A", "B"):
+            return Side(choice)
+        return self.scenario.initial_state.turn
+
+    # Cambio del bando de la persona: la partida empieza de nuevo
+    def _on_human_changed(self, choice: str) -> None:
+        self.human.set(choice)
+        if self.scenario is None:
+            return
+        self._reset_game()
+        self._clear_result()
+        self._set_buttons(self.enabled)
+        self._ai_opens()
+
+    # Si la IA abre la partida (la persona juega el bando que no tiene el turno), mueve primero
+    def _ai_opens(self) -> None:
+        if self.scenario is None or self.busy or self.auto or self._game_over():
+            return
+        if not SPECS[self.algorithm.get()].adversarial:
+            return
+        if self._state().turn is self._human_side():
+            return
+        params = {key: var.get() for key, var in self.param_vars.items()}
+        self.busy = True
+        self.after_id = self.root.after(
+            RESPONSE_MILLISECONDS, self._respond, self.algorithm.get(), params
+        )
+        self._set_buttons(self.enabled)
+
+    # Botón «Partida automática»: la IA juega los dos bandos hasta el final; otro clic la pausa
+    def toggle_auto(self) -> None:
+        if self.auto:
+            self._stop_auto()
+            return
+        if self.scenario is None or self._game_over():
+            return
+        self._cancel_animation()
+        self.auto, self.busy, self.selected = True, True, None
+        self.after_id = self.root.after(RESPONSE_MILLISECONDS, self._auto_step)
+        self._set_buttons(self.enabled)
+        self.draw(0)
+
+    # Un paso de la partida automática: decide y aplica la jugada del bando con el turno
+    def _auto_step(self) -> None:
+        self.after_id = None
+        if not self.auto:
+            return
+        params = {key: var.get() for key, var in self.param_vars.items()}
+        if self._game_over() or not self._play_turn(self.algorithm.get(), params):
+            self._stop_auto()
+            return
+        self.draw(0)
+        if self._game_over():
+            self._announce_result()
+            self._stop_auto()
+            return
+        self.after_id = self.root.after(RESPONSE_MILLISECONDS, self._auto_step)
+
+    # Termina o pausa la partida automática; el estado de la partida se conserva
+    def _stop_auto(self) -> None:
+        self._cancel_animation()
+        self.auto = self.busy = False
+        if self.scenario is not None:
+            self.draw(0)
         self._set_buttons(self.enabled)
 
     # Respuesta del rival tras la jugada aplicada
@@ -1152,9 +1254,10 @@ class App:
             immunity = self._dstate().immunity
             extra = "\nrecuperación: " + (", ".join(waiting) or "ninguna")
             extra += f" · inmunidad del portador: {immunity}" if immunity else ""
+        role = "IA contra IA" if self.auto else f"tú juegas el bando {self._human_side().value}"
         self.turn_label.configure(
             text=f"{head}\nJugada {state.turn_number} de {board.turn_limit} · portador: "
-            f"{carrier}{extra}"
+            f"{carrier}{extra}\n{role}"
         )
 
     # Leyenda de terrenos: un cuadro con el color, el nombre y el costo de cada tipo

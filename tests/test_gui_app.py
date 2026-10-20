@@ -230,3 +230,67 @@ def test_window_shows_the_recovery_after_entering_a_swamp(window: App) -> None:
     assert window.dyn_state.recovery_of("A2") == 2
     window.draw(0)
     assert "A2 2" in window.turn_label.cget("text")
+
+
+def _wait(app: App, done) -> None:  # type: ignore[no-untyped-def]
+    # deja correr el bucle de Tk hasta que se cumpla `done` (con tope para no colgar la prueba)
+    for _ in range(3000):
+        app.root.update()
+        if done():
+            return
+        app.root.after(2)
+    raise AssertionError("la ventana no llegó al estado esperado")
+
+
+def test_window_plays_an_automatic_game_to_the_end(window: App) -> None:
+    window.load(str(CASE_7))
+    window.algorithm.set("Alfa-beta")
+    window.on_algorithm_changed()
+    window.param_vars["depth"].set("1")
+    window.toggle_auto()
+    assert window.auto and window.busy
+    assert str(window.auto_button.cget("text")) == "Pausar"
+    _wait(window, lambda: not window.auto)
+    assert window._game_over() and not window.busy
+    assert window.history[0].startswith("1. A:") and window.history[1].startswith("2. B:")
+    assert window.history[-1].startswith(("Ganó el bando", "Empate"))
+
+
+def test_window_pauses_the_automatic_game_and_keeps_the_state(window: App) -> None:
+    window.load(str(CASE_7))
+    window.algorithm.set("Alfa-beta")
+    window.on_algorithm_changed()
+    window.param_vars["depth"].set("1")
+    window.toggle_auto()
+    _wait(window, lambda: window.game_state is not None and window.game_state.turn_number >= 2)
+    window.toggle_auto()  # pausa
+    played = window.game_state.turn_number  # type: ignore[union-attr]
+    assert not window.auto and not window.busy
+    window.root.after(30)
+    window.root.update()
+    assert window.game_state.turn_number == played  # type: ignore[union-attr]
+    assert str(window.auto_button.cget("text")) == "Partida automática"
+
+
+def test_window_lets_the_ai_open_when_the_person_plays_b(window: App) -> None:
+    window.load(str(CASE_7))
+    window.algorithm.set("Alfa-beta")
+    window.on_algorithm_changed()
+    window.param_vars["depth"].set("1")
+    window._on_human_changed("B")
+    assert window.busy  # la IA (A) abre la partida
+    window._on_click(_click(window, 10, 8))  # B1 todavía no se puede elegir
+    assert window.selected is None
+    _wait(window, lambda: not window.busy)
+    assert window.history[0].startswith("1. A:") and not window.history[0].endswith("(manual)")
+    assert "tú juegas el bando B" in window.turn_label.cget("text")
+    window._on_click(_click(window, 10, 8))  # ahora sí: turno de B
+    assert window.selected == "B1"
+
+
+def test_default_side_is_the_one_that_opens_and_nothing_moves_by_itself(window: App) -> None:
+    window.load(str(CASE_7))
+    window.algorithm.set("Alfa-beta")
+    window.on_algorithm_changed()
+    assert not window.busy and window.game_state is None
+    assert "tú juegas el bando A" in window.turn_label.cget("text")
