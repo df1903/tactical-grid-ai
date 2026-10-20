@@ -30,16 +30,24 @@ from tactical_grid.algorithms.adversarial import (
     alpha_beta,
     minimax,
 )
+from tactical_grid.algorithms.adversarial_dynamic import (
+    DynamicAdversarialResult,
+    alpha_beta_dynamic,
+    minimax_dynamic,
+)
 from tactical_grid.algorithms.common import PathProblem, SearchResult, make_problem
 from tactical_grid.algorithms.heuristics import Heuristic, manhattan, obstacle_aware
 from tactical_grid.algorithms.informed import a_star, beam_search
 from tactical_grid.algorithms.uninformed import bfs, dfs, ucs
 from tactical_grid.algorithms.utility import UtilityWeights, make_utility
+from tactical_grid.algorithms.utility_dynamic import make_dynamic_utility
+from tactical_grid.domain import dynamic
 from tactical_grid.domain.model import Action, GameState, Move, Position, Side
 from tactical_grid.domain.rules import apply, is_terminal, legal_actions, skip_turn, winner
 from tactical_grid.experiments.verifier import (
     VerificationReport,
     verify_adversarial,
+    verify_adversarial_dynamic,
     verify_search,
 )
 from tactical_grid.scenario.loader import Scenario, ScenarioError, load_scenario
@@ -69,10 +77,14 @@ class AlgorithmSpec:
     description: str = ""
     # decisión adversarial sobre el estado inicial completo (Minimax, alfa-beta)
     decide: Callable[[Scenario, GameState, Params, bool], AdversarialResult] | None = None
+    # decisión de la variante dinámica: recibe el estado con los contadores de recuperación
+    decide_dynamic: (
+        Callable[[Scenario, dynamic.DynamicState, Params, bool], DynamicAdversarialResult] | None
+    ) = None
 
     @property
     def adversarial(self) -> bool:
-        return self.decide is not None
+        return self.decide is not None or self.decide_dynamic is not None
 
 
 # Heurísticas del selector: valor interno -> (etiqueta, fábrica)
@@ -173,6 +185,43 @@ def _decide(
     return algorithm(scenario.board, state, depth, utility, order, record=record)
 
 
+# Decisión de la variante dinámica; las reglas (penalización, inmunidad) salen del escenario
+def _decide_dynamic(
+    algorithm: Callable[..., DynamicAdversarialResult],
+    scenario: Scenario,
+    state: dynamic.DynamicState,
+    params: Params,
+    record: bool,
+) -> DynamicAdversarialResult:
+    depth = int(_number(params, "depth", "la profundidad", int))
+    if depth < 1:
+        raise ValueError("la profundidad debe ser al menos 1")
+    order: ActionOrder = "reversed" if params.get("order") == "reversed" else "default"
+    weights = UtilityWeights(
+        delivery=_number(params, "w_delivery", "el peso de entrega", float),
+        carry=_number(params, "w_carry", "el peso de recurso cargado", float),
+        goal_distance=_number(params, "w_goal_distance", "el peso de distancia al objetivo", float),
+        rival_distance=_number(params, "w_rival_distance", "el peso de distancia del rival", float),
+        rival_progress=_number(params, "w_rival_progress", "el peso de progreso del rival", float),
+    )
+    utility = make_dynamic_utility(scenario.board, state.turn, weights)
+    return algorithm(
+        scenario.board, state, depth, utility, scenario.dynamic_rules, order, record=record
+    )
+
+
+def _decide_minimax_dynamic(
+    scenario: Scenario, state: dynamic.DynamicState, params: Params, record: bool
+) -> DynamicAdversarialResult:
+    return _decide_dynamic(minimax_dynamic, scenario, state, params, record)
+
+
+def _decide_alpha_beta_dynamic(
+    scenario: Scenario, state: dynamic.DynamicState, params: Params, record: bool
+) -> DynamicAdversarialResult:
+    return _decide_dynamic(alpha_beta_dynamic, scenario, state, params, record)
+
+
 def _decide_minimax(
     scenario: Scenario, state: GameState, params: Params, record: bool
 ) -> AdversarialResult:
@@ -233,6 +282,18 @@ SPECS: dict[str, AlgorithmSpec] = {
         params=ADVERSARIAL_PARAMS,
         decide=_decide_alpha_beta,
         description="Misma decisión que Minimax, podando ramas que no la pueden cambiar.",
+    ),
+    "Minimax dinámico": AlgorithmSpec(
+        "Minimax dinámico",
+        params=ADVERSARIAL_PARAMS,
+        decide_dynamic=_decide_minimax_dynamic,
+        description="Minimax con recuperación por costo de terreno y placaje que roba el recurso.",
+    ),
+    "Alfa-beta dinámico": AlgorithmSpec(
+        "Alfa-beta dinámico",
+        params=ADVERSARIAL_PARAMS,
+        decide_dynamic=_decide_alpha_beta_dynamic,
+        description="Misma decisión que Minimax dinámico, podando ramas que no la pueden cambiar.",
     ),
 }
 
@@ -303,11 +364,15 @@ def trace_decision(
     params: Params | None = None,
     state: GameState | None = None,
     record: bool = False,
-) -> AdversarialResult:
-    decide = SPECS[algorithm].decide
-    if decide is None:
+    dynamic_state: dynamic.DynamicState | None = None,
+) -> AdversarialResult | DynamicAdversarialResult:
+    spec = SPECS[algorithm]
+    if spec.decide_dynamic is not None:
+        start = dynamic_state or dynamic.initial_dynamic_state(state or scenario.initial_state)
+        return spec.decide_dynamic(scenario, start, params or {}, record)
+    if spec.decide is None:
         raise ValueError(f"{algorithm} no es un algoritmo adversarial")
-    return decide(scenario, state or scenario.initial_state, params or {}, record)
+    return spec.decide(scenario, state or scenario.initial_state, params or {}, record)
 
 
 # Texto corto de una acción: "A1 -> (2, 3)" para un movimiento, "A1 placa a B1" para un placaje
@@ -454,9 +519,11 @@ class App:
         root.title("TacticalGrid")
         self.scenario: Scenario | None = None
         self.trace: SearchTrace | None = None
-        self.decision: AdversarialResult | None = None
+        self.decision: AdversarialResult | DynamicAdversarialResult | None = None
         # partida en curso (Minimax/alfa-beta): estado actual, historial y última jugada
         self.game_state: GameState | None = None
+        # variante dinámica: mismo estado con los contadores; su `base` es `game_state`
+        self.dyn_state: dynamic.DynamicState | None = None
         self.history: list[str] = []
         self.arrow: tuple[Position, Position] | None = None
         self.busy = False
@@ -477,7 +544,7 @@ class App:
             textvariable=self.algorithm,
             values=list(SPECS),
             state="readonly",
-            width=10,
+            width=18,
         )
         algorithm_box.pack(side="right")
         ttk.Label(bar, text="Algoritmo:").pack(side="right", padx=(0, 4))
@@ -620,6 +687,46 @@ class App:
         assert self.scenario is not None
         return self.game_state or self.scenario.initial_state
 
+    # La variante dinámica está elegida en el selector
+    def _dynamic(self) -> bool:
+        return SPECS[self.algorithm.get()].decide_dynamic is not None
+
+    # Estado dinámico actual (contadores incluidos); si no hay partida dinámica, uno nuevo
+    def _dstate(self) -> dynamic.DynamicState:
+        state = self._state()
+        if self.dyn_state is not None and self.dyn_state.base is state:
+            return self.dyn_state
+        return dynamic.initial_dynamic_state(state)
+
+    # Acciones legales del bando con el turno según la variante elegida
+    def _legal(self) -> list[Action]:
+        assert self.scenario is not None
+        board = self.scenario.board
+        if self._dynamic():
+            return dynamic.legal_actions(board, self._dstate())
+        return legal_actions(board, self._state())
+
+    # Aplica una acción legal al estado de la partida según la variante elegida
+    def _apply(self, action: Action) -> None:
+        assert self.scenario is not None
+        board = self.scenario.board
+        if self._dynamic():
+            nxt = dynamic.apply(board, self._dstate(), action, self.scenario.dynamic_rules)
+            self.dyn_state, self.game_state = nxt, nxt.base
+        else:
+            self.dyn_state = None
+            self.game_state, _ = apply(board, self._state(), action)
+
+    # Pasa el turno del bando bloqueado según la variante elegida
+    def _pass(self) -> None:
+        assert self.scenario is not None
+        if self._dynamic():
+            nxt = dynamic.pass_turn(self.scenario.board, self._dstate())
+            self.dyn_state, self.game_state = nxt, nxt.base
+        else:
+            self.dyn_state = None
+            self.game_state = skip_turn(self._state())
+
     # La partida terminó: hay ganador o se agotaron los turnos
     def _game_over(self) -> bool:
         return self.scenario is not None and is_terminal(self.scenario.board, self._state())
@@ -627,7 +734,7 @@ class App:
     # Vuelve la partida al estado inicial del escenario
     def _reset_game(self) -> None:
         self._cancel_animation()
-        self.game_state, self.arrow, self.busy = None, None, False
+        self.game_state, self.dyn_state, self.arrow, self.busy = None, None, None, False
         self.selected = None
         self.history = []
 
@@ -705,6 +812,9 @@ class App:
         self.file_label.configure(text=path)
         self.summary.configure(text="")
         self._build_terrain_legend()
+        # el escenario pide la variante dinámica: se preselecciona un algoritmo dinámico
+        if self.scenario.variant == "dinamica" and not self._dynamic():
+            self.algorithm.set("Alfa-beta dinámico")
         self._build_params()
         self._reset_game()
         self._set_buttons(True)
@@ -761,7 +871,7 @@ class App:
         assert self.scenario is not None and self.selected is not None
         state = self._state()
         targets: dict[Position, Action] = {}
-        for action in legal_actions(self.scenario.board, state):
+        for action in self._legal():
             if action.unit_id != self.selected:
                 continue
             cell = action.dest if isinstance(action, Move) else state.position_of(action.target)
@@ -796,7 +906,7 @@ class App:
         self.decision = None
         self.verification = ""
         self.arrow = action_arrow(state, action)
-        self.game_state, _ = apply(self.scenario.board, state, action)
+        self._apply(action)
         self.history.append(
             f"{state.turn_number + 1}. {state.turn.value}: {describe_action(action)}  (manual)"
         )
@@ -826,25 +936,32 @@ class App:
     # Decide y aplica una jugada del bando con el turno; False si la decisión falla
     def _play_turn(self, name: str, params: Params) -> bool:
         assert self.scenario is not None
-        board, state = self.scenario.board, self._state()
+        state = self._state()
         try:
-            result = trace_decision(self.scenario, name, params, state, self.verify.get())
+            result = trace_decision(
+                self.scenario,
+                name,
+                params,
+                state,
+                self.verify.get(),
+                self._dstate() if self._dynamic() else None,
+            )
         except ValueError as exc:
             self.summary.configure(text=f"Error: {exc}")
             return False
         self.verification = ""
         if self.verify.get():
-            self.verification = describe_verification(verify_adversarial(board, state, result))
+            self.verification = describe_verification(self._verify(result))
         side, number = state.turn, state.turn_number + 1
         self.decision = result
         action = result.action
         if action is None:  # sin jugadas legales: el turno se salta solo
             self.arrow = None
-            self.game_state = skip_turn(state)
+            self._pass()
             self.history.append(f"{number}. {side.value}: sin jugadas, pasa el turno")
         else:
             self.arrow = action_arrow(state, action)
-            self.game_state, _ = apply(board, state, action)
+            self._apply(action)
             self.history.append(
                 f"{number}. {side.value}: {describe_action(action)}  valor {result.value:g}"
             )
@@ -871,7 +988,12 @@ class App:
             if SPECS[name].adversarial:
                 state = self._state()
                 self.decision = trace_decision(
-                    self.scenario, name, params, state, self.verify.get()
+                    self.scenario,
+                    name,
+                    params,
+                    state,
+                    self.verify.get(),
+                    self._dstate() if self._dynamic() else None,
                 )
                 action = self.decision.action
                 self.arrow = None if action is None else action_arrow(state, action)
@@ -903,14 +1025,22 @@ class App:
             return ""
         assert self.scenario is not None
         if self.decision is not None:
-            report = verify_adversarial(self.scenario.board, self._state(), self.decision)
+            report = self._verify(self.decision)
         else:
             assert self.trace is not None
             report = verify_search(self.trace.problem, self.trace.result)
         return describe_verification(report)
 
+    # Chequeo RF-42 de una decisión con las reglas de la variante que la produjo
+    def _verify(self, result: AdversarialResult | DynamicAdversarialResult) -> VerificationReport:
+        assert self.scenario is not None
+        board = self.scenario.board
+        if isinstance(result, DynamicAdversarialResult):
+            return verify_adversarial_dynamic(board, self._dstate(), result)
+        return verify_adversarial(board, self._state(), result)
+
     # Una línea por acción de la raíz con su valor; la elegida va marcada con *
-    def _decision_lines(self, result: AdversarialResult) -> str:
+    def _decision_lines(self, result: AdversarialResult | DynamicAdversarialResult) -> str:
         if not result.root_values:
             return "Sin acciones: la raíz es terminal."
         return "\n".join(
@@ -1016,8 +1146,15 @@ class App:
         else:
             where = state.resource
             carrier = f"nadie (recurso en {where.row}, {where.col})" if where else "nadie"
+        extra = ""
+        if self._dynamic():
+            waiting = [f"{uid} {turns}" for uid, turns in self._dstate().recovery if turns > 0]
+            immunity = self._dstate().immunity
+            extra = "\nrecuperación: " + (", ".join(waiting) or "ninguna")
+            extra += f" · inmunidad del portador: {immunity}" if immunity else ""
         self.turn_label.configure(
-            text=f"{head}\nJugada {state.turn_number} de {board.turn_limit} · portador: {carrier}"
+            text=f"{head}\nJugada {state.turn_number} de {board.turn_limit} · portador: "
+            f"{carrier}{extra}"
         )
 
     # Leyenda de terrenos: un cuadro con el color, el nombre y el costo de cada tipo
@@ -1107,6 +1244,11 @@ class App:
             )
             if size >= 24:
                 self.canvas.create_text((x0 + x1) / 2, (y0 + y1) / 2, text=unit_id, fill="white")
+            # variante dinámica: turnos propios que le faltan a la unidad para volver a moverse
+            if self._dynamic() and size >= 24:
+                turns = self._dstate().recovery_of(unit_id)
+                if turns > 0:
+                    self.canvas.create_text(x1 - 6, y0 + 7, text=str(turns), fill="black")
         if self.selected is not None and SPECS[self.algorithm.get()].adversarial:
             x0, y0, x1, y1 = box(self._state().position_of(self.selected))
             self.canvas.create_rectangle(x0, y0, x1, y1, outline="#00a050", width=3)

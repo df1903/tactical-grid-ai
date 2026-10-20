@@ -1,4 +1,5 @@
 import tkinter as tk
+from dataclasses import replace
 from types import SimpleNamespace
 
 import pytest
@@ -19,6 +20,7 @@ from tactical_grid.scenario.loader import load_scenario
 CASE_3 = SCENARIOS / "caso_03_obstaculo_heuristica.json"
 CASE_5 = SCENARIOS / "caso_05_beam_k.json"
 CASE_7 = SCENARIOS / "caso_07_decision_adversarial.json"
+CASE_11 = SCENARIOS / "caso_11_dinamico.json"
 ADVERSARIAL_PARAMS = {
     "depth": "2",
     "order": "default",
@@ -32,8 +34,23 @@ ADVERSARIAL_PARAMS = {
 
 # ---------------------------------------------------------------- lógica sin pantalla
 def test_every_algorithm_of_the_selector_is_registered() -> None:
-    assert list(SPECS) == ["BFS", "DFS", "UCS", "A*", "Beam", "Minimax", "Alfa-beta"]
-    assert [name for name, spec in SPECS.items() if spec.adversarial] == ["Minimax", "Alfa-beta"]
+    assert list(SPECS) == [
+        "BFS",
+        "DFS",
+        "UCS",
+        "A*",
+        "Beam",
+        "Minimax",
+        "Alfa-beta",
+        "Minimax dinámico",
+        "Alfa-beta dinámico",
+    ]
+    assert [name for name, spec in SPECS.items() if spec.adversarial] == [
+        "Minimax",
+        "Alfa-beta",
+        "Minimax dinámico",
+        "Alfa-beta dinámico",
+    ]
 
 
 def test_dfs_neighbor_order_changes_the_expansion() -> None:
@@ -175,3 +192,41 @@ def test_clicking_a_rival_unit_does_not_select_it(window: App) -> None:
     window.on_algorithm_changed()
     window._on_click(_click(window, 10, 8))  # B1 on A's turn
     assert window.selected is None
+
+
+def test_dynamic_decisions_agree_and_are_verified() -> None:
+    scenario = load_scenario(CASE_11)
+    full = trace_decision(scenario, "Minimax dinámico", ADVERSARIAL_PARAMS)
+    pruned = trace_decision(scenario, "Alfa-beta dinámico", ADVERSARIAL_PARAMS)
+    assert (full.value, full.action) == (pruned.value, pruned.action)
+
+
+def test_window_preselects_the_dynamic_algorithm_and_plays_with_recovery(window: App) -> None:
+    window.load(str(CASE_11))
+    assert window.algorithm.get() == "Alfa-beta dinámico"
+    window.on_algorithm_changed()
+    window.param_vars["depth"].set("1")
+    window.verify.set(True)
+    window._on_click(_click(window, 9, 11))  # A1, next to the resource
+    window._on_click(_click(window, 9, 12))  # camino: no recovery
+    assert window.dyn_state is not None and window.dyn_state.recovery_of("A1") == 0
+    assert window.game_state is window.dyn_state.base
+    window.root.update()
+    window.root.after(20)
+    window.root.update()
+    assert window.game_state.turn_number == 2 and not window.busy
+    assert "recuperación" in window.turn_label.cget("text")
+
+
+def test_window_shows_the_recovery_after_entering_a_swamp(window: App) -> None:
+    window.load(str(CASE_11))
+    window.on_algorithm_changed()
+    base = window._state()
+    # A2 junto al pantano (5, 6) de caso_11
+    moved = tuple((uid, Position(6, 6) if uid == "A2" else pos) for uid, pos in base.positions)
+    window.game_state = replace(base, positions=moved)
+    window._apply(Move("A2", Position(5, 6)))
+    assert window.dyn_state is not None
+    assert window.dyn_state.recovery_of("A2") == 2
+    window.draw(0)
+    assert "A2 2" in window.turn_label.cget("text")
