@@ -4,7 +4,9 @@ import math
 from dataclasses import dataclass
 
 from tactical_grid.algorithms.adversarial import AdversarialResult
+from tactical_grid.algorithms.adversarial_dynamic import DynamicAdversarialResult
 from tactical_grid.algorithms.common import PathProblem, SearchResult
+from tactical_grid.domain import dynamic
 from tactical_grid.domain.model import Board, GameState, Position
 from tactical_grid.domain.rules import legal_actions
 
@@ -166,5 +168,45 @@ def verify_adversarial(
             root_legal,
             f"selected {result.action}",
         ),
+    )
+    return VerificationReport(result.algorithm, checks)
+
+
+# Verifica que toda acción que consideró la búsqueda dinámica sea legal con sus reglas (chequeo 6)
+def verify_adversarial_dynamic(
+    board: Board, state: dynamic.DynamicState, result: DynamicAdversarialResult
+) -> VerificationReport:
+    """RF-42 check 6 for the dynamic variant: every considered action is legal.
+
+    Purpose: independent check that the search never moves a unit in recovery or steals from an
+        immune carrier.
+    Preconditions: `result` was produced from `state` with `record=True`.
+    Postconditions: never raises; also checks that the selected action was legal at the root.
+    Complexity: O(N * U^2) for N recorded actions and U units.
+    AI usage: Yes. Claude Code (Sonnet 5.5) drafted the function from the approved plan.
+    AI intervention: none after the draft.
+    Student validation: tests/test_adversarial_dynamic.py checks that it accepts the search and
+        rejects a move of a unit in recovery.
+    """
+    illegal = [
+        index
+        for index, (node, action) in enumerate(result.considered)
+        if action not in dynamic.legal_actions(board, node)
+    ]
+    recorded = bool(result.considered) or result.action is None
+    root_legal = result.action is None or result.action in dynamic.legal_actions(board, state)
+    checks = (
+        Check(
+            "legal actions",
+            recorded and not illegal,
+            "every considered action is legal"
+            if recorded and not illegal
+            else (
+                f"illegal actions at positions {illegal[:5]}"
+                if illegal
+                else "no considered actions were recorded (run with record=True)"
+            ),
+        ),
+        Check("selected action legal", root_legal, f"selected {result.action}"),
     )
     return VerificationReport(result.algorithm, checks)
