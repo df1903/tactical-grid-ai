@@ -7,7 +7,7 @@ from collections.abc import Callable, Sequence
 from typing import Any
 
 from tactical_grid.domain.model import Position
-from tactical_grid.experiments.runner import MODES, VARIANTS, RunError, RunOptions
+from tactical_grid.experiments.runner import MODES, PLAYS, VARIANTS, RunError, RunOptions
 from tactical_grid.experiments.sweep import Sweep, run_sweep, write_csv, write_json
 from tactical_grid.scenario.loader import ScenarioError, load_scenario
 
@@ -59,6 +59,12 @@ def build_parser() -> argparse.ArgumentParser:
         choices=VARIANTS,
         help="adversarial rules: base or dinamica (default: scenario)",
     )
+    parser.add_argument(
+        "--play",
+        choices=PLAYS,
+        help="mode partida: auto (AI vs AI) or humano (you vs the AI); omit to only describe",
+    )
+    parser.add_argument("--side", choices=("A", "B"), help="your side with --play humano (A)")
     parser.add_argument("--unit", help="start unit of a search")
     parser.add_argument("--goal", type=_goal, help="goal cell of a search, as row,col")
     parser.add_argument("--verify", action="store_true", help="run the RF-42 checks")
@@ -86,6 +92,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 goal=args.goal,
                 verify=args.verify,
                 variant=args.variant,
+                play=args.play,
+                side=args.side,
             ),
             algorithms=args.algorithm or (),
             heuristics=args.heuristic or (),

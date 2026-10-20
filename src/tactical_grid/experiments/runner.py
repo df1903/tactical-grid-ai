@@ -26,7 +26,8 @@ from tactical_grid.algorithms.uninformed import bfs, dfs, ucs
 from tactical_grid.algorithms.utility import UtilityWeights, make_utility
 from tactical_grid.algorithms.utility_dynamic import make_dynamic_utility
 from tactical_grid.domain.dynamic import initial_dynamic_state
-from tactical_grid.domain.model import Position
+from tactical_grid.domain.model import Position, Side
+from tactical_grid.experiments.game import play_game
 from tactical_grid.experiments.verifier import (
     VerificationReport,
     verify_adversarial,
@@ -44,6 +45,8 @@ SEARCH_ALGORITHMS = ("BFS", "DFS", "UCS", "A_STAR", "BEAM")
 ADVERSARIAL_ALGORITHMS = ("MINIMAX", "ALPHA_BETA")
 # variantes de reglas del juego adversarial
 VARIANTS = ("base", "dinamica")
+# formas de jugar el modo partida: IA contra IA o una persona contra la IA
+PLAYS = ("auto", "humano")
 # heurísticas disponibles por nombre (H1 = Manhattan, H2 = con obstáculos)
 _HEURISTICS: dict[str, Callable[[PathProblem], Heuristic]] = {
     "H1": manhattan,
@@ -75,6 +78,8 @@ class RunOptions:
     goal: Position | None = None
     verify: bool = False
     variant: str | None = None  # base o dinamica; si falta se usa `juego.variante` del escenario
+    play: str | None = None  # partida: auto (IA contra IA) o humano; si falta solo se describe
+    side: str | None = None  # partida con humano: bando de la persona (A por defecto)
 
 
 # Pasa un nombre a su forma oficial: mayúsculas, guiones bajos y sin alias
@@ -104,9 +109,11 @@ def run(scenario: Scenario, options: RunOptions) -> dict[str, Any]:
     mode = (options.mode or config.mode or "").lower()
     if mode not in MODES:
         raise RunError(f"mode must be one of {MODES}, got {mode!r}")
-    # en modo partida solo se describe el juego cargado
+    if options.play and mode != "partida":
+        raise RunError("--play only applies to mode partida")
+    # en modo partida se describe el juego cargado, o se juega completo si se pidió `play`
     if mode == "partida":
-        return describe(scenario)
+        return _run_game(scenario, options) if options.play else describe(scenario)
     name = canonical(options.algorithm or config.algorithm or "")
     if mode == "busqueda":
         return _run_search(scenario, options, name)
@@ -177,14 +184,15 @@ def _run_search(scenario: Scenario, options: RunOptions, name: str) -> dict[str,
     return report
 
 
-# Ejecuta Minimax o alfa-beta sobre el estado inicial y arma su reporte
-def _run_adversarial(scenario: Scenario, options: RunOptions, name: str) -> dict[str, Any]:
+# Valida y resuelve algoritmo, profundidad, orden y variante (la opción explícita gana)
+def _adversarial_settings(
+    scenario: Scenario, options: RunOptions, name: str
+) -> tuple[int, str, str]:
     config = scenario.test_config
     if name not in ADVERSARIAL_ALGORITHMS:
         raise RunError(
             f"adversarial algorithm must be one of {ADVERSARIAL_ALGORITHMS}, got {name!r}"
         )
-    # profundidad y orden de acciones: la opción explícita gana sobre la del escenario
     depth = options.depth if options.depth is not None else config.minimax_depth
     if depth is None:
         raise RunError("Minimax needs a depth (juego.profundidad_maxima_minimax or --depth)")
@@ -196,6 +204,43 @@ def _run_adversarial(scenario: Scenario, options: RunOptions, name: str) -> dict
     variant = (options.variant or scenario.variant).lower()
     if variant not in VARIANTS:
         raise RunError(f"variant must be one of {VARIANTS}, got {variant!r}")
+    return depth, order, variant
+
+
+# Juega la partida completa (modo partida con --play): IA contra IA o persona contra la IA
+def _run_game(scenario: Scenario, options: RunOptions) -> dict[str, Any]:
+    play = (options.play or "").lower()
+    if play not in PLAYS:
+        raise RunError(f"play must be one of {PLAYS}, got {play!r}")
+    # la IA usa el algoritmo pedido, el del escenario si es adversarial, o alfa-beta
+    name = canonical(options.algorithm or "")
+    if not name:
+        configured = canonical(scenario.test_config.algorithm or "")
+        name = configured if configured in ADVERSARIAL_ALGORITHMS else "ALPHA_BETA"
+    depth, order, variant = _adversarial_settings(scenario, options, name)
+    action_order: ActionOrder = "reversed" if order == "reversed" else "default"
+    human: Side | None = None
+    if play == "humano":
+        side = (options.side or "A").upper()
+        if side not in ("A", "B"):
+            raise RunError(f"side must be A or B, got {side!r}")
+        human = Side(side)
+    elif options.side:
+        raise RunError("--side only applies with --play humano")
+    return play_game(
+        scenario,
+        name,
+        depth,
+        action_order,
+        variant == "dinamica",
+        human,
+        write=print if human else (lambda _text: None),
+    )
+
+
+# Ejecuta Minimax o alfa-beta sobre el estado inicial y arma su reporte
+def _run_adversarial(scenario: Scenario, options: RunOptions, name: str) -> dict[str, Any]:
+    depth, order, variant = _adversarial_settings(scenario, options, name)
     board, state = scenario.board, scenario.initial_state
     # la utilidad se mide desde el lado que tiene el turno, con los pesos del escenario
     weights = UtilityWeights.from_mapping(scenario.utility_weights)

@@ -46,7 +46,9 @@ def expand(scenario: Scenario, sweep: Sweep) -> list[RunOptions]:
     config = scenario.test_config
     mode = (sweep.base.mode or config.mode or "").lower()
     # una lista vacía se cambia por un solo valor None para no anular las combinaciones
-    algorithms: Sequence[str | None] = sweep.algorithms or (config.algorithm,)
+    # en partida el algoritmo del escenario puede ser de búsqueda: `_run_game` lo resuelve sola
+    fallback = None if mode == "partida" else config.algorithm
+    algorithms: Sequence[str | None] = sweep.algorithms or (fallback,)
     heuristics: Sequence[str | None] = sweep.heuristics or (None,)
     ks: Sequence[int | None] = sweep.ks or (None,)
     depths: Sequence[int | None] = sweep.depths or (None,)
@@ -57,7 +59,7 @@ def expand(scenario: Scenario, sweep: Sweep) -> list[RunOptions]:
         base = replace(sweep.base, algorithm=algorithm)
         name = canonical(algorithm) if algorithm else ""
         # adversarial: se combinan profundidades y órdenes
-        if mode == "adversarial":
+        if mode in ("adversarial", "partida"):
             runs += [replace(base, depth=d, order=o) for d in depths for o in orders]
         # A*: se combinan heurísticas
         elif name == "A_STAR":
