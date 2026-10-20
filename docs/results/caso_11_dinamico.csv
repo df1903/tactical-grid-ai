@@ -1,0 +1,9 @@
+algoritmo,profundidad,orden_acciones,accion,valor,nodos_generados,nodos_evaluados,nodos_podados,profundidad_alcanzada,tiempo_segundos,variante,verificacion_ok
+MINIMAX,1,default,"Move(unit_id='A1', dest=Position(row=8, col=11))",-2.5,11,11,0,1,0.008982500003185123,dinamica,True
+MINIMAX,2,default,"Move(unit_id='A1', dest=Position(row=8, col=11))",-3.5,132,121,0,2,0.011353900015819818,dinamica,True
+MINIMAX,3,default,"Move(unit_id='A3', dest=Position(row=8, col=11))",-1.0,1395,1263,0,3,0.04791099997237325,dinamica,True
+MINIMAX,4,default,"Move(unit_id='A3', dest=Position(row=8, col=11))",-2.0,14896,13501,0,4,0.36862620001193136,dinamica,True
+ALPHA_BETA,1,default,"Move(unit_id='A1', dest=Position(row=8, col=11))",-2.5,11,11,0,1,0.01073130004806444,dinamica,True
+ALPHA_BETA,2,default,"Move(unit_id='A1', dest=Position(row=8, col=11))",-3.5,36,25,96,2,0.010715599986724555,dinamica,True
+ALPHA_BETA,3,default,"Move(unit_id='A3', dest=Position(row=8, col=11))",-1.0,490,416,269,3,0.033772199996747077,dinamica,True
+ALPHA_BETA,4,default,"Move(unit_id='A3', dest=Position(row=8, col=11))",-2.0,1481,1101,2557,4,0.06097729998873547,dinamica,True

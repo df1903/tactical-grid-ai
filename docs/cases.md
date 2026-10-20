@@ -169,6 +169,28 @@ settles on A3 from depth 3, and the effort grows exponentially with the depth.
 (Alpha-beta, `default` order. With Minimax the evaluated nodes are 11 / 121 / 1,263 / 13,501 /
 141,048.)
 
+## Extra case 11 — Dynamic variant (not one of the 10 minimum)
+
+Scenario `scenarios/caso_11_dinamico.json`: the map and units of case 7 with
+`"variante": "dinamica"` (penalty 2, immunity 1). Command:
+`uv run python -m tactical_grid scenarios/caso_11_dinamico.json --algorithm MINIMAX,ALPHA_BETA --depth 1,2,3,4 --verify`.
+
+**Expectation.** Alpha-beta decides exactly like Minimax, and on this map the root decision
+equals case 10 (the first moves cross cost-1 ground, so no recovery turn is inside the horizon).
+
+| Depth | Action | Value | Minimax generated | Alpha-beta generated | Match |
+|---|---|---|---|---|---|
+| 1 | A1 → (8,11) | −2.5 | 11 | 11 | yes |
+| 2 | A1 → (8,11) | −3.5 | 132 | 36 | yes |
+| 3 | A3 → (8,11) | −1.0 | 1,395 | 490 | yes |
+| 4 | A3 → (8,11) | −2.0 | 14,896 | 1,481 | yes |
+
+The rules of the variant (waiting turns per terrain cost, the steal, the penalty as a maximum,
+the immunity, stealing on the own base) are asserted by `tests/test_dynamic_rules.py`, and that
+alpha-beta equals Minimax by `tests/test_adversarial_dynamic.py` and
+`tests/test_dynamic_runner.py`; the numbers above are in `docs/results/caso_11_dinamico.csv`.
+Full games and the technical discussion: technical report, section 10.6.
+
 ---
 
 **Note.** These cases do not replace the professor's external tests. Appendix A of the

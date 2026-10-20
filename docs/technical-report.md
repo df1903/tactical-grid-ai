@@ -20,8 +20,12 @@ alpha-beta pruning.
 Everything the assignment lists as mandatory is implemented: composite state, the seven
 algorithms with their metrics, two admissible heuristics, a utility function, atomic scenario
 loading with the nine validations, the six-check verifier, a CLI with sweeps and CSV/JSON
-export, a GUI with manual and automatic play, and the ten demonstration cases. The project has
-170+ automated tests; `ruff` and `mypy --strict` pass.
+export, a GUI with manual and automatic play, and the ten demonstration cases. Beyond the
+assignment, the team added two optional pieces that do not change the base game: a **dynamic
+variant** of the rules (terrain cost as waiting time, tackle that steals the resource; sections
+3.1 and 10.6) and a **partida mode** that plays a whole game from the terminal or the GUI, a
+person against the AI or the AI against itself (user manual, section 4.1). The project has 280+
+automated tests; `ruff` and `mypy --strict` pass.
 
 What is **not** done at the time of writing: the *Student validation* field of the method
 docstrings (cross-review by the other team member) and the optional RF-41 view of explored
@@ -105,6 +109,32 @@ playing for its own side.
 
 Order of resolution inside a move: (1) pickup, (2) delivery check.
 
+### 3.1 Dynamic variant (optional)
+
+A second rule set, selected by `juego.variante: "dinamica"` or `--variant dinamica`. It lives in
+`domain/dynamic.py` next to `rules.py` and never edits it: `DynamicState` wraps the base
+`GameState` and adds the counters, and movement, pickup and delivery are delegated to the base
+rules. The base game is the delivered one; a scenario without the field plays as before.
+The parameters come from the JSON, not from the code (RNF-03).
+
+| Rule | Dynamic variant |
+|---|---|
+| Cost of terrain | Entering a cell of cost `c` leaves the unit waiting `ceil(c) − 1` of its side's turns (cost 1: none, 3: two, 7: six). The counters of a side drop by one at the end of each of its turns. |
+| Unit in recovery | Cannot move or tackle; it can still be tackled. |
+| Tackle | Becomes a **steal**: a free unit adjacent to the rival carrier becomes the carrier. Nobody moves, it costs nothing and the resource never lies on the ground. |
+| Penalty | The victim waits `juego.penalizacion_placaje` own turns (default 2), as a maximum with what it already had, not a sum. |
+| Immunity | The new carrier cannot be tackled for `juego.inmunidad_robo` rival turns (default 1), which avoids two units stealing back and forth forever. |
+| Delivery by steal | Stealing on the own base wins at once. |
+| Blocked side | It passes; its counters still drop. In the search a pass is a node with one child that consumes one level of depth (in the base game a blocked node is a leaf). |
+
+The variant has its own utility (`algorithms/utility_dynamic.py`): the same formula and weights
+as section 8, but every distance is the sum of `ceil(cost)` of the entered cells plus the
+recovery turns still to wait, so it measures *own turns* instead of steps. Minimax and
+alpha-beta for it are in `algorithms/adversarial_dynamic.py` (same recursion, tie-break and
+metrics as section 6.5), and the verifier has its own legality check
+(`verify_adversarial_dynamic`, section 11). Both sides keep the same rules: the roles MAX and
+MIN remain roles of the tree.
+
 ## 4. Costs
 
 - `g(n)` is the sum of destination-cell costs along the path; the start cell is free.
@@ -121,10 +151,10 @@ Five components, as decided on 2026-10-07 (RNF-05); no database or network.
 
 | Component | Responsibility | Depends on |
 |---|---|---|
-| `domain` | state, actions, legal actions, successors, costs, winner / draw | nothing |
+| `domain` | state, actions, legal actions, successors, costs, winner / draw; optional dynamic variant (`dynamic.py`) | nothing |
 | `scenario` | JSON loading, nine validations, translation to `domain` objects | `domain` |
-| `algorithms` | BFS, DFS, UCS, A\*, Beam, Minimax, alpha-beta, heuristics, utility | `domain` |
-| `experiments` | runner (modes), sweeps, CSV/JSON export, verifier | `algorithms`, `scenario` |
+| `algorithms` | BFS, DFS, UCS, A\*, Beam, Minimax, alpha-beta, heuristics, utility; dynamic utility and dynamic Minimax / alpha-beta | `domain` |
+| `experiments` | runner (modes), sweeps, CSV/JSON export, verifier, full games for the `partida` mode (`game.py`) | `algorithms`, `scenario` |
 | `gui` | one tkinter window (`gui/app.py`): algorithm selector with a parameter panel per algorithm, game state and click-to-move | all of the above |
 
 `algorithms` never reads JSON and never knows the GUI. The GUI holds no game rule: it calls
@@ -219,6 +249,11 @@ experimented (RF-23); the result is in section 10.3.
   carrier"). It replaced an automatic interception that made every automatic game end in a
   draw (decision of 2026-10-18); it adds at most one action per own unit next to the carrier,
   so the branching factor stays low.
+- **Whole games (`partida` mode).** `experiments/game.py` repeats one decision per turn until a
+  delivery, the turn limit or the person quits. The side to move is MAX in each decision and
+  the utility is rebuilt from that side, so both sides are served by the same function with the
+  same algorithm, depth, order and weights. The person (terminal or GUI) chooses among the same
+  `legal_actions` the search uses.
 
 ## 7. Heuristics (RF-21, RF-22)
 
@@ -451,6 +486,39 @@ on 15×15 and 20×20 maps (Minimax at depth 6 on 15×15 takes 10 s, over the tar
 distance tables of the utility cost one BFS per target cell and are reused for the whole
 game. Times are from the team's laptop (Windows, Python 3.14).
 
+### 10.6 Dynamic variant and full games
+
+Not part of the 10 minimum cases. Scenario `scenarios/caso_11_dinamico.json` is the map and
+units of case 7 declared as `"variante": "dinamica"` (penalty 2, immunity 1). Raw results:
+`docs/results/caso_11_dinamico.csv` and `.json`, produced with `--verify` (all checks pass).
+
+**Root decision** (`--algorithm MINIMAX,ALPHA_BETA --depth 1,2,3,4`):
+
+| Depth | Action | Value | Minimax generated | Alpha-beta generated | Alpha-beta pruned |
+|---|---|---|---|---|---|
+| 1 | A1 → (8,11) | −2.5 | 11 | 11 | 0 |
+| 2 | A1 → (8,11) | −3.5 | 132 | 36 | 96 |
+| 3 | A3 → (8,11) | −1.0 | 1,395 | 490 | 269 |
+| 4 | A3 → (8,11) | −2.0 | 14,896 | 1,481 | 2,557 |
+
+Alpha-beta returns the action and value of Minimax at every depth. The values equal those of
+case 10 on the base rules: on this map the first moves cross cost-1 ground only, so no recovery
+turn enters the horizon, and the variant shows up in longer games instead.
+
+**Full games** (`--mode partida --play auto --algorithm ALPHA_BETA`, same depth for both
+sides, `default` order):
+
+| Scenario | Rules | Depth | Winner | Turns | Tackles |
+|---|---|---|---|---|---|
+| `caso_07` | base | 2 | A | 47 | 0 |
+| `caso_07` | base | 3 | A | 39 | 0 |
+| `caso_11` | dynamic | 2 | B | 48 | 1 (a steal) |
+| `caso_11` | dynamic | 3 | A | 39 | 0 |
+
+("Tackles" counts the tackle actions of the game.) In these games the AI almost never tackles
+(0 or 1 per game), so the steal, the penalty and the immunity are covered by
+`tests/test_dynamic_rules.py` and not by these games.
+
 ## 11. Verification and testing (RF-42, RE-03)
 
 The `--verify` option (and the GUI checkbox) runs the six checks of the assignment:
@@ -464,12 +532,18 @@ The `--verify` option (and the GUI checkbox) runs the six checks of the assignme
 | 5 | no invalid states are generated | searches |
 | 6 | the actions considered by Minimax / alpha-beta are legal and the chosen one is legal | adversarial |
 
+For the dynamic variant, `verify_adversarial_dynamic` runs check 6 under the dynamic rules:
+every considered action is legal (no unit in recovery moves, no steal from an immune carrier)
+and the selected action is legal at the root.
+
 Every run saved in `docs/results/` was produced with `--verify` and all checks pass.
 
 Automated tests (`uv run pytest`): domain rules and state, scenario validation (the nine
 validations and the atomic load), search algorithms, heuristics, utility, Minimax / alpha-beta,
-verifier, runner and sweeps, the 10 cases with their expected values, and the GUI (the
-functions that run each algorithm, and the window when a display is available). `uv run ruff check .` and `uv run mypy src` pass (strict).
+verifier, runner and sweeps, the 10 cases with their expected values, the dynamic variant
+(rules, utility, Minimax / alpha-beta, runner), the `partida` mode (AI against AI, a person
+with scripted answers, invalid and abandoned input) and the GUI (the functions that run each
+algorithm, and the window when a display is available: sides, automatic game and pause). `uv run ruff check .` and `uv run mypy src` pass (strict).
 
 ## 12. Scenario format and robustness (RF-34 … RF-37)
 
@@ -477,7 +551,9 @@ The loader reads the JSON of Appendix A, validates **all** of it (the nine minim
 plus: two units cannot share a cell, `limite_turnos` and `utilidad` are well-formed) and reports
 every error before rejecting the file; nothing is built if any error exists. Optional fields of
 the team (`juego.limite_turnos`, `utilidad`, `prueba.algoritmo`, `prueba.heuristica`,
-`prueba.k`, `prueba.orden_acciones`) never alter the mandatory ones. The loader does not require
+`prueba.k`, `prueba.orden_acciones`, `juego.variante`, `juego.penalizacion_placaje`,
+`juego.inmunidad_robo`) never alter the mandatory ones; the variant fields must be a known
+variant name and non-negative integers or the file is rejected. The loader does not require
 three units per side, because Appendix A has two; the team's own scenarios use three or more
 where the size allows it. Terrain names are read from the catalog (open set); non-passable
 terrains may omit `costo`. Dimensions, costs, bases, obstacles, units and resource may change
@@ -503,6 +579,11 @@ without touching the code; this is exercised by scenarios of 3×3, 4×4, 5×5, 7
 7. **Questions to the professor** (assignment section 19) have no official answer.
 8. **Measured times** come from one machine and are not repeated statistically; deterministic
    metrics are the basis for comparisons.
+9. **Dynamic variant:** it is optional and was calibrated only on the case 7 map; the penalty
+   and the immunity are not tuned, and in the measured games the AI almost never steals
+   (section 10.6). Its utility is a separate function, not a generalization of the base one.
+10. **Terminal game:** the person must pick the move from a numbered list; there is no undo and
+    no choice of a different AI per side (both sides use the same algorithm and depth).
 
 ## 14. Report of generative-AI use
 
@@ -520,6 +601,8 @@ Franco Rincón. **Purpose, by area:**
 | CLI, runner, sweeps, export | Drafted the code | Decided the option names (G10) and the formats |
 | GUI | Drafted `gui/app.py`, including the Spanish interface, the per-algorithm parameter panels, the verification and the click-to-move play | Requested the features and the language; reviews the behavior |
 | Scenarios and experiments | Generated the 15×15 and 20×20 maps with a script; ran the sweeps | Chose the case maps and the expected values |
+| Dynamic variant | Drafted `domain/dynamic.py`, the dynamic utility, dynamic Minimax / alpha-beta, its verifier check and tests, following an approved plan (Claude Sonnet 5.5) | Approved the plan (recovery turns, steal, penalty, immunity, parameters in the JSON); reviews the behavior |
+| `partida` mode | Drafted `experiments/game.py`, the runner and CLI options, and the GUI controls (sides, automatic game, pause) with their tests (Claude Sonnet 5.5, 2026-10-19) | Asked for the person-vs-AI and AI-vs-AI games in the terminal and the window; reviews the behavior |
 | Documentation | Drafted this report, the manual and the case table from the repository and the experiment output | Reviews and takes responsibility for the content |
 
 **Human interventions and corrections of the AI draft:**

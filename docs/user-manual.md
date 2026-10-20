@@ -64,8 +64,8 @@ JSON*. The window is in Spanish and has the same layout for every algorithm.
 - **Métricas:** result of the last run (and the verification when enabled).
 - **Traza:** expansion order of a search, or the values of every root action of a decision
   (`*` marks the chosen one) followed by the game history.
-- **Bottom bar:** *Ejecutar*, *Animar*, *Aplicar jugada*, *Reiniciar*, *Verificar (RF-42)* and
-  the animation speed.
+- **Bottom bar:** *Ejecutar*, *Animar*, *Aplicar jugada*, *Reiniciar*, *Verificar (RF-42)*, the
+  *Juegas* selector (your side), *Partida automática* and the animation speed.
 
 ### 3.3 Using it
 
@@ -77,6 +77,17 @@ JSON*. The window is in Spanish and has the same layout for every algorithm.
 - **Playing by hand:** with Minimax or alpha-beta selected, click a unit of the side to move and
   then one of the green dots; to tackle, click the rival carrier when one of your units is next
   to it. The rival answers automatically.
+- **Dynamic variant:** *Minimax dinámico* and *Alfa-beta dinámico* play with the rules of
+  section 5.1. They are preselected when the scenario declares `"variante": "dinamica"`
+  (for example `caso_11_dinamico.json`). The *Estado* panel then lists the units that are still
+  recovering (own turns left) and the immunity of the carrier; everything else (clicks, *Juegas*,
+  *Partida automática*, *Verificar*) works as with the base algorithms.
+- **Your side (*Juegas*):** by default you play the side that opens the game. Pick *Bando A* or
+  *Bando B* to choose; if you play the side that does not move first, the AI opens. Changing it
+  restarts the game, and the *Estado* panel shows which side you play.
+- **Partida automática:** the AI plays both sides until the end (same rules, algorithm and
+  parameters for both). Press it again (*Pausar*) to stop without losing the game; *Reiniciar*
+  also stops it.
 - **Verificar (RF-42):** runs the six checks on the result (or on each decision of a game) and
   lists them in *Métricas*.
 - **Reiniciar:** returns to the initial state of the scenario; changing the algorithm also
@@ -92,7 +103,10 @@ Options override the `prueba` section of the JSON:
 
 | Option | Meaning |
 |---|---|
-| `--mode` | `busqueda`, `adversarial` or `partida` (describes the loaded game) |
+| `--mode` | `busqueda`, `adversarial` or `partida` (describes the loaded game, or plays it with `--play`) |
+| `--play` | with `partida`: `auto` (AI vs AI, whole game) or `humano` (you vs the AI, pick a move by its number, `q` quits) |
+| `--side` | with `--play humano`: your side, `A` (default) or `B`; the AI uses `--algorithm`, `--depth`, `--order`, `--variant` |
+| `--variant` | adversarial rules: `base` or `dinamica` (section 5.1); default `juego.variante` of the scenario |
 | `--algorithm` | `BFS`, `DFS`, `UCS`, `A_STAR` (`A*`, `A_ESTRELLA`), `BEAM`, `MINIMAX`, `ALPHA_BETA` |
 | `--heuristic` | `H1` (Manhattan) or `H2` (obstacle aware); default `H1` |
 | `--k` | beam width |
@@ -116,8 +130,41 @@ The report is a JSON object with keys equivalent to Appendix B of the assignment
 `algoritmo`, `exito`, `camino`, `costo`, `longitud`, `estados_generados`, `estados_expandidos`,
 `maximo_frontera`, `tiempo_segundos` (searches) and `profundidad`, `accion`, `valor`,
 `nodos_generados`, `nodos_evaluados`, `nodos_podados`, `profundidad_alcanzada`, `valores_raiz`,
-`tiempo_segundos` (adversarial). Errors in the scenario or in the options go to the standard
-error stream with exit code 2.
+`tiempo_segundos` (adversarial). With the dynamic variant the adversarial report also has
+`"variante": "dinamica"`. Errors in the scenario or in the options go to the standard error
+stream with exit code 2.
+
+### 4.1 Playing a whole game from the terminal (`--mode partida`)
+
+Without `--play` the mode only prints a summary of the loaded game. With `--play` it plays the
+scenario to the end, from the initial state, with Minimax or alpha-beta on the AI side:
+
+```bash
+# AI against AI: prints the whole game as JSON
+uv run python -m tactical_grid scenarios/caso_07_decision_adversarial.json \
+    --mode partida --play auto --algorithm ALPHA_BETA --depth 3
+# you against the AI (you are side A; add --side B to play second)
+uv run python -m tactical_grid scenarios/caso_07_decision_adversarial.json \
+    --mode partida --play humano --depth 3
+# the same with the dynamic variant
+uv run python -m tactical_grid scenarios/caso_11_dinamico.json --mode partida --play humano --depth 3
+```
+
+- **Both sides play under the same rules** and the AI uses the same algorithm, depth, action
+  order and weights whichever side it plays; MAX and MIN are only the roles inside each
+  decision's tree. `--algorithm` defaults to the scenario's adversarial algorithm or alpha-beta;
+  the depth comes from `--depth` or `juego.profundidad_maxima_minimax`.
+- **`--play humano`:** on your turn the map is drawn as text (terrain initial, units, `*` for
+  the carrier, `$` for the resource, `<A>`/`<B>` for the bases) and your legal actions are listed
+  with a number. Type the number and press Enter; `q` (or closing the input) abandons the game.
+  An invalid answer is asked again. After each of your moves the AI answers and its move is
+  printed. A side with no legal action passes its turn.
+- **Report** (printed when the game ends): `modo`, `variante`, `algoritmo`, `profundidad`,
+  `orden`, `jugadores` (who plays each side), `terminada`, `abandonada`, `ganador` (`A`, `B` or
+  `null` for a draw or an abandoned game), `turnos_jugados`, `jugadas` (turn, side, player,
+  action, and for the AI its value and generated nodes) and `estado_final`.
+- `--depth` accepts a list here too (one game per value); `--play` only applies to `partida`
+  and `--side` only to `--play humano`.
 
 ## 5. Scenario file (JSON)
 
@@ -154,6 +201,9 @@ Optional fields of the team (they never replace the mandatory ones):
 | `prueba.heuristica` | `H1` or `H2` | `H1` |
 | `prueba.k` | beam width | none |
 | `prueba.orden_acciones` | `default` or `reversed` | `default` |
+| `juego.variante` | rules of the adversarial game: `base` or `dinamica` (section 5.1) | `base` |
+| `juego.penalizacion_placaje` | dynamic variant: own turns the victim of a steal cannot act | 2 |
+| `juego.inmunidad_robo` | dynamic variant: rival turns the new carrier cannot be tackled | 1 |
 
 Scenarios included in `scenarios/`:
 
@@ -162,12 +212,34 @@ Scenarios included in `scenarios/`:
 | `apendice_a.json` | official 4×4 example |
 | `caso_01` … `caso_05` | cases 1–5 (searches) |
 | `caso_07_decision_adversarial.json` | cases 7–10 (20×20, three units per side) |
+| `caso_11_dinamico.json` | the same map and units as `caso_07`, declared as `"variante": "dinamica"` (penalty 2, immunity 1) |
 | `prueba_15x15.json` | 15×15 performance test (three units per side) |
 | `prueba_20x20.json` | 20×20 test (three units per side); open it in the GUI |
 | `escenario_03x03.json` … `escenario_30x30.json` | the same game at six sizes, for the size experiments (the 30×30 one has a limit of 200 turns) |
 
 To try another map, copy a file, change dimensions, costs, positions or units, and open it; no
 code change is needed.
+
+### 5.1 Dynamic variant (optional)
+
+An alternative set of rules for the adversarial game, selected with `juego.variante: "dinamica"`
+or `--variant dinamica`. The base rules are not modified and a scenario without the field keeps
+playing as before. The variant changes two things:
+
+- **Terrain cost becomes waiting time.** A unit that enters a cell of cost `c` cannot act for
+  `ceil(c) - 1` of its side's next turns (cost 1: no wait; cost 3: two turns; cost 7: six turns).
+  While waiting, the unit neither moves nor tackles, but it can be tackled. The counters of a
+  side go down by one at the end of each of its turns.
+- **The tackle steals.** A free unit adjacent to the rival carrier takes the resource: it becomes
+  the carrier, nobody moves and the resource never lies on the ground. The victim waits
+  `penalizacion_placaje` own turns (the maximum with what it already had, not the sum) and the
+  new carrier cannot be tackled for `inmunidad_robo` rival turns. Stealing on the own base wins
+  at once.
+
+Everything else (four directions, one unit per cell, the rival base forbidden, pickup on
+arrival, delivery, turn limit, passing when blocked) is as in the base game. The AI uses its own
+utility, measured in own turns instead of steps, with the same weights from the `utilidad`
+section. Details and measurements: technical report, sections 3.1 and 10.6.
 
 ## 6. Reproducing the reported experiments
 
@@ -186,6 +258,7 @@ $U scenarios/prueba_20x20.json --algorithm ALPHA_BETA --depth 2,3,4,5,6 --csv $R
 $U scenarios/prueba_15x15.json --algorithm ALPHA_BETA --depth 5,6,7 --csv $R/rendimiento_15x15.csv
 $U scenarios/prueba_15x15.json --algorithm MINIMAX --depth 4,5,6 --csv $R/rendimiento_15x15_minimax.csv
 $U scenarios/apendice_a.json --algorithm BFS,DFS,UCS,A_STAR,BEAM --heuristic H1,H2 --k 1,2,4,8 --verify --csv $R/apendice_a.csv
+$U scenarios/caso_11_dinamico.json --algorithm MINIMAX,ALPHA_BETA --depth 1,2,3,4 --verify --csv $R/caso_11_dinamico.csv --json $R/caso_11_dinamico.json
 ```
 
 (Minimax at depth 6 on the 15×15 map takes about 10 s.) The expected values of the 10 cases are

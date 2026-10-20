@@ -23,6 +23,8 @@ uv run python -m tactical_grid scenarios/apendice_a.json --algorithm A_STAR --ve
 uv run python -m tactical_grid scenarios/caso_07_decision_adversarial.json --algorithm ALPHA_BETA --depth 3
 uv run python -m tactical_grid.gui scenarios/caso_07_decision_adversarial.json   # GUI (omit the path to pick a file)
 uv run python -m tactical_grid.gui scenarios/prueba_20x20.json   # 20x20 test, 3 units per side
+uv run python -m tactical_grid scenarios/caso_07_decision_adversarial.json --mode partida --play humano --depth 3   # you vs the AI
+uv run python -m tactical_grid scenarios/caso_11_dinamico.json --algorithm ALPHA_BETA --depth 3 --verify   # dynamic variant
 uv run pytest                    # tests
 uv run ruff check .              # lint
 uv run ruff format --check .     # format check
@@ -32,6 +34,11 @@ uv run mypy src                  # types (strict)
 Options (they override the scenario's `prueba` section): `--mode busqueda|adversarial|partida`,
 `--algorithm BFS|DFS|UCS|A_STAR|BEAM|MINIMAX|ALPHA_BETA`, `--heuristic H1|H2`, `--k`, `--depth`,
 `--order default|reversed`, `--unit`, `--goal row,col`, `--verify`. The report is printed as JSON.
+With `--mode partida`, `--play auto` plays a whole game AI vs AI and `--play humano [--side A|B]` lets you
+play against the AI by typing the number of a legal move (`q` quits); without `--play` it only describes the game.
+`--variant base|dinamica` (or `juego.variante` in the JSON) selects the rules of the adversarial game: the optional
+dynamic variant turns terrain cost into waiting turns and makes the tackle steal the resource (user manual, section 5.1).
+In the GUI the **Juegas** selector chooses your side against the AI and **Partida automática** lets the AI play both sides.
 `--algorithm`, `--heuristic`, `--k`, `--depth` and `--order` take comma-separated lists and run every
 applicable combination (a sweep); `--csv PATH` writes one metrics row per run and `--json PATH` the
 full reports. Example: `--algorithm MINIMAX,ALPHA_BETA --depth 1,2,3,4 --order default,reversed`.
@@ -39,11 +46,11 @@ full reports. Example: `--algorithm MINIMAX,ALPHA_BETA --depth 1,2,3,4 --order d
 ## Layout
 | Path | Content |
 |---|---|
-| `src/tactical_grid/domain/` | state, actions, successors, costs, game rules |
+| `src/tactical_grid/domain/` | state, actions, successors, costs, game rules (`rules.py`; optional dynamic variant in `dynamic.py`) |
 | `src/tactical_grid/scenario/` | JSON loading and atomic validation |
 | `src/tactical_grid/algorithms/` | search, heuristics, Minimax, alpha-beta, utility |
 | `src/tactical_grid/gui/` | graphical interface (`app.py`, tkinter) |
-| `src/tactical_grid/experiments/` | metrics, verifier, minimal cases |
+| `src/tactical_grid/experiments/` | runner, sweeps, verifier, full games from the terminal (`game.py`) |
 | `tests/` | automated tests |
 | `scenarios/` | JSON scenarios (`apendice_a.json` is the official example) |
 | `docs/` | assignment statement (`enunciado.md`), `technical-report.md`, `user-manual.md`, `cases.md` (10 cases, expected vs. obtained), `results/` (raw CSV/JSON of the experiments) |
@@ -51,5 +58,6 @@ full reports. Example: `--algorithm MINIMAX,ALPHA_BETA --depth 1,2,3,4 --order d
 ## Status
 All functional requirements are implemented (domain with move and tackle actions, scenario loader, BFS/DFS/UCS/A*/Beam,
 Minimax/alpha-beta with a moves-to-win utility, verifier, CLI with sweeps and export, one GUI with per-algorithm parameter
-panels, manual and automatic play) and documented. All scenarios live in `scenarios/`; the raw results of the experiments
+panels, manual and automatic play; whole games from the terminal, person vs AI or AI vs AI; optional dynamic rules variant
+with its own utility, Minimax and alpha-beta) and documented. All scenarios live in `scenarios/`; the raw results of the experiments
 are in `docs/results/`. See `docs/user-manual.md` to reproduce them and `.context/state/current.md` for the project state.
