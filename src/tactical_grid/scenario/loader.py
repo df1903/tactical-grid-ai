@@ -9,10 +9,15 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, TypeGuard
 
+from tactical_grid.domain.dynamic import DynamicRules
 from tactical_grid.domain.model import Board, GameState, Position, Side, Terrain
 
 # límite de turnos por defecto si el JSON no lo trae
 DEFAULT_TURN_LIMIT = 100
+# variantes de reglas del juego; la base es la entregada y la dinámica es opcional (RNF-02)
+VARIANTS = ("base", "dinamica")
+# parámetros por defecto de la variante dinámica: turnos de castigo e inmunidad tras un robo
+DEFAULT_DYNAMIC_RULES = DynamicRules(tackle_penalty=2, steal_immunity=1)
 
 # Optional extra section `utilidad` (RNF-02). Values below apply only when the JSON omits a key.
 UTILITY_KEYS = {
@@ -65,6 +70,8 @@ class Scenario:
     initial_state: GameState
     test_config: TestConfig
     utility_weights: Mapping[str, float] = field(default_factory=lambda: DEFAULT_UTILITY_WEIGHTS)
+    variant: str = "base"
+    dynamic_rules: DynamicRules = DEFAULT_DYNAMIC_RULES
 
 
 # Función para cargar un escenario desde un archivo JSON
@@ -109,6 +116,7 @@ def build_scenario(raw: dict[str, Any]) -> Scenario:
     carrier = _read_carrier(raw, units, errors)
     turn_limit = _read_turn_limit(raw, errors)
     weights = _read_utility_weights(raw, errors)
+    variant, dynamic_rules = _read_variant(raw, errors)
 
     # si hubo algún error, no se construye nada (todo o nada)
     if errors or rows is None or cols is None or grid is None or turn is None:
@@ -139,6 +147,8 @@ def build_scenario(raw: dict[str, Any]) -> Scenario:
         initial_state=state,
         test_config=_read_test_config(raw),
         utility_weights=weights,
+        variant=variant,
+        dynamic_rules=dynamic_rules,
     )
 
 
@@ -348,6 +358,28 @@ def _read_turn_limit(raw: dict[str, Any], errors: list[str]) -> int:
         errors.append(f"juego.limite_turnos must be a positive integer, got {limit!r}")
         return DEFAULT_TURN_LIMIT
     return int(limit)
+
+
+# Función para leer la variante de reglas y sus parámetros (campos opcionales de `juego`)
+def _read_variant(raw: dict[str, Any], errors: list[str]) -> tuple[str, DynamicRules]:
+    juego = raw.get("juego")
+    if not isinstance(juego, dict):
+        return "base", DEFAULT_DYNAMIC_RULES
+    variant = juego.get("variante", "base")
+    if not isinstance(variant, str) or variant.lower() not in VARIANTS:
+        errors.append(f"juego.variante must be one of {VARIANTS}, got {variant!r}")
+        variant = "base"
+    values: dict[str, int] = {}
+    for key, name, default in (
+        ("penalizacion_placaje", "tackle_penalty", DEFAULT_DYNAMIC_RULES.tackle_penalty),
+        ("inmunidad_robo", "steal_immunity", DEFAULT_DYNAMIC_RULES.steal_immunity),
+    ):
+        value = juego.get(key, default)
+        if not _is_int(value) or value < 0:
+            errors.append(f"juego.{key} must be a non-negative integer, got {value!r}")
+            value = default
+        values[name] = int(value)
+    return variant.lower(), DynamicRules(**values)
 
 
 # Función para leer los pesos de utilidad del escenario
