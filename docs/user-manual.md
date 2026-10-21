@@ -70,7 +70,9 @@ JSON*. The window is in Spanish and has the same layout for every algorithm.
 ### 3.3 Using it
 
 - **Searches (BFS … Beam):** *Ejecutar* shows the path and the metrics; *Animar* replays the
-  expansion cell by cell. The unit and the goal come from `prueba` of the scenario.
+  expansion cell by cell. The unit and the goal come from `prueba` of the scenario, unless you
+  pick others: click a unit (of any side) to make it the origin and click a free cell (or
+  right-click any cell) to set the goal; the search reruns at once. Loading a scenario resets both.
 - **Minimax / alpha-beta:** *Ejecutar* shows the best action for the side to move without
   playing it. *Aplicar jugada* plays it and, after a short pause, the rival answers with the same
   algorithm and parameters. The game ends with a delivery or at the turn limit.
