@@ -336,16 +336,25 @@ class SearchTrace:
     problem: PathProblem
 
 
-# Corre el algoritmo elegido con la unidad y la meta de la sección `prueba` del escenario
-def trace_search(scenario: Scenario, algorithm: str, params: Params | None = None) -> SearchTrace:
+# Corre el algoritmo elegido con la unidad y la meta de la sección `prueba` del escenario,
+# o con las que se indiquen (elegidas con el clic en la GUI)
+def trace_search(
+    scenario: Scenario,
+    algorithm: str,
+    params: Params | None = None,
+    unit: str | None = None,
+    goal: Position | None = None,
+) -> SearchTrace:
     config = scenario.test_config
-    if config.start_unit is None or config.goal is None:
+    unit = unit or config.start_unit
+    goal = goal or config.goal
+    if unit is None or goal is None:
         raise ValueError("el escenario no define prueba.unidad_inicio / prueba.objetivo")
-    if config.start_unit not in scenario.board.unit_sides:
-        raise ValueError(f"unidad desconocida: {config.start_unit!r}")
-    if not scenario.board.is_passable(config.goal):
-        raise ValueError(f"la meta ({config.goal.row}, {config.goal.col}) no es transitable")
-    base = make_problem(scenario.board, scenario.initial_state, config.start_unit, config.goal)
+    if unit not in scenario.board.unit_sides:
+        raise ValueError(f"unidad desconocida: {unit!r}")
+    if not scenario.board.is_passable(goal):
+        raise ValueError(f"la meta ({goal.row}, {goal.col}) no es transitable")
+    base = make_problem(scenario.board, scenario.initial_state, unit, goal)
     run = SPECS[algorithm].run
     if run is None:
         raise ValueError(f"{algorithm} no es una búsqueda de camino")
@@ -354,9 +363,7 @@ def trace_search(scenario: Scenario, algorithm: str, params: Params | None = Non
         base.board, base.initial, base.unit_id, base.goal, reverse_neighbors=reverse
     )
     result = run(problem, params or {})
-    return SearchTrace(
-        config.start_unit, config.goal, tuple(problem.expanded_cells), result, problem
-    )
+    return SearchTrace(unit, goal, tuple(problem.expanded_cells), result, problem)
 
 
 # Decisión adversarial del bando que mueve en `state` (por defecto, el estado inicial)
@@ -531,6 +538,9 @@ class App:
         self.busy = False
         self.auto = False  # partida automática IA contra IA en curso
         self.selected: str | None = None  # unidad elegida con el clic (juego manual)
+        # búsqueda de camino: unidad y meta elegidas con el clic (None = las del escenario)
+        self.search_unit: str | None = None
+        self.search_goal: Position | None = None
         self.verification = ""
         self.after_id: str | None = None
         self.param_vars: dict[str, tk.StringVar] = {}
@@ -559,6 +569,7 @@ class App:
         self.canvas = tk.Canvas(body, width=CANVAS_PIXELS, height=CANVAS_PIXELS, bg="white")
         self.canvas.pack(side="left")
         self.canvas.bind("<Button-1>", self._on_click)
+        self.canvas.bind("<Button-3>", self._on_right_click)
         side = ttk.Frame(body, padding=(8, 0, 0, 0))
         side.pack(side="left", fill="both", expand=True)
 
@@ -840,6 +851,7 @@ class App:
             return
         self.file_label.configure(text=path)
         self.summary.configure(text="")
+        self.search_unit = self.search_goal = None
         self._build_terrain_legend()
         # el escenario pide la variante dinámica: se preselecciona un algoritmo dinámico
         if self.scenario.variant == "dinamica" and not self._dynamic():
@@ -910,7 +922,10 @@ class App:
 
     # Clic en el tablero: elige una unidad del bando con el turno o juega la acción elegida
     def _on_click(self, event: tk.Event[tk.Misc]) -> None:
-        if self.scenario is None or self.busy or not SPECS[self.algorithm.get()].adversarial:
+        if self.scenario is None or self.busy:
+            return
+        if not SPECS[self.algorithm.get()].adversarial:
+            self._pick_search(event, goal_only=False)
             return
         if self._game_over():
             return
@@ -929,6 +944,27 @@ class App:
         mine = occupant is not None and self.scenario.board.unit_sides[occupant] is state.turn
         self.selected = occupant if mine else None
         self.draw(0)
+
+    # Clic derecho en una búsqueda de camino: fija la meta aunque haya una unidad encima
+    def _on_right_click(self, event: tk.Event[tk.Misc]) -> None:
+        if self.scenario is None or self.busy or SPECS[self.algorithm.get()].adversarial:
+            return
+        self._pick_search(event, goal_only=True)
+
+    # Búsqueda de camino: clic en una unidad (de cualquier bando) la elige; clic en otra
+    # celda fija la meta. Con unidad y meta definidas recalcula con el algoritmo elegido
+    def _pick_search(self, event: tk.Event[tk.Misc], goal_only: bool) -> None:
+        assert self.scenario is not None
+        cell = self._cell_at(event)
+        if cell is None:
+            return
+        occupant = self._state().unit_at(cell)
+        if occupant is not None and not goal_only:
+            self.search_unit = occupant
+        else:
+            self.search_goal = cell
+        self._cancel_animation()
+        self.run_all_at_once()
 
     # Aplica la jugada del usuario y deja que el rival responda con el algoritmo elegido
     def _play_manual(self, action: Action) -> None:
@@ -1100,7 +1136,9 @@ class App:
                 action = self.decision.action
                 self.arrow = None if action is None else action_arrow(state, action)
             else:
-                self.trace = trace_search(self.scenario, name, params)
+                self.trace = trace_search(
+                    self.scenario, name, params, self.search_unit, self.search_goal
+                )
         except ValueError as exc:
             self.draw(0)
             self.summary.configure(text=f"Error: {exc}")
@@ -1231,8 +1269,13 @@ class App:
         assert self.scenario is not None
         if not SPECS[self.algorithm.get()].adversarial:
             config = self.scenario.test_config
-            goal = "" if config.goal is None else f" → ({config.goal.row}, {config.goal.col})"
-            self.turn_label.configure(text=f"Búsqueda de camino: unidad {config.start_unit}{goal}")
+            unit = self.search_unit or config.start_unit
+            target = self.search_goal or config.goal
+            goal = "" if target is None else f" → ({target.row}, {target.col})"
+            self.turn_label.configure(
+                text=f"Búsqueda de camino: unidad {unit}{goal}\n"
+                "clic en una unidad = origen · clic en una celda (o derecho) = meta"
+            )
             return
         state = self._state()
         board = self.scenario.board
@@ -1334,6 +1377,12 @@ class App:
                 self.canvas.create_line(*points, fill=PATH, width=4, capstyle="round")
         if self.trace:
             self.canvas.create_rectangle(*box(self.trace.goal), outline=GOAL, width=4)
+        if not SPECS[self.algorithm.get()].adversarial:  # aro verde: unidad de la búsqueda
+            unit = self.search_unit or self.scenario.test_config.start_unit
+            if unit is not None and unit in board.unit_sides:
+                self.canvas.create_rectangle(
+                    *box(self._state().position_of(unit)), outline="#00a050", width=3
+                )
         for unit_id, pos in self._state().positions:
             x0, y0, x1, y1 = box(pos)
             pad = size * 0.2
@@ -1364,7 +1413,7 @@ class App:
         self._update_status()
         # la meta de la configuración se marca aunque aún no se haya ejecutado
         if self.trace is None and not SPECS[self.algorithm.get()].adversarial:
-            goal = self.scenario.test_config.goal
+            goal = self.search_goal or self.scenario.test_config.goal
             if goal is not None and board.in_bounds(goal):
                 self.canvas.create_rectangle(*box(goal), outline=GOAL, width=4)
 

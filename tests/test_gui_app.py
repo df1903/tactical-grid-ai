@@ -172,6 +172,26 @@ def test_window_applies_a_move_and_the_rival_answers(window: App) -> None:
     assert window.history[0].startswith("1. A:") and window.history[1].startswith("2. B:")
 
 
+def test_trace_search_accepts_another_unit_and_goal() -> None:
+    scenario = load_scenario(CASE_3)
+    trace = trace_search(scenario, "BFS", None, "B1", Position(19, 10))
+    assert trace.unit == "B1" and trace.goal == Position(19, 10)
+    assert trace.result.success and trace.result.path[0] == Position(19, 18)
+
+
+def test_window_picks_unit_and_goal_by_clicks_in_a_path_search(window: App) -> None:
+    window.load(str(CASE_3))
+    window.algorithm.set("BFS")
+    window.on_algorithm_changed()
+    window._on_click(_click(window, 19, 18))  # B1, a unit of the other side
+    assert window.search_unit == "B1" and window.trace is not None
+    window._on_click(_click(window, 19, 10))  # free cell: the new goal
+    assert window.search_goal == Position(19, 10)
+    assert window.trace is not None and window.trace.goal == Position(19, 10)
+    assert window.trace.unit == "B1" and window.trace.result.success
+    assert "unidad B1" in window.turn_label.cget("text")
+
+
 def test_window_plays_a_manual_move_by_clicks(window: App) -> None:
     window.load(str(CASE_7))
     window.algorithm.set("Alfa-beta")
