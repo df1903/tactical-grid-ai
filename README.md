@@ -53,7 +53,7 @@ full reports. Example: `--algorithm MINIMAX,ALPHA_BETA --depth 1,2,3,4 --order d
 | `src/tactical_grid/experiments/` | runner, sweeps, verifier, full games from the terminal (`game.py`) |
 | `tests/` | automated tests |
 | `scenarios/` | JSON scenarios (`apendice_a.json` is the official example) |
-| `docs/` | assignment statement (`enunciado.md`), `technical-report.md`, `user-manual.md`, `cases.md` (10 cases, expected vs. obtained), `results/` (raw CSV/JSON of the experiments) |
+| `docs/` | assignment statement (`enunciado.md`), `technical-report.md`, `user-manual.md`, `cases.md` (10 cases, expected vs. obtained), `results/` (raw CSV/JSON of the experiments), `latex/` (LaTeX sources of the two manuals, build with `make` there), `pdf/` (`Manual_Tecnico.pdf`, `Manual_de_Usuario.pdf`) |
 
 ## Status
 All functional requirements are implemented (domain with move and tackle actions, scenario loader, BFS/DFS/UCS/A*/Beam,

@@ -1,12 +1,12 @@
 # LaTeX Documentation for TacticalGrid
 
 Este directorio contiene la versión LaTeX de la documentación del proyecto TacticalGrid,
-generada a partir de los archivos Markdown en `../tactical-grid-ai/docs/`.
+generada a partir de los archivos Markdown en `docs/` (directorio padre).
 
 ## Estructura
 
 ```
-latex/
+docs/latex/
 ├── main.tex                    # Informe técnico (compilable)
 ├── manual.tex                  # Manual de usuario (compilable)
 ├── ucaldas.sty                 # Plantilla UCALDAS (paquete personalizado)
@@ -108,7 +108,7 @@ Los 8 diagramas Mermaid del HTML original se han convertido a TikZ nativo en `im
 
 Para compilar un diagrama individual:
 ```bash
-cd latex/images
+cd docs/latex/images
 lualatex --shell-escape arquitectura.tikz
 ```
 
@@ -145,7 +145,7 @@ nuevo para que herede el `PATH` actualizado.
 
 ## Diferencias con Markdown Original
 
-| Aspecto | Markdown (`docs/`) | LaTeX (`latex/`) |
+| Aspecto | Markdown (`docs/`) | LaTeX (`docs/latex/`) |
 |---------|-------------------|------------------|
 | Diagramas | Mermaid (JS) | TikZ nativo (PDF vectorial) |
 | Código | Bloques markdown | `minted` (Pygments, syntax highlight) |
@@ -156,7 +156,7 @@ nuevo para que herede el `PATH` actualizado.
 
 ## Regenerar desde Markdown
 
-Si actualizas los `.md` en `../tactical-grid-ai/docs/` y quieres regenerar el LaTeX:
+Si actualizas los `.md` en `docs/` (directorio padre) y quieres regenerar el LaTeX:
 
 1. Los `.md` son la **fuente de verdad**.
 2. Los `.tex` en `chapters/` y `manual_chapters/` se editaron manualmente a partir de los `.md`.
@@ -168,7 +168,7 @@ Si actualizas los `.md` en `../tactical-grid-ai/docs/` y quieres regenerar el La
 *.aux, *.log, *.out, *.toc, *.lof, *.lot, *.bbl, *.blg, *.run.xml
 *.synctex.gz, *.fls, *.fdb_latexmk
 
-Los entregables `Manual_Tecnico.pdf` y `Manual_de_Usuario.pdf` se conservan junto a los fuentes.
+Los entregables `Manual_Tecnico.pdf` y `Manual_de_Usuario.pdf` se versionan en `docs/pdf/` (`make` los copia ahí tras compilar).
 ```
 
 Están en `.gitignore` (añadir al repo principal si no existe).

@@ -190,3 +190,8 @@
 - Contexto: `main` quedó detrás de `origin/main` (manuales LaTeX de Jorge); la rama `feat/adversarial-dinamico` ya estaba fusionada.
 - Decisión: se alinea `main` con rebase sin conflictos, se añade en la GUI la elección de unidad (clic en una unidad) y meta (clic en celda o clic derecho) en las búsquedas de camino (`trace_search` acepta `unit` y `goal`), y se etiqueta `v1.1.0` como versión final. `v1.0.0` no se mueve.
 - Consecuencias: 283 tests, `ruff` y `mypy --strict` en verde.
+
+## 2026-10-20 — Manuales LaTeX dentro de `docs/`
+- Contexto: `latex/` colgaba de la raíz junto a los PDFs, separado del resto de la documentación.
+- Decisión: fuentes en `docs/latex/` (con su `README.md`), PDFs entregables en `docs/pdf/`; el `Makefile` copia los PDFs allí tras compilar. En `main.tex` las rutas al código pasan a `../../src/`. La raíz queda solo con código, configuración y `docs/`.
+- Consecuencias: LaTeX no está instalado en esta máquina, así que la recompilación no se probó; solo cambiaron rutas relativas.

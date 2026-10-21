@@ -4,14 +4,17 @@
 LATEXMK = latexmk -lualatex -shell-escape -interaction=nonstopmode -synctex=1
 MAIN = Manual_Tecnico
 MANUAL = Manual_de_Usuario
+PDFDIR = ../pdf
 
 all: $(MAIN).pdf $(MANUAL).pdf
 
 $(MAIN).pdf: main.tex preambulo.tex portada.tex ucaldas.sty chapters/*.tex images/*.tikz images/screenshots/*
 	$(LATEXMK) -jobname=$(MAIN) main.tex
+	@mkdir -p $(PDFDIR) && cp $(MAIN).pdf $(PDFDIR)/
 
 $(MANUAL).pdf: manual.tex preambulo.tex portada.tex ucaldas.sty manual_chapters/*.tex images/*.tikz images/screenshots/*
 	$(LATEXMK) -jobname=$(MANUAL) manual.tex
+	@mkdir -p $(PDFDIR) && cp $(MANUAL).pdf $(PDFDIR)/
 
 # Compilar solo diagramas TikZ a PDF individuales (para verificar)
 tikz: images/arquitectura.tikz images/ciclo_turno.tikz images/flujo_apply.tikz \
@@ -37,7 +40,7 @@ clean:
 	rm -rf _minted
 
 clean-all: clean
-	rm -f $(MAIN).pdf $(MANUAL).pdf
+	rm -f $(MAIN).pdf $(MANUAL).pdf $(PDFDIR)/$(MAIN).pdf $(PDFDIR)/$(MANUAL).pdf
 
 # Ver PDFs
 view-informe: $(MAIN).pdf
