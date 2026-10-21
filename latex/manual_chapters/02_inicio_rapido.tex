@@ -1,0 +1,92 @@
+% 02_inicio_rapido.tex - Manual Capítulo 2: Inicio Rápido
+\chapter{Inicio Rápido}
+\label{man:inicio}
+
+\section{Ejecutar la Interfaz Gráfica (GUI)}
+\label{sec:gui-inicio}
+
+\begin{minted}{bash}
+# Abrir la GUI con un escenario específico
+uv run python -m tactical_grid.gui scenarios/prueba_20x20.json
+
+# Sin argumentos: abre diálogo para elegir archivo
+uv run python -m tactical_grid.gui
+\end{minted}
+
+La ventana se abre mostrando:
+\begin{itemize}
+\item \textbf{Mapa central:} Grid con terrenos coloreados por costo (verde claro = barato, marrón = caro), obstáculos gris oscuro, bases con borde azul/rojo, recurso (diamante dorado), unidades (círculos azul/rojo).
+\item \textbf{Panel derecho:} Turno actual, movimiento \#/límite, portador del recurso, unidad seleccionada, meta de búsqueda y métricas.
+\item \textbf{Traza:} Orden de expansión de búsquedas, valores de las acciones raíz en decisiones y acciones de la partida.
+\item \textbf{Barra inferior:} Botones \textit{Ejecutar}, \textit{Animar}, \textit{Aplicar jugada}, \textit{Reiniciar}, verificación RF-42, selector de bando y \textit{Partida automática}.
+\end{itemize}
+
+\section{Ejecutar una Búsqueda (CLI)}
+\label{sec:cli-busqueda}
+
+\begin{minted}{bash}
+# BFS desde A1 a (3,2) en el ejemplo oficial
+uv run python -m tactical_grid scenarios/apendice_a.json \
+    --algorithm BFS --unit A1 --goal 3,2 --verify
+
+# A* con heurística obstacle-aware (h2)
+uv run python -m tactical_grid scenarios/caso_03_obstaculo_heuristica.json \
+    --algorithm A_STAR --heuristic H2 --verify
+\end{minted}
+
+La salida es JSON con claves equivalentes al Apéndice B:
+\code{algoritmo, exito, camino, costo, longitud, estados\_generados, estados\_expandidos, maximo\_frontera, tiempo\_segundos}.
+
+\section{Jugar una Partida (GUI)}
+\label{sec:jugar-gui}
+
+\begin{enumerate}
+\item Abre la GUI: \code{uv run python -m tactical\_grid.gui scenarios/prueba\_20x20.json}
+\item Modo \textit{Seleccionar / mover unidades} (radio button izquierdo).
+\item Clic en una unidad de tu bando (azul = A, rojo = B) $\to$ se selecciona (anillo negro discontinuo).
+\item Celdas verdes $\to$ destinos legales para esa unidad. Clic en una $\to$ mueve.
+\item Turno pasa automáticamente al otro bando.
+\item Gana quien lleva el recurso (diamante dorado) a su base (borde grueso de su color).
+\item Empate al llegar al límite de turnos (default 100).
+\end{enumerate}
+
+\section{Jugar una Partida desde la Terminal}
+\label{sec:partida-cli-rapida}
+
+\begin{minted}{bash}
+# IA contra IA hasta terminar la partida
+uv run python -m tactical_grid scenarios/caso_07_decision_adversarial.json \
+    --mode partida --play auto --algorithm ALPHA_BETA --depth 3
+
+# Persona contra IA; --side B permite jugar segundo
+uv run python -m tactical_grid scenarios/caso_07_decision_adversarial.json \
+    --mode partida --play humano --side A --depth 3
+
+# Variante dinámica
+uv run python -m tactical_grid scenarios/caso_11_dinamico.json \
+    --mode partida --play humano --variant dinamica --depth 3
+\end{minted}
+
+En el modo \code{humano}, la terminal enumera las acciones legales y se selecciona una
+escribiendo su número; \code{q} o \code{salir} abandona la partida.
+
+\section{Atajos de Teclado / Mouse}
+\label{sec:atajos}
+
+\begin{table}[H]
+\centering
+\caption{Atajos en la GUI}
+\begin{tabular}{ll}
+\toprule
+\textbf{Acción} & \textbf{Tecla o clic} \\
+\midrule
+Seleccionar unidad & Clic izquierdo sobre la unidad \\
+Mover unidad & Clic izquierdo en una celda verde (después de seleccionar) \\
+Fijar meta de búsqueda & Clic derecho en cualquier celda \\
+Aplicar decisión & Botón \textit{Aplicar jugada} \\
+Animar búsqueda & Botón \textit{Animar} \\
+Partida automática & Botón \textit{Partida automática}; vuelve a pulsarlo para pausar \\
+Reiniciar partida & Botón \textit{Reiniciar} \\
+\bottomrule
+\end{tabular}
+\end{table}

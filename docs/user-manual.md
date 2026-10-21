@@ -88,8 +88,9 @@ JSON*. The window is in Spanish and has the same layout for every algorithm.
 - **Partida automática:** the AI plays both sides until the end (same rules, algorithm and
   parameters for both). Press it again (*Pausar*) to stop without losing the game; *Reiniciar*
   also stops it.
-- **Verificar (RF-42):** runs the six checks on the result (or on each decision of a game) and
-  lists them in *Métricas*.
+- **Verificar (RF-42):** for searches, runs checks 1–5 (legal moves, obstacles, cost, goal and
+  valid states); for Minimax/alpha-beta, runs check 6 (legal considered and selected actions).
+  In a game, the applicable adversarial check is run for each decision and listed in *Métricas*.
 - **Reiniciar:** returns to the initial state of the scenario; changing the algorithm also
   restarts the game.
 

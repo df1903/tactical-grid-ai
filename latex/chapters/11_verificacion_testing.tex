@@ -1,0 +1,124 @@
+% 11_verificacion_testing.tex - Capítulo 11: Verificación y Testing
+\chapter{Verificación, Testing y Calidad}
+\label{ch:verificacion}
+
+\section{Verificación de Soluciones (RF-42)}
+\label{sec:verificacion-rf42}
+
+El enunciado exige 6 chequeos (RF-42). Todos implementados en \code{experiments/verifier.py}:
+
+\begin{table}[H]
+\centering
+\caption{6 Checks de verificación (RF-42)}
+\begin{tabular}{llp{5.5cm}}
+\toprule
+\# & Check & Descripción \\
+\midrule
+1 & \textit{valid moves} & Cada paso del camino es acción legal según \code{legal\_actions} \\
+2 & \textit{no obstacles} & Ninguna celda del camino es no transitable \\
+3 & \textit{cost matches} & Costo reportado = suma de costos al re-ejecutar (\code{math.isclose}) \\
+4 & \textit{goal reached} & Última celda del camino = \code{problem.goal} \\
+5 & \textit{no invalid states} & Estados rejugados: 1 unidad/celda, todas transitables \\
+6 & \textit{Minimax legal} & Acciones consideradas por Minimax/$\alpha$-$\beta$ son legales; acción elegida es legal \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:checks-rf42}
+
+
+Implementación:
+\begin{itemize}
+\item Checks 1--5: \code{verify\_search(problem, result)} re-ejecuta el camino paso a paso con
+  \code{problem.expand} y valida cada transición.
+\item Check 6: \code{verify\_adversarial(board, state, result)} usa \code{record=True} en
+  Minimax/$\alpha$-$\beta$ para obtener \code{considered} y valida legalidad de cada acción
+  considerada y de la elegida.
+\end{itemize}
+
+Todos los reportes en \texttt{docs/results/} se generaron con \code{--verify} y \textbf{todos
+los checks pasan}.
+
+\section{Testing Automatizado}
+\label{sec:testing}
+
+\screenshotfigure{test-resultados}{0.90}{Ejecución de pytest, ruff y mypy con resultados satisfactorios.}
+
+\begin{table}[H]
+\centering
+\caption{Suite de tests (281 tests, 0 skips)}
+\begin{tabular}{ll}
+\toprule
+\textbf{Archivo} & \textbf{Qué prueba} \\
+\midrule
+\code{test\_domain\_state.py} & \code{GameState}, \code{Position}, \code{Board}, inmutabilidad \\
+\code{test\_domain\_rules.py} & \code{legal\_actions}, \code{apply}, \code{successors}, \code{winner}, \code{is\_terminal} \\
+\code{test\_scenario\_validation.py} & 9 validaciones RF-35 + extra (célula compartida), carga atómica \\
+\code{test\_bfs.py}, \code{test\_dfs.py}, \code{test\_ucs.py} & Métricas, optimalidad, convenciones \\
+\code{test\_search\_common.py} & \code{make\_problem}, \code{reconstruct}, \code{\_normalize} \\
+\code{test\_heuristics.py} & Escalado \code{min\_step\_cost}, dominancia h2$\ge$h1, celdas inalcanzables \\
+\code{test\_astar.py} & Optimalidad, equivalencia con UCS, reapertura \\
+\code{test\_beam.py} & Límite k, fallo k=1, determinismo \\
+\code{test\_adversarial.py} & Minimax, $\alpha$-$\beta$, métricas RF-30, mismo decisión (RF-31) \\
+\code{test\_case\_6.py} & Caso 6: estado compuesto, 3 estados misma posición \\
+\code{test\_cases\_f2.py}, \code{test\_cases\_f3.py}, \code{test\_cases\_f4.py} & Casos 1--10 esperado vs obtenido \\
+\code{test\_utility.py} & Pesos, objetivo dinámico, término rival, terminales \\
+\code{test\_verifier.py} & 6 checks RF-42 (búsqueda + adversarial) \\
+\code{test\_runner.py}, \code{test\_sweep.py} & CLI, sweep combinatorio, export CSV/JSON \\
+\code{test\_gui\_app.py} & Ventana, dibujo, clics, auto-mode \\
+\code{test\_runner.py} & CLI, modos, sweep, export \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:tests}
+
+
+\textbf{Comando:} \code{uv run pytest} (281 tests, 0 skips).
+\textbf{Calidad:} \code{uv run ruff check .} + \code{uv run mypy src --strict} $\to$ \textbf{verde}.
+
+\section{Cobertura de Requisitos por Test}
+\label{sec:cobertura-rf}
+
+\begin{table}[H]
+\centering
+\caption{Cobertura de RF por archivo de test}
+\begin{tabular}{ll}
+\toprule
+\textbf{RF} & \textbf{Test que lo cubre} \\
+\midrule
+RF-03, RF-04, RF-37 & \code{test\_scenario\_validation.py} (costos desde JSON) \\
+RF-05, RF-06, RF-07, RF-08, RF-09 & \code{test\_domain\_rules.py} \\
+RF-10, RF-11, RF-12, RF-13 & \code{test\_domain\_state.py}, \code{test\_case\_6.py} \\
+RF-14, RF-15, RF-16, RF-19 & \code{test\_bfs.py}, \code{test\_dfs.py}, \code{test\_ucs.py} \\
+RF-20, RF-21, RF-22, RF-23, RF-24 & \code{test\_astar.py}, \code{test\_beam.py}, \code{test\_heuristics.py} \\
+RF-25--33 & \code{test\_adversarial.py}, \code{test\_cases\_f4.py} \\
+RF-34, RF-35 & \code{test\_scenario\_validation.py} \\
+RF-42 (1-5) & \code{test\_verifier.py} (búsqueda) \\
+RF-42 (6) & \code{test\_verifier.py} (adversarial), \code{test\_adversarial.py} \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:cobertura-rf}
+
+
+\section{Calidad de Código}
+\label{sec:calidad}
+
+\begin{itemize}
+\item \code{uv run ruff check .} $\to$ \textbf{0 errores, 0 warnings}
+\item \code{uv run ruff format --check .} $\to$ \textbf{formato correcto}
+\item \code{uv run mypy src --strict} $\to$ \textbf{0 errores} (tipado estricto)
+\item Docstrings con: Purpose, Preconditions, Postconditions, Complexity, AI usage, AI intervention, Student validation (sección 9.2 enunciado)
+\item \textbf{Validación del equipo:} Revisión cruzada realizada por los integrantes
+\end{itemize}
+
+\section{Integración Continua (Manual)}
+\label{sec:ci}
+
+No hay CI/CD automatizado configurado, pero el flujo de trabajo manual antes de cada commit:
+\begin{enumerate}
+\item \code{uv run pytest}
+\item \code{uv run ruff check .}
+\item \code{uv run ruff format --check .}
+\item \code{uv run mypy src}
+\item Si todo verde $\to$ commit
+\end{enumerate}

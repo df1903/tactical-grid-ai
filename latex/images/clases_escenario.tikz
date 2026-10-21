@@ -1,0 +1,136 @@
+% clases_escenario.tikz - Diagrama: Clases del Escenario JSON (Mermaid classDiagram -> TikZ)
+% Compilar: lualatex --shell-escape clases_escenario.tikz
+
+\documentclass[tikz,border=10pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{shapes, arrows, positioning, calc, fit, backgrounds, arrows.meta}
+
+% Colores UCALDAS
+\definecolor{ucaldasAzul}{HTML}{003366}
+\definecolor{ucaldasDorado}{HTML}{C8A84D}
+\definecolor{ucaldasAzulClaro}{HTML}{0056A0}
+\definecolor{ucaldasVerde}{HTML}{22543D}
+\definecolor{ucaldasNaranja}{HTML}{F9D423}
+\definecolor{ucaldasRosa}{HTML}{FF6584}
+\definecolor{ucaldasCeleste}{HTML}{63B3ED}
+\definecolor{ucaldasVioleta}{HTML}{B794F4}
+
+\begin{document}
+\begin{tikzpicture}[
+    node distance=1.5cm and 1.2cm,
+    >=Stealth,
+    font=\small,
+    class/.style={
+        rectangle, draw=ucaldasAzul, thick, fill=ucaldasAzul!10,
+        rounded corners, minimum width=2.5cm, minimum height=1.5cm,
+        align=left, font=\small
+    },
+    arrow/.style={->, thick, ucaldasAzul},
+    relation/.style={->, thick, ucaldasDorado, font=\tiny}
+]
+
+% Clases principales
+\node[class] (Escenario) {
+    \textbf{Escenario}\\
+    + version : string\\
+    + mapa : Mapa\\
+    + tipos\_terreno : TiposTerreno\\
+    + terreno : string[][]\\
+    + bases : Bases\\
+    + recurso : Posicion\\
+    + unidades : Unidad[]\\
+    + turno : string\\
+    + juego : Juego\\
+    + prueba : Prueba
+};
+
+\node[class, below left=of Escenario] (Mapa) {
+    \textbf{Mapa}\\
+    + filas : int\\
+    + columnas : int
+};
+
+\node[class, below=of Escenario] (TiposTerreno) {
+    \textbf{TiposTerreno}\\
+    + terrenos : Map
+};
+
+\node[class, right=of TiposTerreno] (TerrenoTipo) {
+    \textbf{TerrenoTipo}\\
+    + costo : int\\
+    + transitable : bool
+};
+
+\node[class, below left=of Escenario] (Bases) {
+    \textbf{Bases}\\
+    + A : Posicion\\
+    + B : Posicion
+};
+
+\node[class, below=of Bases] (Posicion) {
+    \textbf{Posicion}\\
+    + fila : int\\
+    + columna : int
+};
+
+\node[class, below right=of Escenario] (Unidad) {
+    \textbf{Unidad}\\
+    + id : string\\
+    + bando : string\\
+    + tipo : string\\
+    + fila : int\\
+    + columna : int
+};
+
+\node[class, below=of Unidad] (Juego) {
+    \textbf{Juego}\\
+    + portador\_recurso : string\\
+    + profundidad\_maxima\_minimax : int\\
+    + limite\_turnos : int\\
+    + utilidad : Utilidad
+};
+
+\node[class, right=of Juego] (Prueba) {
+    \textbf{Prueba}\\
+    + modo : string\\
+    + unidad\_inicio : string\\
+    + objetivo : Posicion\\
+    + algoritmo : string\\
+    + heuristica : string\\
+    + k : int\\
+    + orden\_acciones : string\\
+    + profundidad : int
+};
+
+\node[class, below=of Juego] (Utilidad) {
+    \textbf{UtilityWeights}\\
+    + entrega : float\\
+    + carry : float\\
+    + goal\_distance : float\\
+    + rival\_distance : float
+};
+
+% Relaciones
+\draw[arrow] (Escenario) -- node[labelEdge, left] {1} (Mapa);
+\draw[arrow] (Escenario) -- node[labelEdge, left] {1} (TiposTerreno);
+\draw[arrow] (TiposTerreno) -- node[labelEdge, right] {*} (TerrenoTipo);
+\draw[arrow] (Escenario) -- node[labelEdge, left] {1} (Bases);
+\draw[arrow] (Bases) -- node[labelEdge, left] {1} (Posicion);
+\draw[arrow] (Bases) -- node[labelEdge, right] {1} (Posicion);
+\draw[arrow] (Escenario) -- node[labelEdge, left] {1} (Posicion);
+\draw[arrow] (Escenario) -- node[labelEdge, right] {*} (Unidad);
+\draw[arrow] (Unidad) -- node[labelEdge, right] {1} (Posicion);
+\draw[arrow] (Escenario) -- node[labelEdge, left] {1} (Juego);
+\draw[arrow] (Escenario) -- node[labelEdge, right] {1} (Prueba);
+\draw[arrow] (Prueba) -- node[labelEdge, right] {1} (Posicion);
+\draw[arrow] (Juego) -- node[labelEdge, right] {1} (Utilidad);
+
+% Leyenda
+\node[below=1.5cm of Juego, font=\tiny, text width=12cm, align=center, text=gray] {
+    \textbf{Diagrama de Clases del Escenario JSON (RF-35)} \\
+    Claves en español (entrada); código interno usa nombres en inglés. \\
+    Campos obligatorios + opcionales del equipo (RNF-02): \code{juego.limite\_turnos}, \code{utilidad}, \code{prueba.*}.
+};
+
+\end{tikzpicture}
+\end{document}

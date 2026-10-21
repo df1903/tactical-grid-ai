@@ -1,0 +1,202 @@
+% 10_experimentacion.tex - Capítulo 10: Experimentación y Resultados
+\chapter{Metodología Experimental y Resultados}
+\label{ch:experimentos}
+
+\section{Metodología}
+\label{sec:metodologia}
+
+\screenshotfigure{cli-resultado}{0.90}{Ejecución de una búsqueda individual con métricas y verificaciones RF-42.}
+
+\screenshotfigure{cli-sweep}{0.90}{Sweep de algoritmos con exportación de resultados en CSV y JSON.}
+
+\begin{itemize}
+\item \textbf{Escenarios:} Apéndice A oficial (\code{apendice\_a.json}) + casos del equipo en
+  \code{scenarios/} (\code{caso\_01}..\code{caso\_07}, \code{prueba\_15x15}, \code{prueba\_20x20},
+  \code{escenario\_03x03}..\code{escenario\_30x30}).
+\item \textbf{Valores esperados:} Derivados \textbf{a mano del mapa} \textbf{antes} de ejecutar
+  el código; aserciones en \code{tests/test\_cases\_f*.py}.
+\item \textbf{Determinismo:} Métricas de conteo (generados, expandidos, frontera, costo, longitud)
+  son idénticas en cada ejecución. Solo \code{time\_seconds} varía (tiempo de ejecución).
+\item \textbf{Reproducibilidad:} Cada número se regenera con los comandos del capítulo \ref{ch:reproducibilidad}
+  (\texttt{user-manual.md} §6). Archivos brutos en \texttt{docs/results/}.
+\end{itemize}
+
+\section{Casos 1 y 2: No Informada y Costos (F2)}
+\label{sec:resultados-f2}
+
+\subsection{Caso 1: BFS vs DFS (Mismo costo, distinta exploración)}
+\label{sec:caso1}
+
+\textbf{Setup:} Grid 20$\times$20, todo \code{camino} (costo 1). A1 en (2,2), meta (2,6).
+
+\begin{table}[H]
+\centering
+\caption{Caso 1: BFS vs DFS}
+\begin{tabular}{lccccccc}
+\toprule
+Algoritmo & Éxito & Costo & Movs & Generados & Expandidos & Max Frontera & Match \\
+\midrule
+BFS & Sí & 4 & 4 & 39 & 29 & 11 & Sí \\
+DFS & Sí & 42 & 42 & 152 & 94 & 58 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:caso1}
+
+\textbf{Conclusión:} Ambos encuentran solución (completitud en grafo finito), pero DFS explora
+un camino 10$\times$ más largo porque expande ``abajo'' primero. BFS garantiza mínimos
+movimientos.
+
+\subsection{Caso 2: Ruta Corta vs. Ruta Económica}
+\label{sec:experimento-caso2-detalle}
+
+\textbf{Setup:} Banda de pantano (costo 7) en columnas 8--10. A1 (5,5), meta (5,12).
+
+\begin{table}[H]
+\centering
+\caption{Caso 2: BFS vs UCS}
+\begin{tabular}{lccccccc}
+\toprule
+Algoritmo & Éxito & Costo & Movs & Generados & Expandidos & Max Frontera & Match \\
+\midrule
+BFS & Sí & 25 & 7 & 126 & 104 & 23 & Sí \\
+UCS & Sí & 17 & 17 & 269 & 239 & 33 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:caso2-detalle}
+
+\textbf{Conclusión:} La ruta con menos movimientos (BFS, 7 movs) cuesta 25; UCS rodea el
+pantano (17 movs) y paga 17. \textbf{La ruta con menos movimientos no es la más barata.}
+
+\section{Casos 3, 4, 5: Informada y Memoria Limitada (F3)}
+\label{sec:resultados-f3}
+
+\subsection{Caso 3: Obstáculo y Heurística}
+\label{sec:caso3}
+
+Muro vertical en columna 8 (filas 0--15). A1 (5,5), meta (5,12) $\to$ debe rodear por abajo
+(fila 16). Distancia real = 29 movimientos.
+
+\begin{table}[H]
+\centering
+\caption{Caso 3: Expansiones -- h2 ve el muro, h1 no}
+\begin{tabular}{lccccc}
+\toprule
+Algoritmo & Costo & Movs & Generados & Expandidos & Max Frontera \\
+\midrule
+UCS & 29 & 29 & 307 & 295 & 17 \\
+A* h1 & 29 & 29 & 194 & 166 & 28 \\
+A* h2 & 29 & 29 & 122 & 84 & 38 \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:caso3-expansiones}
+
+h2 expande \textbf{2$\times$ menos} que h1 porque ``ve'' el muro y no explora el lado
+equivocado.
+
+\subsection{Caso 4: Comparación de Heurísticas}
+\label{sec:caso4}
+
+Muro en columna 9 (filas 3--16). Hueco arriba (filas 0--2) = pantano (costo 3); hueco abajo
+= camino (costo 1). Óptimo = 22 movimientos, costo 24 (por abajo).
+
+\begin{table}[H]
+\centering
+\caption{Caso 4: A* con h1 vs h2}
+\begin{tabular}{lccccc}
+\toprule
+Algoritmo & Costo & Movs & Generados & Expandidos & Max Frontera \\
+\midrule
+UCS & 24 & 22 & 346 & 332 & 20 \\
+A* h1 & 24 & 22 & 230 & 186 & 44 \\
+A* h2 & 24 & 22 & 164 & 115 & 49 \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:caso4}
+
+h2 expande menos que h1 (ve el muro), pero \textbf{no ve el pantano}: el atajo por arriba
+es más corto en movimientos pero cruza pantano (costo 3). h2 lo explora igual que h1.
+
+\subsection{Caso 5: Beam Search y k}
+\label{sec:caso5}
+
+Mapa 7$\times$9, hierba (2) y bosque (4). Óptimo: costo 28, 14 movimientos (UCS).
+
+\begin{table}[H]
+\centering
+\caption{Caso 5: Beam Search con k variable}
+\begin{tabular}{ccccccc}
+\toprule
+k & Éxito & Costo & Movs & Generados & Expandidos & Max Frontera \\
+\midrule
+1 & No & -- & -- & 9 & 5 & 3 \\
+2 & Sí & 30 & 16 & 43 & 29 & 6 \\
+4 & Sí & 28 & 14 & 50 & 41 & 6 \\
+8 & Sí & 28 & 14 & 46 & 44 & 6 \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:caso5-beam}
+
+\begin{itemize}
+\item $k=1$: incompleto, poda la única rama prometedora $\to$ falla.
+\item $k=2$: sobrevive pero mantiene ruta subóptima (30 > 28).
+\item $k=4,8$: recuperan óptimo. $k=8$ expande más que $k=4$ para mismo camino (punto de
+  rendimientos decrecientes).
+\end{itemize}
+
+\section{Casos 6--10: Adversarial (F4)}
+\label{sec:resultados-f4}
+
+Ver Cap. \ref{ch:adversarial}, \S\ref{sec:casos7-10}. Resumen:
+
+\begin{table}[H]
+\centering
+\caption{Resumen casos 6--10}
+\begin{tabular}{lll}
+\toprule
+Caso & Descripción & Resultado \\
+\midrule
+6 & Estado compuesto & 3 estados en misma posición (1,0) $\to$ 3 objetos distintos \checkmark \\
+7 & Decisión adversarial & Prof 1/2 agarran; prof 3 protege (A1$\to$(1,1)) \checkmark \\
+8 & Minimax vs $\alpha$-$\beta$ & Mismo valor/acción; $\alpha$-$\beta$ 11$\times$ menos nodos (d=4) \checkmark \\
+9 & Orden de acciones & Mismo valor, distinta poda (d=3: 142 vs 191 gen) \checkmark \\
+10 & Profundidad & Impares=guarda (3), pares=aplana a 0 (efecto horizonte) \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:casos6-10-resumen}
+
+
+\section{Rendimiento (G13)}
+\label{sec:rendimiento-detalle}
+
+Escenario \code{prueba\_15x15.json} (15$\times$15, pantanos, muro, 3 unidades/bando).
+Profundidad = acciones de un bando.
+
+\begin{table}[H]
+\centering
+\caption{Rendimiento Minimax vs Alfa-Beta (15$\times$15, 3 unidades/bando)}
+\begin{tabular}{lcc}
+\toprule
+Algoritmo & Profundidad & Tiempo \\
+\midrule
+Alpha-beta & 5 & 0.04 s \\
+Alpha-beta & 6 & 0.18 s \\
+Alpha-beta & 7 & 0.86 s \\
+Minimax & 5 & 1.2 s \\
+Minimax & 6 & 15.7 s (supera meta 5 s) \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:rendimiento-15x15}
+
+
+Con 5 unidades/bando: $\alpha$-$\beta$ d=6 $\to$ 0.85 s. En 20$\times$20 (3 unidades):
+$\alpha$-$\beta$ d=2..6 $\le$ 0.22 s.
+
+\textbf{Conclusión:} Dentro de la meta de 5 s, $\alpha$-$\beta$ hasta profundidad 7; Minimax
+simple hasta profundidad 5. Medido en laptop del equipo (Windows, Python 3.14).

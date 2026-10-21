@@ -1,0 +1,126 @@
+% 03_interfaz_grafica.tex - Manual Capítulo 3: Interfaz Gráfica
+\chapter{Interfaz Gráfica (GUI)}
+\label{man:gui}
+
+\section{Descripción General}
+\label{sec:gui-general}
+
+La GUI (\code{gui/app.py}, \texttt{tkinter}) cumple \textbf{RF-40}: muestra cuadrícula,
+terrenos, obstáculos, bases, recurso, unidades, bando, portador, turno y camino encontrado.
+También permite jugar manualmente contra la IA o dejar que la IA controle ambos bandos.
+
+\screenshotfigure{gui-principal}{0.95}{Vista principal de la interfaz con el mapa y la zona de controles.}
+
+\screenshotfigure{gui-controles}{0.80}{Panel lateral con algoritmo, heurística, profundidad y acciones de ejecución.}
+
+\screenshotfigure{gui-resultados}{0.85}{Panel de métricas y verificaciones tras ejecutar un algoritmo.}
+
+\screenshotfigure{gui-jugadas}{0.80}{Panel de traza con expansiones, decisiones y acciones de la partida.}
+
+\screenshotfigure{gui-automatico}{0.85}{Modo automático de IA contra IA ejecutándose en la interfaz gráfica.}
+
+\section{El Mapa (Canvas Central)}
+\label{sec:gui-mapa}
+
+\begin{table}[H]
+\centering
+\caption{Elementos visuales del mapa}
+\begin{tabular}{ll}
+\toprule
+\textbf{Elemento} & \textbf{Representación} \\
+\midrule
+Terreno transitable & Color interpolado: verde claro (costo mínimo) $\to$ marrón (costo máximo); costo escrito en esquina si celda $\ge$ 30px \\
+Obstáculo (muro) & Gris oscuro \code{\#3a3a3a}, no transitable \\
+Base A / Base B & Borde grueso 3px azul \code{\#1e6fd9} / rojo \code{\#d9381e}; etiqueta \textit{Base A/B} \\
+Recurso & Diamante dorado \code{\#ffc400} con contorno negro \\
+Unidad & Círculo color bando (A=azul \code{\#1e6fd9}, B=rojo \code{\#d9381e}); ID en blanco \\
+Portador & Anillo dorado \code{\#ffc400} grosor 4 alrededor de la unidad \\
+Unidad seleccionada & Anillo negro discontinuo (dash 4,2) alrededor \\
+Meta de búsqueda & Círculo punteado morado \code{\#8000c8} etiquetado \textit{meta} \\
+Camino encontrado & Línea morada \code{\#8000c8} ancho 3 con flecha \\
+Celdas alcanzables & Puntos verdes \code{\#00a050} (al seleccionar unidad en modo mover) \\
+Acción sugerida & Flecha verde \code{\#00a050} ancho 5 (Minimax/$\alpha$-$\beta$) o \textit{esperar} \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:gui-elementos}
+
+
+\textbf{Colores de terreno:} Interpolación lineal entre \code{CHEAP = (196,232,170)} (verde claro)
+y \code{DEAR = (150,110,60)} (marrón) según \code{(costo - min) / (max - min)}. Leídos \textbf{del
+JSON}, no por nombre de terreno (RNF-03).
+
+\section{Panel Derecho (Controles)}
+\label{sec:gui-panel}
+
+\begin{enumerate}
+\item \textbf{Estado:} Banner coloreado (azul/rojo) = turno actual; muestra movimiento \#/límite,
+    portador del recurso, unidad seleccionada, meta de búsqueda y, en la variante dinámica,
+    unidades en recuperación e inmunidad del portador.
+\item \textbf{Clic izquierdo sobre el mapa:} Radio buttons:
+    \begin{itemize}
+    \item \textit{Seleccionar / mover unidades:} clic sobre una unidad $\to$ la selecciona; clic sobre una celda verde $\to$ la mueve.
+    \item \textit{Fijar meta de la búsqueda:} clic derecho (o modo meta + clic izquierdo) fija la meta de búsqueda.
+    \end{itemize}
+\item \textbf{Botones de acción:}
+    \begin{itemize}
+    \item \textit{Esperar}: Unidad seleccionada hace \code{Wait} (costo 0).
+    \item \textit{Reiniciar partida}: Vuelve al estado inicial del escenario.
+    \item \textit{Seleccionar JSON}: \code{filedialog} carga JSON (validación atómica RF-34).
+    \end{itemize}
+\item \textbf{Algoritmo:} ComboBox con búsquedas, decisiones base y decisiones dinámicas:
+    \begin{description}
+    \item[BFS, DFS, UCS] $\to$ sin parámetros extra
+    \item[A*] $\to$ aparece \textit{Heurística} (H1/H2)
+    \item[Beam] $\to$ aparece \textit{Ancho k} (entry numérico)
+    \item[Minimax, Alfa-beta] $\to$ aparecen \textit{Profundidad} + \textit{Orden} (Normal/Invertido)
+    \item[Minimax dinámico, Alfa-beta dinámico] $\to$ variante con recuperación e inmunidad
+    \end{description}
+    Las decisiones también muestran cinco pesos de utilidad. Checkbox \textit{Verificar resultado
+    (RF-42)} ejecuta los checks aplicables tras correr.
+\item \textbf{Botones de ejecución:}
+    \begin{itemize}
+    \item \textit{▶ Ejecutar}: Ejecuta el algoritmo seleccionado con los parámetros actuales.
+    \item \textit{Aplicar jugada}: Juega la acción devuelta por Minimax/$\alpha$-$\beta$.
+    \item \textit{Reiniciar}: Regresa al estado inicial del escenario.
+    \end{itemize}
+\item \textbf{Controles de partida:}
+    \begin{itemize}
+    \item \textit{Bando del usuario}: elige el bando A o B. Si eliges el bando que no inicia, la IA realiza el primer movimiento.
+    \item \textit{Partida automática}: la IA juega ambos bandos hasta el final; vuelve a pulsarlo
+      para pausar sin perder el estado.
+    \item El control de velocidad regula el intervalo entre decisiones.
+    \end{itemize}
+\item \textbf{Traza:}
+    \begin{itemize}
+    \item En búsquedas: celdas expandidas en orden.
+    \item En decisiones: valores de las acciones raíz; un asterisco marca la elegida.
+    \item En partidas: historial de acciones y pases de turno.
+    \end{itemize}
+\end{enumerate}
+
+\section{Interacción: Flujo Típico}
+\label{sec:gui-flujo}
+
+\begin{enumerate}
+\item \textbf{Jugar a mano:} seleccionar una unidad $\to$ hacer clic en una celda verde $\to$ el turno pasa al otro bando.
+\item \textbf{Ver búsqueda:} modo \textit{Fijar meta} $\to$ hacer clic en la meta $\to$ elegir el algoritmo $\to$
+  \textit{Ejecutar} $\to$ camino dibujado + métricas en pestaña \textit{Resultados}.
+\item \textbf{Decisión adversarial:} Elegir Minimax/Alfa-beta $\to$ \textit{Ejecutar} $\to$
+  flecha verde en mapa + valores en \textit{Resultados} $\to$ \textit{Aplicar jugada sugerida}.
+\item \textbf{Partida automática:} Elegir Minimax/Alfa-beta, o su variante dinámica, ajustar
+  profundidad y velocidad $\to$ \textit{Partida automática} $\to$ ver IA vs IA.
+\end{enumerate}
+
+\section{Leyenda (Debajo del Mapa)}
+\label{sec:gui-leyenda}
+
+Muestra dinámicamente:
+\begin{itemize}
+\item Terreno barato (costo mínimo) -- verde claro
+\item Terreno caro (costo máximo) -- marrón
+\item Obstáculo -- gris
+\item Recurso -- diamante dorado
+\item Bandos A/B -- círculos azul/rojo
+\item Portador -- círculo gris con anillo dorado
+\end{itemize}

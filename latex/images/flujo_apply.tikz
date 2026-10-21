@@ -1,0 +1,48 @@
+% Flujo simplificado de apply.
+\documentclass[tikz,border=10pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric}
+\definecolor{azul}{HTML}{003366}
+\definecolor{dorado}{HTML}{8A6400}
+\begin{document}
+\begin{tikzpicture}[
+  >=Stealth, font=\small,
+  block/.style={rectangle, rounded corners, draw=azul, thick, fill=azul!7,
+    minimum width=5.0cm, minimum height=.85cm, align=center},
+  decision/.style={diamond, draw=azul, thick, fill=azul!10,
+    aspect=2.2, inner sep=2pt, align=center},
+  terminal/.style={ellipse, draw=dorado, thick, fill=dorado!8,
+    minimum width=4.5cm, minimum height=.85cm, align=center},
+  arrow/.style={->, thick, draw=azul},
+  edge/.style={font=\scriptsize, text=azul, fill=white, inner sep=1pt}
+]
+\node[terminal] (start) {apply(board, state, action)};
+\node[decision, below=1.0cm of start] (wait) {¿Es \texttt{Wait}?};
+\node[block, below left=1.0cm and 2.2cm of wait] (waitret)
+  {Cambiar turno\\costo = 0};
+\node[block, below right=1.0cm and 2.2cm of wait] (move)
+  {Mover unidad al destino};
+\node[decision, below=1.0cm of move] (pickup) {¿Recoge el recurso?};
+\node[block, below left=1.0cm and 2.2cm of pickup] (nopick)
+  {Sin cambio de recurso};
+\node[block, below right=1.0cm and 2.2cm of pickup] (dopick)
+  {Asignar portador\\retirar recurso del tablero};
+\node[block, below=1.0cm of dopick] (finish)
+  {Actualizar estado, costo\\y cambiar turno};
+\node[terminal, below=1.0cm of finish] (end) {Estado sucesor};
+
+\draw[arrow] (start) -- (wait);
+\draw[arrow] (wait) -- node[edge,left] {Sí} (waitret);
+\draw[arrow] (wait) -- node[edge,right] {No} (move);
+\draw[arrow] (move) -- (pickup);
+\draw[arrow] (pickup) -- node[edge,left] {No} (nopick);
+\draw[arrow] (pickup) -- node[edge,right] {Sí} (dopick);
+\draw[arrow] (nopick) |- (finish);
+\draw[arrow] (dopick) -- (finish);
+\draw[arrow] (waitret) |- (end);
+\draw[arrow] (finish) -- (end);
+\node[below=0.5cm of end, font=\scriptsize, text=azul, align=center] {
+  \texttt{apply} produce un nuevo estado inmutable y no modifica el estado original.
+};
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,55 @@
+% glosario.tex - Glosario y Abreviaturas
+% Incluido en main.tex antes del cuerpo principal
+
+\begin{longtable}{p{3cm}p{3cm}p{8cm}}
+\toprule
+\textbf{Término} & \textbf{Abreviatura} & \textbf{Definición} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Término} & \textbf{Abreviatura} & \textbf{Definición} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{3}{r}{\textit{Continúa en la siguiente página}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+Búsqueda en Anchura & BFS & Breadth-First Search: explora nivel por nivel, óptima en número de movimientos \\
+Búsqueda en Profundidad & DFS & Depth-First Search: explora una rama hasta el final antes de retroceder \\
+Costo Uniforme & UCS & Uniform-Cost Search: expande el nodo de menor costo acumulado $g(n)$ \\
+A Estrella & \astar & A*: $f(n) = g(n) + h(n)$, busca óptimo con heurística admisible \\
+Haz Local & Beam & Beam Search: mantiene solo los $k$ mejores candidatos por nivel \\
+Minimax & MM & Algoritmo adversarial: MAX maximiza, MIN minimiza \\
+Alfa-Beta & $\alpha$-$\beta$ & Minimax con poda: elimina ramas que no cambian la decisión \\
+RF & RF & Requisito Funcional (del enunciado) \\
+RNF & RNF & Requisito No Funcional \\
+PLY & -- & Una acción de un bando (profundidad = número de plies) \\
+MAX/MIN & -- & Roles en el árbol Minimax (no agentes distintos) \\
+Utilidad & $U(s)$ & Valor numérico de un estado desde la perspectiva de MAX \\
+Heurística Admisible & -- & $h(n) \le h^*(n)$: nunca sobreestima el costo real restante \\
+Heurística Consistente & -- & $h(n) \le c(n,n') + h(n')$: cumple desigualdad triangular \\
+Factor de Ramificación & $b$ & Número promedio de sucesores por estado \\
+Profundidad de Solución & $d$ & Número de movimientos hasta la meta \\
+Estado Compuesto & -- & Posiciones + carrier + resource + turn + turn\_number \\
+\end{longtable}
+
+\vspace{1cm}
+\textbf{Abreviaturas de archivos:}
+\begin{description}
+\item[BFS] Breadth-First Search
+\item[DFS] Depth-First Search
+\item[UCS] Uniform Cost Search
+\item[ASTAR] A* (A Estrella)
+\item[BEAM] Beam Search
+\item[MM] Minimax
+\item[AB] Alpha-Beta
+\item[CLI] Command Line Interface
+\item[GUI] Graphical User Interface
+\item[JSON] JavaScript Object Notation
+\item[CSV] Comma-Separated Values
+\item[SVG] Scalable Vector Graphics
+\item[PDF] Portable Document Format
+\item[UCALDAS] Universidad de Caldas
+\item[IA] Inteligencia Artificial
+\end{description}

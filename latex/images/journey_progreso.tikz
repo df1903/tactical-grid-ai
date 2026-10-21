@@ -1,0 +1,96 @@
+% journey_progreso.tikz - Diagrama: Progreso del Proyecto (Mermaid journey → TikZ)
+% Compilar: lualatex --shell-escape journey_progreso.tikz
+
+\documentclass[tikz,border=10pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, calc, matrix}
+
+% Colores UCALDAS
+\definecolor{ucaldasAzul}{HTML}{003366}
+\definecolor{ucaldasDorado}{HTML}{C8A84D}
+\definecolor{ucaldasVerde}{HTML}{22543D}
+\definecolor{ucaldasRojo}{HTML}{9B2C2C}
+\definecolor{ucaldasNaranja}{HTML}{F9D423}
+\definecolor{ucaldasGris}{HTML}{666666}
+
+\begin{document}
+\begin{tikzpicture}[
+    font=\small,
+    phase/.style={
+        rectangle, draw=ucaldasAzul, thick, fill=ucaldasAzul!10,
+        rounded corners, minimum width=2cm, minimum height=0.7cm,
+        align=center, font=\small\bfseries
+    },
+    task/.style={
+        rectangle, draw=ucaldasAzul!60, fill=ucaldasAzul!10,
+        rounded corners, minimum width=1.8cm, minimum height=0.6cm,
+        align=center, font=\tiny
+    },
+    taskdone/.style={
+        task,         fill=ucaldasVerde!12, draw=ucaldasVerde
+    },
+    taskactive/.style={
+        task, fill=ucaldasDorado!12, draw=ucaldasDorado!80!black
+    },
+    taskpending/.style={
+        task, fill=ucaldasGris!10, draw=ucaldasGris
+    },
+    arrow/.style={->, thick, ucaldasAzul!60},
+    label/.style={font=\tiny, text=ucaldasGris}
+]
+
+% Fases y tareas
+% F0
+\node[phase] (f0) at (0,0) {F0 Setup};
+\node[taskdone, below=0.2cm of f0] (f0a) {Proyecto uv creado};
+\node[taskdone, below=0.15cm of f0a] (f0b) {Estructura carpetas};
+\node[taskdone, below=0.15cm of f0b] (f0c) {pytest/ruff/mypy};
+
+% F1
+\node[phase, right=3cm of f0] (f1) {F1 Modelo};
+\node[taskdone, below=0.2cm of f1] (f1a) {Estado compuesto};
+\node[taskdone, below=0.15cm of f1a] (f1b) {Carga/validación JSON};
+\node[taskdone, below=0.15cm of f1b] (f1c) {Reglas deterministas};
+
+% F2
+\node[phase, right=3cm of f1] (f2) {F2 No Informada};
+\node[taskdone, below=0.2cm of f2] (f2a) {BFS};
+\node[taskdone, below=0.15cm of f2a] (f2b) {DFS};
+\node[taskdone, below=0.15cm of f2b] (f2c) {UCS};
+\node[taskdone, below=0.15cm of f2c] (f2d) {Verificador};
+
+% F3
+\node[phase, right=3cm of f2] (f3) {F3 Informada};
+\node[taskactive, below=0.2cm of f3] (f3a) {A* y heurísticas};
+\node[taskpending, below=0.15cm of f3a] (f3b) {Beam Search};
+
+% F4
+\node[phase, right=3cm of f3] (f4) {F4 Adversarial};
+\node[taskpending, below=0.2cm of f4] (f4a) {Minimax};
+\node[taskpending, below=0.15cm of f4a] (f4b) {Alfa-beta};
+
+% F5
+\node[phase, right=3cm of f4] (f5) {F5 GUI};
+\node[taskpending, below=0.2cm of f5] (f5a) {Visualización};
+
+% F6
+\node[phase, right=3cm of f5] (f6) {F6 Cierre};
+\node[taskpending, below=0.2cm of f6] (f6a) {Experimentos e informe};
+
+% Flechas entre fases
+\draw[->, thick, ucaldasAzul!60] (f0) -- (f1);
+\draw[->, thick, ucaldasAzul!60] (f1) -- (f2);
+\draw[->, thick, ucaldasAzul!60] (f2) -- (f3);
+\draw[->, thick, ucaldasAzul!60] (f3) -- (f4);
+\draw[->, thick, ucaldasAzul!60] (f4) -- (f5);
+\draw[->, thick, ucaldasAzul!60] (f5) -- (f6);
+
+% Leyenda
+\node[below=1.5cm of f6, font=\tiny, text width=14cm, align=center, text=gray] {
+    \textbf{Progreso del Proyecto (journey)} \\
+    \color{ucaldasVerde}\textbf{Done} \color{ucaldasDorado}\textbf{Active} \color{ucaldasGris}\textbf{Pending} \\
+    281 pruebas automatizadas · ruff + mypy --strict · documentación consolidada
+};
+
+\end{tikzpicture}
+\end{document}

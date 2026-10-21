@@ -1,0 +1,141 @@
+% 07_tests_calidad.tex - Manual Capítulo 7: Tests y Calidad
+\chapter{Tests, Lint y Calidad}
+\label{man:tests}
+
+\section{Ejecutar Tests}
+\label{sec:ejecutar-tests}
+
+\begin{minted}{bash}
+# Todos los tests
+uv run pytest
+
+# Tests específicos
+uv run pytest tests/test_adversarial.py -v
+uv run pytest tests/test_cases_f4.py -v
+uv run pytest tests/test_case_6.py -v
+
+# Con coverage (opcional)
+uv run pytest --cov=src/tactical_grid --cov-report=term-missing
+\end{minted}
+
+\textbf{Resultado esperado:} \textbf{281 tests pasan} (0 skips).
+
+\screenshotfigure{test-resultados}{0.90}{Salida de pytest, ruff y mypy mostrando la validación de calidad del proyecto.}
+
+\section{Descripción de Suites de Test}
+\label{sec:suites-tests}
+
+\begin{longtable}{p{3cm}p{3cm}p{8cm}}
+\toprule
+\textbf{Archivo} & \textbf{N° Tests} & \textbf{Qué prueba} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Archivo} & \textbf{N° Tests} & \textbf{Qué prueba} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{3}{r}{\textit{Continúa}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\code{test\_domain\_state.py} & ~5 & \code{GameState}, \code{Position}, \code{Board}, inmutabilidad, hash \\
+\code{test\_domain\_rules.py} & ~25 & \code{legal\_actions}, \code{apply}, \code{successors}, \code{winner}, \code{is\_terminal} \\
+\code{test\_scenario\_validation.py} & ~20 & 9 validaciones RF-35 + extra, carga atómica, normalización \\
+\code{test\_bfs.py} & ~8 & Métricas, optimalidad, convenciones BFS \\
+\code{test\_dfs.py} & ~8 & Métricas, orden inverso, convenciones DFS \\
+\code{test\_ucs.py} & ~10 & Métricas, tie-break FIFO, actualización costo, optimalidad \\
+\code{test\_search\_common.py} & ~10 & \code{make\_problem}, \code{reconstruct}, \code{\_normalize} \\
+\code{test\_heuristics.py} & ~12 & Escalado \code{min\_step\_cost}, h2$\ge$h1, celdas inalcanzables \\
+\code{test\_astar.py} & ~15 & Optimalidad, equivalencia UCS, reapertura, h1 vs h2 \\
+\code{test\_beam.py} & ~10 & Límite k, fallo k=1, determinismo, poda \\
+\code{test\_adversarial.py} & ~20 & Minimax, $\alpha$-$\beta$, métricas RF-30, RF-31, orden \\
+\code{test\_case\_6.py} & ~5 & Caso 6: tres estados en la misma posición \\
+\code{test\_cases\_f2.py} & ~8 & Casos 1-2 esperado vs obtenido \\
+\code{test\_cases\_f3.py} & ~12 & Casos 3-5: heurísticas, Beam \\
+\code{test\_cases\_f4.py} & ~15 & Casos 7-10 adversarial \\
+\code{test\_utility.py} & ~10 & Pesos, objetivo dinámico, término rival, terminales \\
+\code{test\_verifier.py} & ~8 & 6 checks RF-42 (búsqueda + adversarial) \\
+\code{test\_runner.py} & ~15 & CLI, modos, sweep, export CSV/JSON \\
+\code{test\_sweep.py} & ~8 & Sweep combinatorio, export CSV/JSON \\
+\code{test\_gui\_app.py} & ~8 & Ventana, dibujo, clics, auto-mode \\
+\bottomrule
+\end{longtable}
+\label{tab:tests-detalle}
+
+\section{Calidad de Código}
+\label{sec:calidad-codigo}
+
+\begin{minted}{bash}
+# Lint
+uv run ruff check .
+
+# Formato (check only)
+uv run ruff format --check .
+
+# Auto-formatear (modifica archivos)
+uv run ruff format .
+
+# Type checking strict
+uv run mypy src
+\end{minted}
+
+\textbf{Estado objetivo:} \textbf{Todo en verde} (0 errores, 0 warnings, mypy strict OK).
+
+\section{Configuración de Ruff (pyproject.toml)}
+\label{sec:ruff-config}
+
+\begin{minted}{toml}
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+\end{minted}
+
+Reglas activas: E (pycodestyle), F (pyflakes), I (isort), UP (pyupgrade), B (flake8-bugbear).
+
+\section{Configuración de MyPy (pyproject.toml)}
+\label{sec:mypy-config}
+
+\begin{minted}{toml}
+[tool.mypy]
+strict = true
+mypy_path = "src"
+\end{minted}
+
+\texttt{strict = true} activa todas las comprobaciones estrictas. El código pasa sin errores.
+
+\section{Docstrings y Validación Estudiantil}
+\label{sec:docstrings}
+
+Cada función/método relevante tiene docstring con:
+\begin{itemize}
+\item \code{Purpose}: Responsabilidad concreta
+\item \code{Preconditions}: Condiciones previas
+\item \code{Postconditions}: Condiciones posteriores
+\item \code{Complexity}: Costo temporal/espacial
+\item \code{AI usage}: \code{Yes}/\code{No}
+\item \code{AI intervention}: Detalle si hubo IA
+\item \code{Student validation}: revisión cruzada realizada por los integrantes del equipo
+\end{itemize}
+
+Ejemplo:
+\begin{minted}{python}
+def legal_actions(board: Board, state: GameState) -> list[Action]:
+    """List the actions available to the side whose turn it is.
+
+    Purpose: enumerate deterministic legal moves (4 directions) and waits per unit.
+    Preconditions: `state` belongs to `board` (same units and bounds).
+    Postconditions: empty if game over; otherwise, per active unit (sorted by id),
+        moves to free passable in-map cells that are not the rival base, then Wait.
+    Complexity: O(U * 4 * U) with U units (occupancy lookup is linear in U).
+    AI usage: Yes (Claude Code drafted from rules.md).
+    AI intervention: none after draft; rules decided by team on 2026-10-14.
+    Student validation: revisión cruzada realizada por los integrantes del equipo.
+    """
+    ...
+\end{minted}
+
+\textbf{Student validation:} Revisión cruzada realizada por los integrantes del equipo.

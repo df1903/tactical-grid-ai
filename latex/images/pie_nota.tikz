@@ -1,0 +1,40 @@
+% pie_nota.tikz - Diagrama: Distribución de Nota (Mermaid pie → pgf-pie)
+% Compilar: lualatex --shell-escape pie_nota.tikz
+
+\documentclass[tikz,border=10pt]{standalone}
+\usepackage{pgf-pie}
+\usepackage{tikz}
+
+% Colores UCALDAS
+\definecolor{ucaldasAzul}{HTML}{003366}
+\definecolor{ucaldasDorado}{HTML}{C8A84D}
+\definecolor{ucaldasVerde}{HTML}{22543D}
+\definecolor{ucaldasRojo}{HTML}{9B2C2C}
+\definecolor{ucaldasNaranja}{HTML}{F9D423}
+\definecolor{ucaldasRosa}{HTML}{FF6584}
+\definecolor{ucaldasCeleste}{HTML}{63B3ED}
+\definecolor{ucaldasVioleta}{HTML}{B794F4}
+\definecolor{ucaldasRosaClaro}{HTML}{F687B3}
+
+\begin{document}
+\begin{tikzpicture}
+\pie[
+    radius=3.5,
+    text=legend,
+    legend pos=right,
+    legend font=\small,
+    number font=\small,
+    color={ucaldasAzul, ucaldasVerde, ucaldasNaranja, ucaldasRojo, ucaldasDorado, ucaldasCeleste, ucaldasVioleta, ucaldasRosaClaro},
+    explode=0.1
+]{
+    15/Modelado y estado,
+    15/BFS-DFS-UCS,
+    20/A*-heurísticas-Beam,
+    20/Minimax-alfa-beta,
+    10/Experimentación,
+    10/Calidad-documentación,
+    5/Interfaz,
+    5/Validación
+}
+\end{tikzpicture}
+\end{document}

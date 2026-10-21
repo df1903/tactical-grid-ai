@@ -1,0 +1,56 @@
+% arquitectura.tikz - Diagrama de Arquitectura (Mermaid graph TD → TikZ)
+% Compilar: lualatex --shell-escape arquitectura.tikz
+
+\documentclass[tikz,border=10pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{shapes, arrows, positioning, calc, fit, backgrounds, arrows.meta}
+
+% Colores UCALDAS
+\definecolor{ucaldasAzul}{HTML}{003366}
+\definecolor{ucaldasDorado}{HTML}{C8A84D}
+\definecolor{ucaldasAzulClaro}{HTML}{0056A0}
+\definecolor{ucaldasGris}{HTML}{666666}
+\definecolor{ucaldasAzulMuyClaro}{HTML}{E8F0FE}
+
+\begin{document}
+\begin{tikzpicture}[
+    node distance=2.2cm and 1.5cm,
+    >=Stealth,
+    font=\small,
+    component/.style={
+        rectangle, draw=ucaldasAzul, thick, fill=ucaldasAzul!10,
+        rounded corners, minimum width=2.8cm, minimum height=1.3cm,
+        align=center, font=\small
+    },
+    arrow/.style={->, thick, ucaldasAzul},
+    labelArrow/.style={->, thick, ucaldasDorado, font=\tiny}
+]
+
+% Nodos
+\node[component] (JSON) {scenarios/*.json};
+\node[component, right=of JSON] (SCENARIO) {scenario/loader.py};
+\node[component, below=of SCENARIO] (DOMAIN) {domain/\\(model.py, rules.py)};
+\node[component, right=of DOMAIN] (ALGO) {algorithms/\\(uninformed, informed,\\ adversarial, utility,\\ heuristics)};
+\node[component, below=of ALGO] (EXP) {experiments/\\(runner, verifier,\\ sweep)};
+\node[component, right=of ALGO] (GUI) {gui/\\(app.py, session.py)};
+
+% Flechas principales
+\draw[arrow] (JSON) -- node[above, sloped, font=\tiny] {carga y valida} (SCENARIO);
+\draw[arrow] (SCENARIO) -- node[left, font=\tiny] {estado inicial + catálogo} (DOMAIN);
+\draw[arrow] (DOMAIN) -- node[above, font=\tiny] {sucesores, costo, meta} (ALGO);
+\draw[arrow] (ALGO) -- node[right, font=\tiny] {resultado + métricas} (EXP);
+\draw[arrow, dashed] (EXP) -- node[left, font=\tiny] {verificación} (ALGO);
+\draw[arrow] (GUI) -- node[above, font=\tiny] {orquesta} (SCENARIO);
+\draw[arrow] (GUI) -- node[above, font=\tiny] {ejecuta} (ALGO);
+\draw[arrow] (GUI) -- node[above, font=\tiny] {muestra} (EXP);
+
+% Leyenda
+\node[below=1.2cm of EXP, font=\tiny, text width=12cm, align=center, text=ucaldasGris] {
+    \textbf{Arquitectura de 5 componentes (RNF-05)} \\
+    JSON $\to$ scenario/ (carga atómica, 9+ validaciones) $\to$ domain/ (estado inmutable, reglas) \\
+    $\to$ algorithms/ (7 algoritmos, sin conocer JSON ni GUI) $\to$ experiments/ (métricas, verificador) \\
+    gui/ orquesta todo sin contener lógica de juego.
+};
+
+\end{tikzpicture}
+\end{document}

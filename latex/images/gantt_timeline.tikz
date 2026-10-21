@@ -1,0 +1,81 @@
+% gantt_timeline.tikz - Diagrama: Timeline (Mermaid gantt → pgfgantt)
+% Compilar: lualatex --shell-escape gantt_timeline.tikz
+
+\documentclass[tikz,border=10pt]{standalone}
+\usepackage{pgfgantt}
+\usetikzlibrary{arrows.meta}
+
+% Colores UCALDAS
+\definecolor{ucaldasAzul}{HTML}{003366}
+\definecolor{ucaldasDorado}{HTML}{C8A84D}
+\definecolor{ucaldasAzulClaro}{HTML}{0056A0}
+\definecolor{ucaldasVerde}{HTML}{22543D}
+\definecolor{ucaldasRojo}{HTML}{9B2C2C}
+\definecolor{ucaldasNaranja}{HTML}{F9D423}
+\definecolor{ucaldasRosa}{HTML}{FF6584}
+
+\begin{document}
+\begin{tikzpicture}
+\begin{ganttchart}[
+    x unit=0.45cm,
+    y unit title=0.7cm,
+    y unit chart=0.55cm,
+    vgrid={*2{draw=gray!30}, *1{draw=ucaldasAzul!50}},
+    today=18,
+    today rule/.style={red, dashed, thick},
+    today label font=\tiny\bfseries,
+    today label=HOY,
+    bar/.style={fill=ucaldasAzul!60, draw=ucaldasAzul},
+    bar incomplete/.style={fill=ucaldasDorado!60, draw=ucaldasDorado},
+    bar progress/.style={fill=ucaldasVerde!60, draw=ucaldasVerde},
+    group/.style={fill=ucaldasAzul!20, draw=ucaldasAzul},
+    milestone/.style={fill=ucaldasRojo, draw=ucaldasRojo, shape=circle, inner sep=2pt},
+    milestone label font=\tiny,
+    bar label font=\tiny,
+    group label font=\small\bfseries\color{ucaldasAzul},
+    link/.style={-Stealth, ucaldasAzul!60},
+    link mid/.style={-Stealth, ucaldasDorado},
+    canvas/.style={draw=ucaldasAzul!30, fill=white},
+    vgrid/.style={draw=gray!20}
+]{1}{28}
+\gantttitlecalendar{year, month=name, day} \\
+% F0
+\ganttgroup[progress=100]{F0 Setup}{1}{2} \\
+\ganttbar[progress=100]{uv, estructura, pytest/ruff/mypy}{1}{2} \\
+% F1
+\ganttgroup[progress=100]{F1 Modelo y Escenario}{3}{9} \\
+\ganttbar[progress=100]{domain/model.py, rules.py}{3}{9} \\
+\ganttbar[progress=100]{scenario/loader.py (10 validad.)}{3}{9} \\
+\ganttmilestone[red]{Commit 8a1b2c}{9} \\
+% F2
+\ganttgroup[progress=100]{F2 No Informada y Costos}{10}{14} \\
+\ganttbar[progress=100]{BFS, DFS, UCS}{10}{12} \\
+\ganttbar[progress=100]{Verificador RF-42 (checks 1-5)}{12}{14} \\
+\ganttbar[progress=100]{Casos 1-2 (JSON + tests)}{12}{14} \\
+\ganttmilestone[red]{Commit f145f55}{14} \\
+% F3
+\ganttgroup[progress=100]{F3 Informada}{15}{18} \\
+\ganttbar[progress=100]{heuristics.py (h1, h2)}{15}{16} \\
+\ganttbar[progress=100]{informed.py (A*, Beam)}{16}{18} \\
+\ganttbar[progress=100]{Casos 3, 4, 5}{17}{18} \\
+\ganttmilestone[red]{Commit 394f2f0}{18} \\
+% F4
+\ganttgroup[progress=100]{F4 Adversarial}{19}{22} \\
+\ganttbar[progress=100]{utility.py + adversarial.py}{19}{20} \\
+\ganttbar[progress=100]{Casos 7-10, check 6}{20}{21} \\
+\ganttmilestone[red]{Commit f4a1b2c}{22} \\
+% F5
+\ganttgroup[progress=100]{F5 GUI Mínima}{23}{24} \\
+\ganttbar[progress=100]{gui/app.py (tkinter, 701 líneas)}{23}{24} \\
+\ganttbar[progress=100]{Auto IA vs IA, sweep params}{23}{24} \\
+\ganttmilestone[red]{GUI lista}{24} \\
+% F6
+\ganttgroup[progress=80]{F6 Cierre}{25}{26} \\
+\ganttbar[progress=100]{Docs: technical-report, manual, cases}{25}{26} \\
+\ganttbar[progress=50]{Tag v1.0.0 + ensayo sustentación}{25}{26} \\
+\ganttmilestone[red]{Entrega 21 oct}{26} \\
+% Hoy
+\todayrule
+\end{ganttchart}
+\end{tikzpicture}
+\end{document}

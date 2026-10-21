@@ -1,0 +1,144 @@
+% 07_heuristicas.tex - Capítulo 7: Heurísticas (F3)
+\chapter{Heurísticas para A* y Beam Search}
+\label{ch:heuristicas}
+
+\section{Requisitos (RF-21, RF-22)}
+\label{sec:requisitos-heuristicas}
+
+El enunciado exige \textbf{al menos dos heurísticas} para A*:
+
+\begin{enumerate}
+\item \textbf{Heurística 1 (h1):} Distancia Manhattan (obligatoria)
+\item \textbf{Heurística 2 (h2):} Propuesta y justificada por el equipo (RF-21)
+\end{enumerate}
+
+Para cada heurística se debe justificar (RF-22):
+\begin{enumerate}
+\item Qué intenta estimar
+\item Qué información del estado utiliza
+\item Cuál es su costo computacional
+\item Si se considera admisible y por qué
+\item En qué escenarios orienta bien y en cuáles pierde capacidad de discriminación
+\end{enumerate}
+
+Ambas heurísticas se escalan por \code{min\_step\_cost()} (costo transitable mínimo del JSON)
+para garantizar admisibilidad aunque el mapa externo traiga costos $< 1$ (enunciado §18.4).
+
+\section{h1: Manhattan Escalada}
+\label{sec:h1}
+
+\begin{minted}{python}
+def manhattan(problem: PathProblem) -> Heuristic:
+    scale = min_step_cost(problem.board)
+    goal = problem.goal
+    def h(state: GameState) -> float:
+        pos = state.position_of(problem.unit_id)
+        return (abs(pos.row - goal.row) + abs(pos.col - goal.col)) * scale
+    return h
+\end{minted}
+
+\begin{table}[H]
+\centering
+\caption{Justificación RF-22 para h1 (Manhattan)}
+\begin{tabular}{lp{8cm}}
+\toprule
+\textbf{Punto RF-22} & \textbf{Respuesta} \\
+\midrule
+1. Qué estima & Costo restante si no hay obstáculos y cada paso cuesta el mínimo \\
+2. Info del estado & Posición de la unidad, meta, \code{min\_step\_cost} \\
+3. Costo computacional & O(1) por evaluación, sin preprocesamiento \\
+4. Admisible & Sí. Cada movimiento cambia la distancia Manhattan en $\le 1$ y cuesta $\ge$ min\_cost \\
+5. Dónde pierde & Detrás de barreras: apunta recto al objetivo aunque haya muro (caso 3) \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:h1-rf22}
+
+
+\section{h2: Obstacle-Aware (BFS Inverso desde la Meta)}
+\label{sec:h2}
+
+Propuesta del equipo (RF-21): una heurística que \textbf{conoce el layout del mapa} (muros y
+base rival) pero ignora costos de terreno y otras unidades.
+
+\begin{minted}{python}
+def obstacle_aware(problem: PathProblem) -> Heuristic:
+    board = problem.board
+    scale = min_step_cost(board)
+    rival_base = board.bases[board.unit_sides[problem.unit_id].opponent]
+    moves: dict[Position, int] = {problem.goal: 0}
+    queue: deque[Position] = deque([problem.goal])
+    while queue:
+        cell = queue.popleft()
+        for nxt in cell.neighbors():
+            if nxt in moves or nxt == rival_base or not board.is_passable(nxt):
+                continue
+            moves[nxt] = moves[cell] + 1
+            queue.append(nxt)
+    def h(state: GameState) -> float:
+        steps = moves.get(state.position_of(problem.unit_id))
+        return math.inf if steps is None else steps * scale
+    return h
+\end{minted}
+
+Construcción: \textbf{BFS inverso desde la meta} (backward BFS) esquivando muros y base rival.
+Complejidad: O(R$\times$C) una vez al construir; O(1) por evaluación (lookup en dict).
+
+\begin{table}[H]
+\centering
+\caption{Justificación RF-22 para h2 (Obstacle-aware)}
+\begin{tabular}{lp{8cm}}
+\toprule
+\textbf{Punto RF-22} & \textbf{Respuesta} \\
+\midrule
+1. Qué estima & Costo restante con layout real (muros + base rival), paso a costo mínimo \\
+2. Info del estado & Posición de la unidad + layout completo del mapa (muros, base rival) \\
+3. Costo computacional & O(R$\times$C) una vez (BFS inverso), O(1) por evaluación (lookup) \\
+4. Admisible & Sí. Es el costo exacto de un problema relajado (movimientos gratis excepto min\_cost) \\
+5. Dónde pierde & No ve costos de terreno: si el atajo cruza pantano, h2 sigue prefiriéndolo (caso 4) \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:h2-rf22}
+
+
+\section{Propiedades: h2 Domina a h1}
+\label{sec:h2-domina}
+
+\begin{itemize}
+\item h2 $\ge$ h1 \textbf{siempre} (h2 cuenta movimientos reales esquivando obstáculos; h1 asume camino recto)
+\item Ambas son \textbf{admisibles} y \textbf{consistentes} para movimientos de 4 direcciones
+\item h2 tiene O(R$\times$C) preprocesamiento una vez; h1 es O(1) sin preprocesamiento
+\item En A*, h2 expande \textbf{menos estados} que h1 (casos 3 y 4 lo demuestran)
+\item Celdas inalcanzables $\to$ h2 = $\infty$ (admisible: no hay camino, costo real = $\infty$)
+\end{itemize}
+
+\section{Medición de Efecto (Casos 3 y 4)}
+\label{sec:medicion-heuristicas}
+
+\begin{table}[H]
+\centering
+\caption{Expandidos en Caso 3 (muro) y Caso 4 (pantano vs. camino abierto)}
+\begin{tabular}{lccc}
+\toprule
+Algoritmo & Caso 3 (muro) & Caso 4 (pantano vs. abierto) & Nota \\
+\midrule
+UCS & 295 & 332 & baseline \\
+A* h1 (Manhattan) & 166 & 186 & h1 ignora muro/pantano \\
+A* h2 (Obstacle-aware) & 84 & 115 & h2 ve muro, no ve pantano \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:heuristicas-expandidos}
+
+
+En caso 3 (muro vertical), h2 reduce expandidos a la \textbf{mitad} de h1 (84 vs 166).
+En caso 4 (atajo por pantano), h2 ayuda pero no ve el costo del terreno.
+
+\section{Origen de h2}
+\label{sec:origen-h2}
+
+La heurística h2 fue \textbf{propuesta por Claude Code (Sonnet 5.5)} durante el desarrollo;
+el equipo revisó la admisibilidad, la consistencia y la dominancia sobre h1, y la aceptó
+tras verificar que cumple los 5 puntos de RF-22. (La documentación inicial la llamaba
+``propuesta del equipo''; se corrigió en \texttt{decisions.md} 2026-10-17).

@@ -1,0 +1,71 @@
+% Flujo de apply con interceptacion. Diagrama legible para el informe.
+\documentclass[tikz,border=10pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric}
+\definecolor{azul}{HTML}{003366}
+\definecolor{dorado}{HTML}{8A6400}
+\definecolor{verde}{HTML}{22543D}
+\begin{document}
+\begin{tikzpicture}[
+  >=Stealth, font=\small,
+  block/.style={rectangle, rounded corners, draw=azul, thick, fill=azul!7,
+    minimum width=5.0cm, minimum height=0.85cm, align=center},
+  decision/.style={diamond, draw=azul, thick, fill=azul!10,
+    aspect=2.2, inner sep=2pt, align=center},
+  terminal/.style={ellipse, draw=dorado, thick, fill=dorado!8,
+    minimum width=4.5cm, minimum height=.85cm, align=center},
+  success/.style={rectangle, rounded corners, draw=verde, thick, fill=green!8,
+    minimum width=4.5cm, minimum height=.85cm, align=center},
+  arrow/.style={->, thick, draw=azul},
+  edge/.style={font=\scriptsize, text=azul, fill=white, inner sep=1pt}
+]
+\node[terminal] (start) {apply(board, state, action)};
+\node[decision, below=1.0cm of start] (wait) {¿Es \texttt{Wait}?};
+\node[block, below left=1.0cm and 2.2cm of wait] (waitret)
+  {Cambiar turno\\costo = 0};
+\node[block, below right=1.0cm and 2.2cm of wait] (move)
+  {Mover unidad al destino};
+\node[decision, below=1.0cm of move] (pickup) {¿Recoge el recurso?};
+\node[block, below left=1.0cm and 2.2cm of pickup] (nopick)
+  {Sin cambio de recurso};
+\node[block, below right=1.0cm and 2.2cm of pickup] (dopick)
+  {carrier = unidad\\resource = None};
+\node[decision, below=1.0cm of dopick] (carrier) {¿Hay portador?};
+\node[block, below=1.0cm of carrier] (position)
+  {Actualizar posición del portador};
+\node[decision, below=1.0cm of position] (delivery)
+  {¿Llegó a la base propia?};
+\node[success, below left=1.0cm and 2.0cm of delivery] (victory)
+  {VICTORIA\\terminar partida};
+\node[decision, below right=1.0cm and 2.0cm of delivery] (intercept)
+  {¿Rival adyacente?};
+\node[block, below right=1.0cm and 1.6cm of intercept] (drop)
+  {Soltar recurso\\en la celda actual};
+\node[block, below=1.0cm of intercept] (continue)
+  {Continuar sin interceptación};
+\node[terminal, below=1.2cm of continue] (end)
+  {Cambiar turno y finalizar acción};
+
+\draw[arrow] (start) -- (wait);
+\draw[arrow] (wait) -- node[edge,left] {Sí} (waitret);
+\draw[arrow] (wait) -- node[edge,right] {No} (move);
+\draw[arrow] (move) -- (pickup);
+\draw[arrow] (pickup) -- node[edge,left] {No} (nopick);
+\draw[arrow] (pickup) -- node[edge,right] {Sí} (dopick);
+\draw[arrow] (nopick) |- (carrier);
+\draw[arrow] (dopick) -- (carrier);
+\draw[arrow] (carrier) -- node[edge,right] {Sí} (position);
+\draw[arrow] (carrier) -| node[edge,left] {No} (end);
+\draw[arrow] (position) -- (delivery);
+\draw[arrow] (delivery) -- node[edge,left] {Sí} (victory);
+\draw[arrow] (delivery) -- node[edge,right] {No} (intercept);
+\draw[arrow] (intercept) -- node[edge,right] {Sí} (drop);
+\draw[arrow] (intercept) -- node[edge,left] {No} (continue);
+\draw[arrow] (drop) |- (end);
+\draw[arrow] (continue) -- (end);
+\node[below=0.5cm of end, font=\scriptsize, text=azul, align=center] {
+  Orden: recoger recurso \(\rightarrow\) entregar \(\rightarrow\) interceptar.\\
+  La entrega tiene prioridad sobre la interceptación.
+};
+\end{tikzpicture}
+\end{document}

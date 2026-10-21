@@ -1,0 +1,64 @@
+% 13_limitaciones.tex - Capítulo 13: Limitaciones
+\chapter{Limitaciones y Trabajo Futuro}
+\label{ch:limitaciones}
+
+\section{Limitaciones Conocidas}
+\label{sec:limitaciones-conocidas}
+
+\begin{enumerate}
+\item \textbf{Validación cruzada.} El equipo revisó los módulos, las pruebas y la
+  documentación antes de la entrega.
+  
+\item \textbf{Pesos de utilidad con limitación conocida.} Con defaults 10/3/1/0.5:
+  \begin{itemize}
+  \item Recurso en celda propia de MAX (nadie porta, dist=0): $U = 0$
+  \item MAX porta y está a 4 pasos de su base: $U = +3 - 1\cdot4 = -1$
+  \item \textbf{Anomalía:} Recurso en celda propia ($U=0$) se valora \textbf{mejor} que
+    llevarlo a más de 3 pasos de la base ($U < 0$).
+  \item Profundidades pares aplanan valores a 0 (efecto horizonte, caso 10).
+  \end{itemize}
+  \textbf{Decisión (2026-10-17):} No cambiar defaults (invalidaría casos 7--10 ya validados).
+  Se documenta como limitación; quien necesite otro comportamiento ajusta
+  \code{recurso\_cargado $\ge$ 8} en el JSON de su escenario (\texttt{utilidad.recurso\_cargado}).
+
+\item \textbf{Complejidad exponencial de Minimax.} Minimax puro crece exponencialmente:
+  profundidad 6 en 15$\times$15 $\approx$ 15.7 s (supera meta 5 s). $\alpha$-$\beta$ mitiga
+  (d=7 $\approx$ 0.86 s), pero depende del orden de acciones. En mapas grandes con muchas
+  unidades, la poda es menos efectiva.
+
+\item \textbf{Búsquedas de un agente ignoran al adversario.} Por diseño (RF-14), rivales se
+  eliminan, turno no alterna, recurso ignorado. No modelan un plan de juego completo,
+  solo navegación puntual.
+
+\item \textbf{Solo dos acciones: Move y Wait.} No hay acciones de proteger, bloquear, atacar
+  u otras (decisión 2026-10-07: complejidad innecesaria). El placaje es consecuencia de
+  movimiento, no una acción explícita.
+
+\item \textbf{Estados explorados no visualizados en GUI.} RF-41 es opcional; la GUI muestra
+  camino/acción sugerida, no frontera/estados explorados.
+
+\item \textbf{Preguntas al profesor sin respuesta oficial.} Las 8 preguntas de la Sección 19
+  del enunciado (vecindad, semántica de costo, campos \code{prueba}, mayúsculas, límites,
+  ocupación, decimales, formato entrega) no tienen respuesta oficial; las decisiones del
+  equipo están documentadas en \texttt{decisions.md}.
+\end{enumerate}
+
+\section{Trabajo Futuro}
+\label{sec:trabajo-futuro}
+
+\begin{enumerate}
+\item \textbf{Revisar pesos de utilidad:} Ajustar \code{recurso\_cargado} $\ge$ 8 o añadir
+  término de costo de terreno para evitar anomalía del recurso en celda propia.
+\item \textbf{Ordenamiento de acciones en $\alpha$-$\beta$:} Implementar ordenación por
+  heurística (mejores primero) para maximizar poda.
+\item \textbf{Transposition table en Minimax:} Memoizar estados evaluados para evitar
+  recálculos en árboles con transposiciones.
+\item \textbf{Visualización de frontera/expandidos en GUI:} Cumplir RF-41 opcional.
+\item \textbf{Acciones adversariales adicionales:} Proteger zona, bloquear posición,
+  interceptar explícito (requiere ampliar \code{Action} y \code{legal\_actions}).
+\item \textbf{Tests de estrés y fuzzing JSON:} Generar escenarios aleatorios válidos para
+  validar robustez del loader.
+\item \textbf{CI/CD:} GitHub Actions para \texttt{pytest}, \texttt{ruff}, \texttt{mypy} en
+  cada push.
+\item \textbf{Documentación en inglés:} Traducir .md y docstrings (código ya en inglés).
+\end{enumerate}

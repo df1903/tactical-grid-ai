@@ -1,0 +1,125 @@
+% ucaldas.sty - Plantilla UCALDAS para TacticalGrid
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{ucaldas}[2026/10/18 Plantilla UCALDAS TacticalGrid]
+
+\RequirePackage[utf8]{inputenc}
+\RequirePackage[spanish]{babel}
+\RequirePackage[T1]{fontenc}
+\RequirePackage{lmodern}
+\RequirePackage{geometry}
+\RequirePackage{titlesec}
+\RequirePackage{fancyhdr}
+\RequirePackage{graphicx}
+\RequirePackage{booktabs}
+\RequirePackage{longtable}
+\RequirePackage{caption}
+\RequirePackage{subcaption}
+\RequirePackage{float}
+\RequirePackage{amsmath,amssymb}
+\RequirePackage{minted}
+\RequirePackage{tikz}
+\RequirePackage{pgfplots}
+\RequirePackage{pgfgantt}
+\RequirePackage{pgf-pie}
+\RequirePackage{hyperref}
+\RequirePackage{cleveref}
+\RequirePackage{booktabs}
+\RequirePackage{array}
+\RequirePackage{multirow}
+\RequirePackage{colortbl}
+\RequirePackage{xcolor}
+
+% Configuración de página
+\geometry{
+    a4paper,
+    left=3cm, right=2.5cm,
+    top=3cm, bottom=2.5cm,
+    headheight=15pt
+}
+
+% Colores institucionales UCALDAS (del Manual de Imagen 2024)
+\definecolor{ucaldasAzul}{HTML}{003366}   % Azul institucional
+\definecolor{ucaldasDorado}{HTML}{C8A84D} % Dorado institucional
+\definecolor{ucaldasAzulClaro}{HTML}{0056A0}
+\definecolor{ucaldasGris}{HTML}{666666}
+
+% Encabezados/pies de página
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE,RO]{\thepage}
+\fancyhead[RE]{\nouppercase{\leftmark}}
+\fancyhead[LO]{\nouppercase{\rightmark}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyfoot[C]{\textcolor{ucaldasAzul}{\small TacticalGrid -- Proyecto 1 -- Sistemas Inteligentes I -- UCALDAS 2026}}
+
+% Formato de títulos
+\titleformat{\chapter}[display]
+  {\normalfont\bfseries\Large\color{ucaldasAzul}}{\chaptertitlename\ \thechapter}{10pt}{\Huge}
+\titleformat{\section}{\normalfont\bfseries\Large\color{ucaldasAzul}}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\bfseries\large\color{ucaldasAzulClaro}}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalfont\bfseries\normalsize\color{ucaldasAzulClaro}}{\thesubsubsection}{1em}{}
+
+% Captions
+\captionsetup{
+    font=small,
+    labelfont=bf,
+    textfont=it,
+    justification=centering
+}
+
+% Código con minted
+\usemintedstyle{monokai}
+\setminted{
+    fontsize=\small,
+    breaklines=true,
+    breakafter=,
+    frame=lines,
+    framesep=4pt,
+    linenos=true,
+    numbersep=8pt,
+    tabsize=4
+}
+
+% TikZ para diagramas
+\usetikzlibrary{
+    shapes, arrows, positioning, calc, fit, backgrounds,
+    arrows.meta, decorations.pathreplacing, decorations.markings,
+    shapes.geometric, shapes.misc, matrix, chains, quotes,
+    automata, er, fit, shapes.geometric, shapes.misc
+}
+
+% Hipervínculos
+\hypersetup{
+    colorlinks=true,
+    linkcolor=ucaldasAzul,
+    citecolor=ucaldasAzul,
+    urlcolor=ucaldasDorado,
+    pdfauthor={Jorge Iván Garcia Torres, Daniel Felipe Franco Rincón},
+    pdftitle={TacticalGrid - Informe Técnico},
+    pdfsubject={Sistemas Inteligentes I - UCALDAS 2026},
+    pdfkeywords={Sistemas Inteligentes, Búsqueda, Minimax, A*, Beam Search, UCALDAS}
+}
+
+% Tabla de contenidos con numeración profunda
+\setcounter{tocdepth}{3}
+\setcounter{secnumdepth}{3}
+
+% Entorno para definiciones
+\newtheorem{definicion}{Definición}[chapter]
+\newtheorem{observacion}{Observación}[chapter]
+
+% Colores para tablas
+\definecolor{LightBlue}{HTML}{E8F0FE}
+\definecolor{LightGreen}{HTML}{E8F5E9}
+\definecolor{LightYellow}{HTML}{FFF9C4}
+\definecolor{LightRed}{HTML}{FFEBEE}
+
+% Comando para badges estilo HTML
+\newcommand{\badge}[2]{\colorbox{#1}{\textcolor{white}{\small\textbf{#2}}}}
+\newcommand{\badgedone}{\badge{ucaldasAzul}{Done}}
+\newcommand{\badgeactive}{\badge{ucaldasDorado}{Activo}}
+\newcommand{\badgepending}{\badge{ucaldasGris}{Pendiente}}
+\newcommand{\badgedonegreen}{\badge{green!60!black}{Done}}
+\newcommand{\badgedoneblue}{\badge{blue!70!black}{Done}}
+\newcommand{\badgedoneorange}{\badge{orange!70!black}{Done}}

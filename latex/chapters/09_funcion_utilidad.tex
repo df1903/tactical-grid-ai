@@ -1,0 +1,158 @@
+% 09_funcion_utilidad.tex - Capítulo 9: Función de Utilidad (detalle)
+\chapter{Función de Utilidad: Detalle y Análisis}
+\label{ch:utilidad}
+
+Este capítulo profundiza en la función de utilidad $U(s)$, su diseño, pesos, limitaciones y
+cómo explicarla en sustentación.
+
+\section{Formulación Completa}
+\label{sec:formulacion-completa}
+
+La utilidad siempre se mide desde la perspectiva de \textbf{MAX = bando que mueve en la raíz}.
+
+\begin{equation}
+U(s) = w_{ent} \cdot D_{ent}(s) + w_{car} \cdot C_{car}(s) - w_{dist} \cdot D_{goal}(s) + w_{riv} \cdot D_{riv}(s)
+\label{eq:utilidad}
+\end{equation}
+
+Donde:
+\begin{align}
+D_{ent}(s) &= \begin{cases}
++1 & \text{si MAX entregó (ganó)} \\
+-1 & \text{si MIN entregó (ganó)} \\
+0 & \text{si no hay victoria}
+\end{cases} \\
+C_{car}(s) &= \begin{cases}
++1 & \text{si MAX porta el recurso} \\
+-1 & \text{si MIN porta el recurso} \\
+0 & \text{si nadie porta}
+\end{cases} \\
+D_{goal}(s) &= \text{distancia Manhattan al objetivo actual} \\
+D_{riv}(s) &= \begin{cases}
+\min_{r \in Rivales} dist(r, pos_{portador}) & \text{si MAX porta} \\
+0 & \text{si MIN porta o nadie porta}
+\end{cases}
+\end{align}
+
+\section{Justificación de Cada Término}
+\label{sec:justificacion-terminos}
+
+\begin{table}[H]
+\centering
+\caption{Justificación de términos de la utilidad}
+\begin{tabular}{llp{6cm}}
+\toprule
+\textbf{Término} & \textbf{Peso} & \textbf{Por qué} \\
+\midrule
+Entrega ($w_{ent}=10$) & 10 & Victoria/derrota es el objetivo final; debe dominar cualquier combinación de distancias \\
+Carga ($w_{car}=3$) & 3 & Portar el recurso es el paso crítico hacia la victoria; vale más que distancia \\
+Distancia objetivo ($w_{dist}=1$) & 1 & Cada paso de Manhattan = -1; progreso visible y monótono \\
+Distancia rival ($w_{riv}=0.5$) & 0.5 & Rival cerca = riesgo de interceptación; rompe empates entre rutas equidistantes \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:justificacion-utilidad}
+
+
+\section{Objetivo Dinámico (Distancia al Objetivo)}
+\label{sec:objetivo-dinamico}
+
+El objetivo hacia el que se mide la distancia \textbf{cambia según quién porta el recurso}:
+
+\begin{table}[H]
+\centering
+\caption{Objetivo de la distancia según portador}
+\begin{tabular}{lll}
+\toprule
+\textbf{Situación} & \textbf{Objetivo} & \textbf{Desde dónde se mide} \\
+\midrule
+MAX porta & Base propia de MAX & Desde el portador \\
+MIN porta & Posición del portador (perseguir) & Desde la unidad MAX más cercana \\
+Nadie porta & Celda del recurso & Desde la unidad MAX más cercana \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:objetivo-dinamico}
+
+
+\textbf{Por qué:} Si MIN porta, MAX debe \textit{perseguir al portador} para interceptar o
+forzar errores; medir distancia al recurso sería contraproducente (el recurso se mueve con
+MIN). Si nadie porta, ambos bandos van al recurso.
+
+\section{Termino Rival: Solo Cuando MAX Porta}
+\label{sec:termino-rival}
+
+\begin{equation}
+D_{riv}(s) = \begin{cases}
+\min_{r \in Unidades_{MIN}} dist(r, pos_{portador_{MAX}}) & \text{si MAX porta} \\
+0 & \text{en otro caso}
+\end{cases}
+\end{equation}
+
+\textbf{Por qué solo cuando MAX porta:} Un rival cerca del portador de MAX = amenaza de
+interceptación (pierde el recurso). Si MIN porta, un rival de MAX cerca del portador de MIN
+\textit{no} es una amenaza para MAX (es una oportunidad de interceptación, que ya captura la
+persecución via $D_{goal}$).
+
+\section{Pesos Configurables en JSON (RNF-03)}
+\label{sec:pesos-json}
+
+Los pesos se leen de la sección opcional \code{utilidad} del JSON:
+
+\begin{minted}{json}
+{
+  "utilidad": {
+    "entrega": 10,
+    "recurso_cargado": 3,
+    "distancia_objetivo": 1,
+    "distancia_rival": 0.5
+  }
+}
+\end{minted}
+
+Si falta la clave, se usa el default (10/3/1/0.5). \textbf{Nada está hardcodeado} (RNF-03).
+
+\section{Limite Conocida: Recurso en Celda Propia vs. Llevarlo Lejos}
+\label{sec:limitacion-utilidad}
+
+Con pesos 10/3/1/0.5, surge una anomalía documentada en \S\ref{sec:limitaciones-conocidas}:
+
+\begin{itemize}
+\item Recurso en celda propia de MAX (nadie porta, distancia 0): $U = -1 \cdot 0 = 0$
+\item MAX porta y está a 4 pasos de su base: $U = +3 - 1\cdot4 = -1$
+\item \textbf{Resultado:} Recurso en celda propia ($U=0$) se valora \textbf{mejor} que llevarlo
+  a más de 3 pasos de la base ($U < 0$).
+\item Además, profundidades pares aplanan valores a 0 (efecto horizonte, caso 10).
+\end{itemize}
+
+\textbf{Decisión (2026-10-17):} No cambiar defaults (invalidaría casos 7--10 validados).
+Se documenta como limitación; quien necesite otro comportamiento ajusta
+\code{recurso\_cargado $\ge$ 8} en el JSON de su escenario.
+
+\section{Explicación para Sustentación: Ejemplo Caso 7}
+\label{sec:ejemplo-caso7}
+
+Escenario \code{caso\_07\_decision\_adversarial.json}: mapa 5$\times$7, coste 1, recurso en
+(0,1), A1 en (1,0), A2 en (0,2), B1 en (1,2), B2 en (2,4), A mueve.
+
+\begin{enumerate}
+\item \textbf{Profundidad 1 (A mueve, evalúa hoja):}
+  \begin{itemize}
+  \item A2$\to$(0,1) agarra recurso: $U = +3 - 1\cdot1 = 2$ (distancia a base A = 1) + rival term
+  \item Valor $\approx$ 3 $\to$ elige agarrar
+  \end{itemize}
+\item \textbf{Profundidad 2 (B responde):}
+  \begin{itemize}
+  \item B1 se mueve adyacente a A2 (intercepta): recurso cae, $U$ cae a 0
+  \item Valor 0 $\to$ sigue agarrando (empate técnico, tie-break orden)
+  \end{itemize}
+\item \textbf{Profundidad 3 (A vuelve a mover):}
+  \begin{itemize}
+  \item A1$\to$(1,1) \textit{protege} (bloquea a B1 antes de que A2 agarre)
+  \item B1 no puede interceptar $\to$ A2 agarra y mantiene $\to$ $U = 3$
+  \end{itemize}
+\item \textbf{Profundidad 4:} A1$\to$(0,0) (entra a base sin recurso) valor 0; B responde...
+\end{enumerate}
+
+\textbf{Conclusión:} La utilidad hace que el sistema \textbf{aprenda a proteger} antes de
+agarrar, porque la interceptación del rival hace que el valor de agarrar directo caiga a 0.

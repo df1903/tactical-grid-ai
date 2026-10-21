@@ -1,0 +1,80 @@
+% 03_reglas_juego.tex - Capítulo 3: Reglas del Juego
+\chapter{Reglas del Juego}
+\label{ch:reglas}
+
+Este capítulo describe las reglas deterministas del juego (RF-09), decididas por el equipo
+y documentadas en \texttt{decisions.md} (2026-10-07, 2026-10-14, 2026-10-18).
+
+\section{Movimiento y Costos}
+\label{sec:movimiento-costos}
+
+\begin{itemize}
+\item \textbf{Vecindad:} 4 direcciones (arriba, abajo, izquierda, derecha). Decisión 2026-10-07.
+\item \textbf{Costo:} Se paga al \textbf{entrar} a la celda destino; la celda inicial no cuesta.
+  Costos y transitabilidad provienen del catálogo \code{tipos\_terreno} del JSON.
+\item \textbf{Wait:} Siempre legal, cuesta 0. No recoge recurso.
+\end{itemize}
+
+\section{Ocupación y Bases}
+\label{sec:ocupacion-bases}
+
+\begin{itemize}
+\item \textbf{Una unidad por celda:} Validado al cargar (extra a RF-35).
+\item \textbf{Base propia:} Se puede pisar; al llegar con el recurso $\to$ victoria inmediata.
+\item \textbf{Base rival:} \textbf{NO} se puede pisar (decisión 2026-10-18).
+\item \textbf{Celda recurso:} Se pisa; recoge al \textbf{llegar} (Move), no al esperar.
+\end{itemize}
+
+\section{Recurso e Interceptación (Placaje)}
+\label{sec:recurso-interceptacion}
+
+\begin{itemize}
+\item \textbf{Pickup:} Al \textbf{llegar} a la celda del recurso (Move, no Wait).
+\item \textbf{Entrega:} Llegar a base propia con recurso $\to$ victoria inmediata (salta interceptación).
+\item \textbf{Interceptación (Placaje):} Tras \textbf{cualquier} movimiento, si un rival queda adyacente
+  (distancia Manhattan = 1) al portador $\to$ recurso \textbf{cae en la celda del portador}
+  (sin transferencia al rival; no hay desempate).
+\item Portador original \textbf{no recoge} mientras siga en esa celda; debe salir y volver.
+\item Cualquier \textbf{otra unidad} (incluso del mismo bando) lo recoge al llegar a la celda.
+\item Se evalúa tras \textbf{cualquier} movimiento (de cualquier bando).
+\end{itemize}
+
+\section{Fin de Partida}
+\label{sec:fin-partida}
+
+\begin{itemize}
+\item \textbf{Victoria:} Llevar recurso a base propia.
+\item \textbf{Empate:} Límite de turnos (\code{juego.limite\_turnos}, default 100, configurable en JSON).
+\item Bando sin movimientos legales $\to$ pasa turno (\code{Wait} siempre legal).
+\end{itemize}
+
+\section{Unidades}
+\label{sec:unidades}
+
+\begin{itemize}
+\item Un solo tipo (\code{estandar}); mínimo 3 por bando en escenarios propios.
+\item Apéndice A trae 2 $\to$ cargador no exige mínimo al cargar.
+\end{itemize}
+
+\section{Búsqueda de Un Agente (RF-14)}
+\label{sec:busqueda-unagente}
+
+Para búsquedas (BFS, DFS, UCS, A*, Beam):
+\begin{itemize}
+\item Rivales \textbf{removidos} del estado (si no, Apéndice A sin solución: B1 sobre meta).
+\item Solo unidad inicio se mueve; compañeros quietos como obstáculos.
+\item Turno fijo al bando de la unidad; recurso ignorado; \code{Wait} no usado.
+\item Base rival sigue no entrable (regla de dominio).
+\item Estado de búsqueda $\equiv$ posición de la unidad.
+\end{itemize}
+
+\section{Orden de Sucesores y Desempates}
+\label{sec:orden-desempates}
+
+\begin{itemize}
+\item Orden fijo: \textbf{arriba, abajo, izquierda, derecha} (método \code{Position.neighbors()}).
+\item DFS: hijos en orden \textbf{inverso} para expandir primero ``arriba''.
+\item UCS/A*: desempate por \textbf{orden de entrada a la frontera} (FIFO tie-break).
+\item Actualización de costo: camino más barato actualiza $g$ y padre, \textbf{no} regenera.
+\item $max\_frontier$ = tamaño del set \code{waiting} (estados distintos esperando).
+\end{itemize}

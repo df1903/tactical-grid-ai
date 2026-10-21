@@ -1,0 +1,109 @@
+% preambulo.tex - Paquetes y configuraciones comunes para ambos documentos
+\documentclass[12pt,a4paper,oneside]{report}
+
+\usepackage{ucaldas}  % Nuestra plantilla personalizada
+\usepackage{etoolbox}
+
+% Bibliografía
+\usepackage[backend=biber,style=ieee,sorting=none]{biblatex}
+\addbibresource{bibliography.bib}
+
+% Gráficos
+\graphicspath{{images/}}
+
+% Tablas compactas y ajustadas al ancho útil de A4.
+\AtBeginEnvironment{tabular}{\small\sloppy\setlength{\tabcolsep}{3pt}}
+\AtBeginEnvironment{longtable}{\small\sloppy\setlength{\tabcolsep}{3pt}\setlength{\LTleft}{0pt}\setlength{\LTright}{0pt}}
+
+% Configuración de minted para Python
+\setminted{
+    fontsize=\small,
+    breaklines=true,
+    breakafter=,
+    frame=lines,
+    framesep=4pt,
+    linenos=true,
+    numbersep=8pt,
+    tabsize=4,
+    bgcolor=LightBlue
+}
+
+% Configuración de pgfgantt
+\usepackage{pgfgantt}
+\pgfplotsset{compat=1.18}
+
+% Configuración pgf-pie
+\usetikzlibrary{pie}
+
+% Comandos personalizados para el proyecto
+\newcommand{\tacticalgrid}{\textsc{TacticalGrid}}
+\newcommand{\rf}[1]{RF-#1}
+\newcommand{\rfnf}[1]{RNF-#1}
+\newcommand{\sectionref}[1]{Sección~\ref{#1}}
+\newcommand{\figureref}[1]{Figura~\ref{#1}}
+\newcommand{\tableref}[1]{Tabla~\ref{#1}}
+\newcommand{\listingref}[1]{Listing~\ref{#1}}
+
+% Abreviaturas
+\newcommand{\ie}{i.\,e.}
+\newcommand{\eg}{e.\,g.}
+\newcommand{\cf}{c.\,f.}
+\newcommand{\etal}{\textit{et al.}}
+
+% Glosario técnico
+\newcommand{\g}[1]{\textit{#1}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\var}[1]{\textit{#1}}
+\newcommand{\diagramfigure}[3]{%
+    \begin{figure}[H]
+    \centering
+    \IfFileExists{images/#1.pdf}{%
+        \includegraphics[width=#2\textwidth,height=0.72\textheight,keepaspectratio]{images/#1.pdf}%
+    }{%
+        \fbox{\parbox[c][4cm][c]{0.82\textwidth}{\centering Diagrama no disponible: \texttt{#1.pdf}}}%
+    }%
+    \caption{#3}%
+    \end{figure}%
+}
+
+\newcommand{\screenshotfigure}[3]{%
+    \begin{figure}[H]
+    \centering
+    \IfFileExists{images/screenshots/#1.png}{%
+        \includegraphics[width=#2\textwidth]{images/screenshots/#1.png}%
+    }{\IfFileExists{images/screenshots/#1.jpg}{%
+        \includegraphics[width=#2\textwidth]{images/screenshots/#1.jpg}%
+    }{%
+        \fbox{\parbox[c][6cm][c]{0.82\textwidth}{\centering Captura pendiente: \texttt{#1.png / #1.jpg}\\[0.2cm]#3}}%
+    }}%
+    \caption{#3}%
+    \end{figure}%
+}
+
+% Referencias a RF/RNF
+\newcommand{\RF}[1]{RF-#1}
+\newcommand{\RNF}[1]{RNF-#1}
+
+% Comandos para algoritmos
+\newcommand{\astar}{A\textsuperscript{*}}
+\newcommand{\alphabeta}{$\alpha$-$\beta$}
+\newcommand{\minimax}{Minimax}
+\newcommand{\bigO}[1]{\mathcal{O}(#1)}
+
+% Referencias a figuras/tablas
+\newcommand{\Fig}[1]{Figura~\ref{#1}}
+\newcommand{\Tab}[1]{Tabla~\ref{#1}}
+\newcommand{\Lst}[1]{Listing~\ref{#1}}
+\newcommand{\Eq}[1]{Ecuación~\ref{#1}}
+\newcommand{\Sec}[1]{Sección~\ref{#1}}
+\newcommand{\App}[1]{Apéndice~\ref{#1}}
+
+% Colores para código
+\definecolor{codebg}{HTML}{1A1B2E}
+\definecolor{codefg}{HTML}{C4C4E0}
+\definecolor{keyword}{HTML}{6C63FF}
+\newcommand{\kw}[1]{\textcolor{keyword}{\textbf{#1}}}
+
+% Para tablas anchas
+\newcommand{\rotatetable}[1]{\begin{sidewaystable}#1\end{sidewaystable}}
+\usepackage{rotating}

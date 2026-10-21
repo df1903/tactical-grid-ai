@@ -1,0 +1,161 @@
+% 15_reproducibilidad.tex - Capítulo 15: Reproducibilidad y Versiones
+\chapter{Reproducibilidad, Versiones y Entrega}
+\label{ch:reproducibilidad}
+
+\section{Instalación y Ejecución}
+\label{sec:instalacion}
+
+\begin{minted}{bash}
+# 1. Clonar repositorio
+git clone https://github.com/df1903/tactical-grid-ai
+cd tactical-grid-ai
+
+# 2. Instalar dependencias (uv provisiona Python 3.14)
+uv sync
+
+# 3. Verificar instalación
+uv run pytest              # 281 tests deben pasar
+uv run ruff check .        # lint
+uv run mypy src            # tipos strict
+\end{minted}
+
+\section{Versiones Fijas (RE-02, RE-03, RE-04)}
+\label{sec:versiones}
+
+Todas las dependencias fijas en \code{uv.lock}:
+
+\begin{table}[H]
+\centering
+\caption{Versiones fijas de dependencias}
+\begin{tabular}{ll}
+\toprule
+\textbf{Herramienta} & \textbf{Versión} \\
+\midrule
+Python & 3.14 (provisionado por \code{uv}) \\
+\texttt{uv} & 0.x (gestor de paquetes) \\
+\texttt{pytest} & 9.1.1 \\
+\texttt{ruff} & 0.16.10 (reglas E, F, I, UP, B) \\
+\texttt{mypy} & 2.4.0 (--strict) \\
+\texttt{minted} & (LaTeX) \\
+\texttt{pgfgantt}, \texttt{pgf-pie} & (LaTeX diagrams) \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:versiones}
+
+
+La entrega se acompaña del repositorio Git con el código fuente, los escenarios,
+los resultados y la documentación utilizados para generar estos documentos.
+
+\section{Estados Iniciales Declarados}
+\label{sec:estados-iniciales}
+
+Todos los estados iniciales están declarados en archivos JSON de \code{scenarios/}:
+
+\begin{itemize}
+\item \code{apendice\_a.json} -- Ejemplo oficial 4$\times$4
+\item \code{caso\_01\_bfs\_vs\_dfs.json} -- Caso 1
+\item \code{caso\_02\_bfs\_vs\_ucs.json} -- Caso 2
+\item \code{caso\_03\_obstaculo\_heuristica.json} -- Caso 3
+\item \code{caso\_04\_comparacion\_heuristicas.json} -- Caso 4
+\item \code{caso\_05\_beam\_k.json} -- Caso 5
+\item \code{caso\_07\_decision\_adversarial.json} -- Casos 6--10 (mapa 5$\times$7)
+\item \code{prueba\_15x15.json} -- Rendimiento 15$\times$15 (3 unidades/bando)
+\item \code{prueba\_20x20.json} -- Mapa 20$\times$20
+\item \code{escenario\_03x03} .. \code{escenario\_30x30} -- Escalabilidad
+\end{itemize}
+
+\section{Resultados Esperados vs. Obtenidos}
+\label{sec:esperado-vs-obtenido}
+
+Todos los 10 casos mínimos tienen sus valores esperados (derivados a mano) y obtenidos
+(ejecución real) documentados en \texttt{cases.md} y \texttt{docs/results/}.
+Los tests \code{test\_cases\_f2.py}, \code{test\_cases\_f3.py}, \code{test\_case\_6.py},
+\code{test\_cases\_f4.py} asercionan \textbf{expected == obtained}.
+
+Los archivos CSV/JSON brutos están en \texttt{docs/results/}:
+
+\begin{itemize}
+\item \code{caso\_01\_bfs\_vs\_dfs.csv/json}
+\item \code{caso\_02\_bfs\_vs\_ucs.csv/json}
+\item \code{caso\_03\_obstaculo\_heuristica.csv/json}
+\item \code{caso\_04\_comparacion\_heuristicas.csv/json}
+\item \code{caso\_05\_beam\_k.csv/json}
+\item \code{casos\_07\_10\_adversarial.csv/json}
+\item \code{rendimiento\_15x15.csv}, \code{rendimiento\_20x20.csv}
+\item \code{apendice\_a.csv/json}
+\end{itemize}
+
+\section{Comandos de Reproducción (Evidencia RE-03, RE-04)}
+\label{sec:comandos-reproduccion}
+
+Todos los comandos exactos para regenerar los resultados están en
+\texttt{user-manual.md} §6 y se resumen aquí:
+
+\begin{minted}{bash}
+R=docs/results; U="uv run python -m tactical_grid"
+
+# Casos 1-2 (búsquedas no informadas / costos)
+$U scenarios/caso_01_bfs_vs_dfs.json --algorithm BFS,DFS,UCS --verify --csv $R/caso_01_bfs_vs_dfs.csv --json $R/caso_01_bfs_vs_dfs.json
+$U scenarios/caso_02_bfs_vs_ucs.json --algorithm BFS,DFS,UCS --verify --csv $R/caso_02_bfs_vs_ucs.csv --json $R/caso_02_bfs_vs_ucs.json
+
+# Casos 3-5 (informada)
+$U scenarios/caso_03_obstaculo_heuristica.json --algorithm UCS,A_STAR --heuristic H1,H2 --verify --csv $R/caso_03_obstaculo_heuristica.csv --json $R/caso_03_obstaculo_heuristica.json
+$U scenarios/caso_04_comparacion_heuristicas.json --algorithm UCS,A_STAR --heuristic H1,H2 --verify --csv $R/caso_04_comparacion_heuristicas.csv --json $R/caso_04_comparacion_heuristicas.json
+$U scenarios/caso_05_beam_k.json --algorithm UCS,BEAM --heuristic H1 --k 1,2,4,8 --verify --csv $R/caso_05_beam_k.csv --json $R/caso_05_beam_k.json
+
+# Casos 6-10 (adversarial)
+$U scenarios/caso_07_decision_adversarial.json --algorithm MINIMAX --depth 1,2,3 --verify --csv $R/casos_07_10_adversarial.csv --json $R/casos_07_10_adversarial.json
+$U scenarios/caso_07_decision_adversarial.json --algorithm MINIMAX,ALPHA_BETA --depth 4 --verify --csv $R/casos_07_10_adversarial.csv --json $R/casos_07_10_adversarial.json
+$U scenarios/caso_07_decision_adversarial.json --algorithm ALPHA_BETA --depth 3 --order default,reversed --verify --csv $R/casos_07_10_adversarial.csv --json $R/casos_07_10_adversarial.json
+$U scenarios/caso_07_decision_adversarial.json --algorithm ALPHA_BETA --depth 1,2,3,4,5 --verify --csv $R/casos_07_10_adversarial.csv --json $R/casos_07_10_adversarial.json
+
+# Rendimiento
+$U scenarios/prueba_20x20.json --algorithm ALPHA_BETA --depth 2,3,4,5,6 --csv $R/rendimiento_20x20.csv
+$U scenarios/prueba_15x15.json --algorithm ALPHA_BETA --depth 5,6,7 --csv $R/rendimiento_15x15.csv
+$U scenarios/prueba_15x15.json --algorithm MINIMAX --depth 4,5,6 --csv $R/rendimiento_15x15_minimax.csv
+
+# Sweep completo Apéndice A
+$U scenarios/apendice_a.json --algorithm BFS,DFS,UCS,A_STAR,BEAM --heuristic H1,H2 --k 1,2,4,8 --verify --csv $R/apendice_a.csv
+\end{minted}
+
+\section{Identificación de la Entrega (RE-02)}
+\label{sec:tag-entrega}
+
+La entrega puede identificarse y reproducirse desde el repositorio del proyecto:
+
+\begin{minted}{bash}
+git describe --tags --always
+\end{minted}
+
+El comando anterior permite consultar el identificador exacto del estado entregado.
+
+\section{Checklist Final de Entrega}
+\label{sec:checklist-entrega}
+
+\begin{longtable}{ll}
+\toprule
+\textbf{Ítem} & \textbf{Estado} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Ítem} & \textbf{Estado} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{2}{r}{\textit{Continúa}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+Repositorio Git con aportes visibles por integrante & \checkmark \\
+README.md con nombres de integrantes & \checkmark \\
+Código fuente completo + instrucciones instalación/ejecución & \checkmark \\
+Escenarios JSON usados + casos mínimos de prueba & \checkmark \\
+Manual de usuario completo & \checkmark \\
+Documento técnico completo (incluye limitaciones, reporte IA) & \checkmark \\
+Escenarios JSON + 10 casos con esperado vs. obtenido & \checkmark \\
+Repositorio con aportes visibles e identificador reproducible & \checkmark \\
+Uso de IA declarado (herramienta, propósito, intervención, validación) & \checkmark \\
+Cada integrante puede explicar cualquier parte & \checkmark \\
+\bottomrule
+\end{longtable}

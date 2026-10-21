@@ -1,0 +1,131 @@
+% 05_arquitectura.tex - Capítulo 5: Arquitectura
+\chapter{Arquitectura del Sistema}
+\label{ch:arquitectura}
+
+\section{Visión General}
+\label{sec:arquitectura-vision}
+
+La arquitectura sigue el principio de \textbf{separación de responsabilidades} (RNF-05): cinco
+componentes desacoplados que se comunican mediante interfaces bien definidas. Ningún componente
+conoce detalles de implementación de otro; solo dependen de interfaces (clases, funciones,
+tipos de datos).
+
+\begin{figure}[H]
+\centering
+\shorthandoff{>}
+\begin{tikzpicture}[node distance=1.8cm, >=Stealth]
+    \tikzset{
+        component/.style={
+            rectangle, draw=ucaldasAzul, thick, fill=ucaldasAzul!10,
+            rounded corners, minimum width=2.5cm, minimum height=1.2cm,
+            align=center, font=\small
+        }
+    }
+
+    % Nodos
+    \node[component] (JSON) {scenarios/*.json};
+    \node[component, right=of JSON] (SCENARIO) {scenario/\\loader.py};
+    \node[component, below=of SCENARIO] (DOMAIN) {domain/\\model.py, rules.py};
+    \node[component, right=of DOMAIN] (ALGO) {algorithms/\\uninformed, informed,\\ adversarial, utility, heuristics};
+    \node[component, below=of ALGO] (EXP) {experiments/\\runner, verifier, sweep};
+    \node[component, right=of ALGO] (GUI) {gui/\\app.py, session.py};
+    
+    % Flechas
+    \draw[->, thick] (JSON) -- node[above] {carga y valida} (SCENARIO);
+    \draw[->, thick] (SCENARIO) -- node[left] {estado inicial + catálogo} (DOMAIN);
+    \draw[->, thick] (DOMAIN) -- node[above] {sucesores, costo, meta} (ALGO);
+    \draw[->, thick] (ALGO) -- node[right] {resultado + métricas} (EXP);
+    \draw[->, thick, dashed] (EXP) -- node[left] {verificación} (ALGO);
+    \draw[->, thick] (GUI) -- node[above] {orquesta} (SCENARIO);
+    \draw[->, thick] (GUI) -- node[above] {ejecuta} (ALGO);
+    \draw[->, thick] (GUI) -- node[above] {muestra} (EXP);
+    
+\end{tikzpicture}
+\shorthandon{>}
+\caption{Arquitectura de componentes y flujo de datos}
+\label{fig:arquitectura}
+\end{figure}
+
+\section{Componentes}
+\label{sec:componentes}
+
+\begin{table}[H]
+\centering
+\caption{Componentes del sistema y responsabilidades}
+\begin{tabular}{llp{5.5cm}}
+\toprule
+\textbf{Componente} & \textbf{Archivos clave} & \textbf{Responsabilidad} \\
+\midrule
+\code{domain} & \code{model.py}, \code{rules.py} & Estado compuesto, acciones, sucesores, costos, reglas de juego, ganador/empate \\
+\code{scenario} & \code{loader.py} & Carga JSON, validación atómica (9+1), normalización, \code{TestConfig} \\
+\code{algorithms} & \code{common.py}, \code{uninformed.py}, \code{informed.py}, \code{adversarial.py}, \code{utility.py}, \code{heuristics.py} & BFS, DFS, UCS, A*, Beam, Minimax, $\alpha$-$\beta$, heurísticas, utilidad \\
+\code{experiments} & \code{runner.py}, \code{verifier.py}, \code{sweep.py} & Runner (modos), sweeps, export CSV/JSON, verificador RF-42 \\
+\code{gui} & \code{app.py}, \code{session.py} & Ventana tkinter, dibujo, interacción, modo auto IA vs IA \\
+\bottomrule
+\end{tabular}
+\label{tab:componentes}
+\end{table}
+
+\section{Comunicación entre Componentes}
+\label{sec:comunicacion}
+
+\begin{table}[H]
+\centering
+\caption{Comunicación entre componentes}
+\begin{tabular}{llp{5.5cm}}
+\toprule
+\textbf{De} & \textbf{Hacia} & \textbf{Qué se comunica} \\
+\midrule
+\code{scenario} & \code{domain} & Estado inicial \code{GameState} + \code{Board} (catálogo validado) \\
+\code{algorithms} & \code{domain} & Consulta \code{legal\_actions}, \code{successors}, \code{apply}, \code{winner} \\
+\code{experiments} & \code{algorithms} & Ejecuta algoritmos, recibe \code{SearchResult}/\code{AdversarialResult} \\
+\code{gui} & \code{scenario}, \code{algorithms}, \code{experiments} & Orquesta y muestra; \textbf{no contiene lógica de juego} \\
+\bottomrule
+\end{tabular}
+\label{tab:comunicacion}
+\end{table}
+
+Principios clave:
+\begin{itemize}
+\item \code{algorithms} \textbf{nunca lee JSON} ni conoce la GUI; solo usa \code{domain} y \code{Scenario}.
+\item \code{gui} no contiene lógica de juego; llama a \code{domain} (movimientos), \code{algorithms} (decisiones) y \code{experiments} (búsquedas).
+\item \code{scenario} valida \textbf{atómicamente}: todo o nada, errores explicativos, nada parcialmente construido.
+\end{itemize}
+
+\section{Estructura de Carpetas}
+\label{sec:estructura-carpetas}
+
+\begin{minted}{text}
+src/tactical_grid/
+├── domain/         ← estado, acciones, sucesores, costos, reglas
+├── scenario/       ← carga JSON, validación atómica
+├── algorithms/     ← BFS, DFS, UCS, A*, Beam, Minimax, α-β, heurísticas, utilidad
+├── gui/            ← interfaz gráfica tkinter
+└── experiments/    ← métricas, verificador, casos mínimos, runner, sweep
+
+scenarios/          ← JSON de escenarios (apendice_a.json, caso_01..07, prueba_15x15, etc.)
+tests/              ← 281 pruebas automatizadas
+docs/               ← enunciado, informe técnico, manual, casos, resultados
+latex/              ← este documento (LaTeX)
+\end{minted}
+
+\section{Decisiones Arquitectónicas Clave}
+\label{sec:decisiones-arquitectonicas}
+
+\begin{table}[H]
+\centering
+\caption{Decisiones arquitectónicas registradas en \texttt{decisions.md}}
+\begin{tabular}{ll}
+\toprule
+\textbf{Fecha} & \textbf{Decisión} \\
+\midrule
+2026-10-07 & 5 componentes: domain, scenario, algorithms, gui, experiments \\
+2026-10-07 & Separación estática/dinámica: Board (estático) + GameState (dinámico) \\
+2026-10-07 & Inmutabilidad total: frozen dataclasses, tuplas ordenadas \\
+2026-10-07 & JSON claves en español, código en inglés \\
+2026-10-16 & GUI: tkinter (estándar, cero dependencias) \\
+2026-10-17 & CLI: sweep combinatorio, export CSV/JSON \\
+\bottomrule
+\end{tabular}
+\label{tab:decisiones-arq}
+\end{table}

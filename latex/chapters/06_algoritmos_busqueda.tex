@@ -1,0 +1,173 @@
+% 06_algoritmos_busqueda.tex - Capítulo 6: Algoritmos de Búsqueda (F2, F3)
+\chapter{Algoritmos de Búsqueda de Un Agente}
+\label{ch:busqueda}
+
+Este capítulo cubre las búsquedas de un solo agente (RF-14 a RF-24): BFS, DFS, UCS, A*, Beam Search.
+El modelo de abstracción (\code{PathProblem}) transforma el juego completo en un problema de
+un agente (RF-14).
+
+\section{Abstracción de Un Agente: \code{PathProblem}}
+\label{sec:pathproblem}
+
+La RF-14 exige ignorar al adversario. \code{make\_problem} transforma el \code{GameState}
+completo en un problema de \textbf{un solo agente}:
+
+\begin{enumerate}
+\item \textbf{Quita rivales:} las unidades del bando contrario se eliminan de \code{positions}.
+\item \textbf{Compañeros quietos:} las otras unidades propias se quedan quietas como obstáculos.
+\item \textbf{Turno fijo:} el turno se fija al bando de la unidad inicio; no alterna.
+\item \textbf{Recurso ignorado:} \code{carrier=None}, \code{resource=None}.
+\item \textbf{Turn number = 0:} se reinicia el contador.
+\item \textbf{Base rival no entrable:} se mantiene la regla de dominio (no se puede pisar).
+\end{enumerate}
+
+\begin{minted}{python}
+def make_problem(board: Board, initial: GameState, unit_id: str, goal: Position) -> PathProblem:
+    side = board.unit_sides[unit_id]
+    start = replace(
+        initial,
+        positions=tuple((uid, pos) for uid, pos in initial.positions
+                        if board.unit_sides[uid] is side),
+        turn=side,
+        turn_number=0,
+        carrier=None,
+        resource=None,
+    )
+    return PathProblem(board, start, unit_id, goal)
+\end{minted}
+
+El estado de búsqueda equivale a la \textbf{posición de la unidad inicio}; los compañeros
+permanecen como obstáculos estáticos.
+
+\section{Convenciones Comunes (G7, G8, Decisión 2026-10-14)}
+\label{sec:convenciones-comunes}
+
+Todos los algoritmos de búsqueda (BFS, DFS, UCS, A*, Beam) comparten estas convenciones:
+
+\begin{table}[H]
+\centering
+\caption{Convenciones comunes de búsqueda (G7, G8, decisión 2026-10-14)}
+\begin{tabular}{ll}
+\toprule
+\textbf{Convención} & \textbf{Valor} \\
+\midrule
+Tipo de búsqueda & Grafo (visited set); un estado nunca se genera dos veces \\
+Meta & Probada al \textbf{expandir} (no al generar) \\
+Estado inicial & Cuenta como \textbf{generado} (cuenta = 1) \\
+Orden de sucesores & Arriba, Abajo, Izquierda, Derecha (orden de \code{Position.neighbors()}) \\
+DFS & Empuja hijos en orden \textbf{inverso} para expandir primero "arriba" \\
+Desempate UCS/A* & Orden de entrada a la frontera (FIFO tie-break) \\
+Actualización de costo & UCS/A*: camino más barato actualiza $g$ y padre, \textbf{no} regenera \\
+$max\_frontier$ & Tamaño del conjunto \code{waiting} (estados distintos esperando) \\
+DFS & Sin límite de profundidad (visited set garantiza terminación) \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:convenciones-busqueda}
+
+
+\textbf{Justificación:} La meta al expandir (no al generar) es necesaria para que UCS/A* garanticen
+optimalidad. El estado inicial cuenta como generado porque entra a la frontera. El desempate
+FIFO asegura determinismo y reproduce los resultados esperados de los casos de prueba.
+
+\section{BFS: Búsqueda en Anchura}
+\label{sec:bfs}
+
+\begin{minted}{python}
+def bfs(problem: PathProblem) -> SearchResult:
+    # FIFO queue (deque)
+    # goal test al expandir
+    # no duplicados: skip si en explored o en parents (frontera)
+    # orden: up, down, left, right
+\end{minted}
+
+\begin{itemize}
+\item \textbf{Frontera:} \code{deque} (FIFO)
+\item \textbf{Complejidad:} $\mathcal{O}(V)$ tiempo y espacio sobre $V$ estados alcanzables
+\item \textbf{Óptimo en:} número de movimientos (si todos los costos son iguales)
+\end{itemize}
+
+\section{DFS: Búsqueda en Profundidad}
+\label{sec:dfs}
+
+\begin{minted}{python}
+def dfs(problem: PathProblem) -> SearchResult:
+    # LIFO stack (list)
+    # hijos en orden inverso -> pop() expande primero "arriba"
+    # mismo bookkeeping que BFS (grafo, meta al expandir, no duplicados)
+\end{minted}
+
+\begin{itemize}
+\item \textbf{Frontera:} \code{list} (LIFO)
+\item \textbf{Hijos en orden inverso:} para que \code{pop()} saque primero "arriba"
+\item \textbf{Complejidad:} $\mathcal{O}(V)$ tiempo y espacio
+\item \textbf{No óptimo} en movimientos ni en costo
+\end{itemize}
+
+\section{UCS: Costo Uniforme}
+\label{sec:ucs}
+
+Implementa la convención exacta de \rf{19} (curso): prioridad = menor $g(n)$; desempate por
+orden de entrada a la frontera; actualización de costo sin regenerar.
+
+\begin{minted}{python}
+def ucs(problem: PathProblem) -> SearchResult:
+    heap = [(0.0, 0)]           # (g, order_rank)
+    order = {start: 0}          # estado -> rank de entrada
+    by_order = [start]          # rank -> estado
+    waiting = {start}           # estados en frontera (para max_frontier)
+    
+    while heap:
+        g_cost, rank = heapq.heappop(heap)
+        node = by_order[rank]
+        if node in explored or g_cost > g[node]: continue  # stale entry
+        waiting.discard(node)
+        # goal test, expandir, actualizar...
+        
+        if child not in g:
+            # PRIMERA VEZ
+            order[child] = len(by_order)
+            by_order.append(child)
+            waiting.add(child)
+            generated += 1
+            heapq.heappush(heap, (new_cost, order[child]))
+        elif new_cost < g[child]:
+            # CAMINO MÁS BARATO: actualiza g y padre, MANTIENE order original
+            g[child] = new_cost
+            heapq.heappush(heap, (new_cost, order[child]))  # nuevo entry, mismo rank
+\end{minted}
+
+Puntos clave de la implementación:
+\begin{enumerate}
+\item \code{order} = orden de primera entrada a la frontera (tie-break RF-19)
+\item Actualización de costo $\to$ \code{heappush} nuevo entry con \textbf{mismo rank}; el stale se descarta al extraer
+\item \code{max\_frontier} = \code{len(waiting)} (solo estados distintos esperando, no entries stale)
+\item \code{generated} solo incrementa en \textbf{primera generación} del estado
+\end{enumerate}
+
+\section{Métricas Reportadas (RF-15, RF-16, RF-19, RF-38)}
+\label{sec:metricas-busqueda}
+
+Todos los algoritmos de búsqueda devuelven \code{SearchResult} con campos equivalentes al
+Apéndice B del enunciado:
+
+\begin{table}[H]
+\centering
+\caption{Métricas de búsqueda (Apéndice B + tiempo)}
+\begin{tabular}{ll}
+\toprule
+\textbf{Campo} & \textbf{Descripción} \\
+\midrule
+\code{algorithm} & Nombre: \code{BFS}, \code{DFS}, \code{UCS}, \code{A\_STAR\_H1}, \code{A\_STAR\_H2}, \code{BEAM\_K1}... \\
+\code{success} & \code{True}/\code{False} \\
+\code{path} & Tupla de \code{Position} (inicio a meta, inicio incluido) \\
+\code{cost} & Costo total $g(goal)$ \\
+\code{length} & Número de movimientos (\code{len(path)-1}) \\
+\code{generated} & Estados incorporados a la búsqueda \\
+\code{expanded} & Estados cuyos sucesores fueron analizados \\
+\code{max\_frontier} & Máximo tamaño de \code{waiting} \\
+\code{time\_seconds} & \code{time.perf\_counter()}; tiempo de ejecución \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:metricas-busqueda}

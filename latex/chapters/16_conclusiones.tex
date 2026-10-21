@@ -1,0 +1,91 @@
+% 16_conclusiones.tex - Capítulo 16: Conclusiones
+\chapter{Conclusiones}
+\label{ch:conclusiones}
+
+\section{Resumen de Logros}
+\label{sec:logros}
+
+El proyecto \tacticalgrid\ cumple \textbf{todos los requisitos obligatorios} del enunciado del
+Trabajo de Sistemas Inteligentes I (UCALDAS, 2026-2):
+
+\begin{itemize}
+\item \textbf{Modelado y estado (RF-10--13, caso 6):} Estado compuesto inmutable, reglas
+  deterministas, identificación unívoca, justificación de suficiencia.
+\item \textbf{BFS, DFS, UCS (RF-14--19, casos 1--2):} 6 métricas, convenciones G7/G8,
+  casos 1--2 con esperado vs. obtenido.
+\item \textbf{A*, Beam Search (RF-20--24, casos 3--5):} 2 heurísticas (Manhattan escalada,
+  obstacle-aware BFS inverso), justificación RF-22 completa, Beam k=1,2,4,8.
+\item \textbf{Minimax, $\alpha$-$\beta$ (RF-25--33, casos 7--10):} Utilidad con pesos JSON,
+  7 métricas RF-30, misma decisión (RF-31), análisis orden/poda (RF-32), check 6 verif.
+\item \textbf{Experimentación (RF-16, 29, 30, 38, 39, RE-03/04):} 10 casos con esperado vs
+  obtenido, sweep CLI, export CSV/JSON, rendimiento medido.
+\item \textbf{Validación (RF-34, 35, 42):} Carga atómica 9+1 validaciones, 6 checks verif.
+\item \textbf{Calidad y docs (RNF-05, RD-01, 9.2):} 5 componentes, docstrings completos,
+  281 tests, ruff/mypy strict, reporte IA.
+\item \textbf{GUI (RF-40):} tkinter, colores por costo JSON, auto IA vs IA, carga JSON atómico.
+\item \textbf{CLI + Sweep (G10):} Opciones listas, sweep combinatorio, export CSV/JSON.
+\end{itemize}
+
+\section{Aportes Destacados}
+\label{sec:aportes}
+
+\begin{enumerate}
+\item \textbf{Heurística obstacle-aware (h2):} BFS inverso desde la meta que ve muros y base
+  rival. Domina a Manhattan (h2 $\ge$ h1), admisible y consistente. Reduce expandidos
+  2$\times$ en caso 3, 1.6$\times$ en caso 4.
+\item \textbf{Placaje como acción explícita:} Reemplaza interceptación automática. Acción
+  \code{Plack} con costo = terreno destino; recurso cae en celda del portador (sin transferencia).
+  Elimina desempates y simplifica reglas.
+\item \textbf{Utilidad con objetivo dinámico y término rival condicional:} Objetivo cambia según
+  quién porta; término rival solo cuando MAX porta. Pesos 100\% configurables en JSON (RNF-03).
+\item \textbf{Abstracción 1-agente limpia:} \code{make\_problem} quita rivales, fija turno,
+  quita recurso; \code{\_normalize} limpia side-effects de \code{apply}.
+\item \textbf{Sweep CLI + export CSV/JSON:} Listas comma-separated, producto cartesiano de
+  combos, export plano (CSV) y completo (JSON con \code{valores\_raiz}).
+\item \textbf{GUI tkinter única:} 700 líneas, colores por costo JSON, auto IA vs IA, deshacer,
+  reiniciar, carga atómica, ayuda contextual.
+\end{enumerate}
+
+\section{Lecciones Aprendidas}
+\label{sec:lecciones}
+
+\begin{enumerate}
+\item \textbf{Definir convenciones antes de codificar:} G7, G8, G9 (tie-break, meta al expandir,
+  Beam criterion) decidieron la corrección de métricas.
+\item \textbf{Escalar heurísticas por costo mínimo del escenario:} Garantiza admisibilidad
+  ante mapas externos con costos $< 1$ (enunciado §18.4).
+\item \textbf{Placaje como acción, no side-effect:} Simplifica \code{apply}, elimina
+  desempates, hace reglas más explicables.
+\item \textbf{Utilidad con pesos en JSON:} Cumple RNF-03 sin hardcodeo; permite ajustar
+  comportamiento sin tocar código.
+\item \textbf{Validar a mano antes de ejecutar:} Valores esperados de casos 1--10 derivados
+  a mano $\to$ tests asercionan \texttt{expected == obtained}.
+\item \textbf{Documentar decisiones en \texttt{decisions.md}:} 16 decisiones registradas con
+  fecha, contexto, alternativas descartadas; trazabilidad total.
+\end{enumerate}
+
+\section{Trabajo Futuro}
+\label{sec:trabajo-futuro-final}
+
+Ver Cap. \ref{ch:limitaciones} §\ref{sec:trabajo-futuro}. Las líneas de trabajo
+identificadas para futuras ampliaciones son:
+\begin{enumerate}
+\item Evaluar ajustes de \code{recurso\_cargado} en la función de utilidad.
+\item Ampliar la interfaz con más visualizaciones y análisis comparativos.
+\item Incorporar nuevos escenarios para evaluar escalabilidad.
+\end{enumerate}
+
+\section{Agradecimientos}
+\label{sec:agradecimientos}
+
+A la Universidad de Caldas, al curso Sistemas Inteligentes I, y al profesor por la guía.
+Al modelo \textbf{Claude Sonnet 5.5} (Claude Code) por asistir en redacción de código,
+documentación y decisiones; las intervenciones humanas y responsabilidad final son del
+equipo (Jorge Iván Garcia Torres, Daniel Felipe Franco Rincón).
+
+\vspace{2cm}
+\begin{flushright}
+\textbf{Manizales, 21 de octubre de 2026}\\
+\vspace{1cm}
+Jorge Iván Garcia Torres \hspace{3cm} Daniel Felipe Franco Rincón
+\end{flushright}

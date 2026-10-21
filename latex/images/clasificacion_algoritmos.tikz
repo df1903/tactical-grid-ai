@@ -1,0 +1,81 @@
+% clasificacion_algoritmos.tikz - Diagrama: Clasificación de Algoritmos (Mermaid flowchart LR -> TikZ)
+% Compilar: lualatex --shell-escape clasificacion_algoritmos.tikz
+
+\documentclass[tikz,border=10pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{shapes, arrows, positioning, calc, fit, backgrounds, arrows.meta}
+
+% Colores UCALDAS
+\definecolor{ucaldasAzul}{HTML}{003366}
+\definecolor{ucaldasDorado}{HTML}{C8A84D}
+\definecolor{ucaldasVerde}{HTML}{22543D}
+\definecolor{ucaldasNaranja}{HTML}{F9D423}
+\definecolor{ucaldasRojo}{HTML}{9B2C2C}
+
+\begin{document}
+\begin{tikzpicture}[
+    node distance=1.5cm and 1.2cm,
+    >=Stealth,
+    font=\small,
+    subgraph/.style={
+        rectangle, draw=ucaldasAzul!60, thick, fill=ucaldasAzul!5,
+        rounded corners, inner sep=8pt,
+        align=center, font=\small\bfseries
+    },
+    algo/.style={
+        rectangle, draw=ucaldasAzul, thick, fill=ucaldasAzul!10,
+        rounded corners, minimum width=2cm, minimum height=0.8cm,
+        align=center, font=\small\bfseries
+    },
+    arrow/.style={->, thick, ucaldasAzul},
+    labelArrow/.style={->, thick, ucaldasDorado, font=\tiny}
+]
+
+% Subgrafos
+\begin{scope}[on background layer]
+\node[subgraph] (NI) at (0,0) {
+    \textbf{No Informada}
+    \node[algo] (BFS) {BFS};
+    \node[algo, below=0.4cm of BFS] (DFS) {DFS};
+};
+
+\node[subgraph, right=2.5cm of NI] (BC) {
+    \textbf{Basada en Costos}
+    \node[algo] (UCS) {UCS};
+};
+
+\node[subgraph, right=2.5cm of BC] (BI) {
+    \textbf{Informada}
+    \node[algo] (AS) {A*};
+    \node[algo, below=0.4cm of AS] (BEAM) {Beam Search};
+};
+
+\node[subgraph, right=2.5cm of BI] (AD) {
+    \textbf{Adversarial}
+    \node[algo] (MM) {Minimax};
+    \node[algo, below=0.4cm of MM] (AB) {Alfa-Beta};
+};
+\end{scope}
+
+% Flechas entre grupos
+\draw[arrow] (NI.east) -- node[labelEdge, above] {+ costo acumulado} (BC.west);
+\draw[arrow] (BC.east) -- node[labelEdge, above] {+ heurística h(n)} (BI.west);
+\draw[arrow] (BI.east) -- node[labelEdge, above] {+ adversario} (AD.west);
+
+% Estilos de subgrafos
+\begin{scope}[on background layer]
+\fill[ucaldasAzul!10] (NI.south west) rectangle (NI.north east);
+\fill[ucaldasVerde!10] (BC.south west) rectangle (BC.north east);
+\fill[ucaldasNaranja!10] (BI.south west) rectangle (BI.north east);
+\fill[ucaldasRojo!10] (AD.south west) rectangle (AD.north east);
+\end{scope}
+
+% Leyenda
+\node[below=1.2cm of AD, font=\tiny, text width=12cm, align=center, text=gray] {
+    \textbf{Clasificación de Algoritmos (F2-F4)} \\
+    No Informada $\to$ Costos $\to$ Informada $\to$ Adversarial. \\
+    Cada nivel añade información: costo, heurística, adversario.
+};
+
+\end{tikzpicture}
+\end{document}

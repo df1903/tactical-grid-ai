@@ -1,0 +1,219 @@
+% 04_linea_comandos.tex - Manual Capítulo 4: Línea de Comandos
+\chapter{Línea de Comandos (CLI)}
+\label{man:cli}
+
+\section{Uso Básico}
+\label{sec:cli-basico}
+
+\begin{minted}{bash}
+uv run python -m tactical_grid <scenario.json> [opciones]
+\end{minted}
+
+Las opciones sobrescriben la sección \code{prueba} del JSON.
+
+\screenshotfigure{cli-resultado}{0.90}{Ejecución de la línea de comandos con métricas y verificación de resultados.}
+
+\section{Opciones Disponibles}
+\label{sec:cli-opciones}
+
+\begin{longtable}{p{3cm}p{3cm}p{8cm}}
+\toprule
+\textbf{Opción} & \textbf{Tipo} & \textbf{Descripción} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Opción} & \textbf{Tipo} & \textbf{Descripción} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{3}{r}{\textit{Continúa}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\code{scenario} & positional & Ruta al archivo JSON del escenario \\
+\code{--mode} & \code{busqueda}, \code{adversarial}, \code{partida} & Modo de ejecución \\
+\code{--play} & \code{auto}, \code{humano} & En \code{partida}: IA vs IA o persona vs IA \\
+\code{--side} & \code{A}, \code{B} & Bando de la persona con \code{--play humano}; default A \\
+\code{--variant} & \code{base}, \code{dinamica} & Variante de reglas adversariales; default desde el JSON \\
+\code{--algorithm} & \code{BFS}, \code{DFS}, \code{UCS}, \code{A\_STAR} (\code{A*}, \code{A\_ESTRELLA}), \code{BEAM}, \code{MINIMAX}, \code{ALPHA\_BETA} & Algoritmo a ejecutar \\
+\code{--heuristic} & \code{H1} (Manhattan), \code{H2} (con obstáculos); valor predeterminado: \code{H1} & Heurística para A*/Beam \\
+\code{--k} & int & Ancho de haz (Beam) \\
+\code{--depth} & int & Profundidad Minimax/$\alpha$-$\beta$ (default: \code{juego.profundidad\_maxima\_minimax}) \\
+\code{--order} & \code{default}, \code{reversed} & Orden de acciones (Minimax/$\alpha$-$\beta$) \\
+\code{--unit} & string & Unidad de inicio (búsqueda) \\
+\code{--goal} & \code{row,col} & Meta de búsqueda (ej: \code{3,2}) \\
+\code{--verify} & indicador & Ejecuta las comprobaciones RF-42 y añade \code{verificacion} al reporte \\
+\code{--csv} & \code{PATH} & Escribe métricas (una fila por corrida) \\
+\code{--json} & \code{PATH} & Escribe reportes completos (camino, valores\_raiz, checks) \\
+\bottomrule
+\caption{Opciones CLI}
+\label{tab:cli-opciones}
+\end{longtable}
+
+\section{Listas Comma-Separated (Sweep Combinatorio)}
+\label{sec:cli-sweep}
+
+Las opciones \code{--algorithm}, \code{--heuristic}, \code{--k}, \code{--depth}, \code{--order}
+aceptan listas separadas por comas y ejecutan \textbf{todas las combinaciones} (producto cartesiano)
+que apliquen.
+
+\begin{minted}{bash}
+# Beam k=1,2,4,8 con H1
+uv run python -m tactical_grid scenarios/caso_05_beam_k.json \
+    --algorithm BEAM --heuristic H1 --k 1,2,4,8 --verify --csv beam.csv
+
+# Minimax frente a alfa-beta, profundidades 1-4, órdenes predeterminado e invertido
+uv run python -m tactical_grid scenarios/caso_07_decision_adversarial.json \
+    --algorithm MINIMAX,ALPHA_BETA --depth 1,2,3,4 --order default,reversed --verify
+
+# Sweep completo: todos los algoritmos, heurísticas, k, depths, órdenes
+uv run python -m tactical_grid scenarios/apendice_a.json \
+    --algorithm BFS,DFS,UCS,A_STAR,BEAM \
+    --heuristic H1,H2 --k 1,2,4,8 \
+    --depth 3,4,5 --order default,reversed \
+    --verify --csv results.csv --json results.json
+\end{minted}
+
+\section{Variante dinámica}
+\label{sec:variante-dinamica}
+
+La variante se activa con \code{--variant dinamica} o mediante \code{"variante": "dinamica"}
+en la sección \code{juego} del JSON. Mantiene el objetivo de llevar el recurso a la base,
+pero aplica dos reglas adicionales:
+\begin{itemize}
+\item El costo del terreno se convierte en turnos de recuperación propios; una unidad en
+  recuperación no puede actuar hasta quedar libre.
+\item Un placaje puede robar el recurso y el portador conserva inmunidad durante los turnos
+  indicados por \code{juego.inmunidad\_robo}.
+\end{itemize}
+Los algoritmos disponibles para esta variante son Minimax dinámico y Alfa-beta dinámico.
+
+El sweep ejecuta el producto cartesiano de todas las combinaciones válidas (heurística solo para
+A*/Beam, k solo para Beam, depth/order solo para Minimax/$\alpha$-$\beta$).
+
+\screenshotfigure{cli-sweep}{0.90}{Sweep combinado de algoritmos con exportación de resultados en CSV/JSON.}
+
+\section{Ejemplos de Uso Común}
+\label{sec:cli-ejemplos}
+
+\subsection{Búsqueda simple con verificación}
+\begin{minted}{bash}
+uv run python -m tactical_grid scenarios/apendice_a.json \
+    --algorithm A_STAR --heuristic H2 --verify
+\end{minted}
+
+\subsection{Adversarial con verificación (check 6)}
+\begin{minted}{bash}
+uv run python -m tactical_grid scenarios/caso_07_decision_adversarial.json \
+    --algorithm ALPHA_BETA --depth 4 --verify
+\end{minted}
+
+\subsection{Partida completa desde la terminal}
+\begin{minted}{bash}
+# IA contra IA
+uv run python -m tactical_grid scenarios/caso_07_decision_adversarial.json \
+    --mode partida --play auto --algorithm ALPHA_BETA --depth 3
+
+# Persona contra IA
+uv run python -m tactical_grid scenarios/caso_07_decision_adversarial.json \
+    --mode partida --play humano --side A --depth 3
+
+# Variante dinámica
+uv run python -m tactical_grid scenarios/caso_11_dinamico.json \
+    --mode partida --play humano --variant dinamica --depth 3
+\end{minted}
+
+Sin \code{--play}, \code{--mode partida} solo describe el estado cargado. Con
+\code{--play humano}, las acciones legales aparecen numeradas y se responde con un número;
+\code{q} abandona la partida. Con \code{--play auto}, el reporte incluye el desarrollo completo
+de la partida.
+
+\subsection{Sweep de rendimiento (caso 10.5 del informe)}
+\begin{minted}{bash}
+uv run python -m tactical_grid scenarios/prueba_15x15.json \
+    --algorithm ALPHA_BETA --depth 5,6,7 --csv docs/results/rendimiento_15x15.csv
+uv run python -m tactical_grid scenarios/prueba_15x15.json \
+    --algorithm MINIMAX --depth 4,5,6 --csv docs/results/rendimiento_15x15_minimax.csv
+\end{minted}
+
+\subsection{Sweep completo para el informe (todos los casos)}
+\begin{minted}{bash}
+R=docs/results; U="uv run python -m tactical_grid"
+$U scenarios/caso_01_bfs_vs_dfs.json --algorithm BFS,DFS,UCS --verify --csv $R/caso_01_bfs_vs_dfs.csv --json $R/caso_01_bfs_vs_dfs.json
+$U scenarios/caso_02_bfs_vs_ucs.json --algorithm BFS,DFS,UCS --verify --csv $R/caso_02_bfs_vs_ucs.csv --json $R/caso_02_bfs_vs_ucs.json
+$U scenarios/caso_03_obstaculo_heuristica.json --algorithm UCS,A_STAR --heuristic H1,H2 --verify --csv $R/caso_03_obstaculo_heuristica.csv --json $R/caso_03_obstaculo_heuristica.json
+$U scenarios/caso_04_comparacion_heuristicas.json --algorithm UCS,A_STAR --heuristic H1,H2 --verify --csv $R/caso_04_comparacion_heuristicas.csv --json $R/caso_04_comparacion_heuristicas.json
+$U scenarios/caso_05_beam_k.json --algorithm UCS,BEAM --heuristic H1 --k 1,2,4,8 --verify --csv $R/caso_05_beam_k.csv --json $R/caso_05_beam_k.json
+$U scenarios/caso_07_decision_adversarial.json --algorithm MINIMAX,ALPHA_BETA --depth 1,2,3,4,5 --order default,reversed --verify --csv $R/casos_07_10_adversarial.csv --json $R/casos_07_10_adversarial.json
+$U scenarios/prueba_20x20.json --algorithm ALPHA_BETA --depth 2,3,4,5,6 --csv $R/rendimiento_20x20.csv
+$U scenarios/prueba_15x15.json --algorithm ALPHA_BETA --depth 5,6,7 --csv $R/rendimiento_15x15.csv
+$U scenarios/prueba_15x15.json --algorithm MINIMAX --depth 4,5,6 --csv $R/rendimiento_15x15_minimax.csv
+$U scenarios/apendice_a.json --algorithm BFS,DFS,UCS,A_STAR,BEAM --heuristic H1,H2 --k 1,2,4,8 --verify --csv $R/apendice_a.csv
+\end{minted}
+
+\section{Salida JSON (Estructura)}
+\label{sec:cli-salida}
+
+\subsection{Modo \code{busqueda}}
+\begin{minted}{json}
+{
+  "algoritmo": "A_STAR_H2",
+  "exito": true,
+  "camino": [[2,2], [3,2], [4,2], [5,2]],
+  "costo": 9,
+  "longitud": 3,
+  "estados_generados": 84,
+  "estados_expandidos": 42,
+  "maximo_frontera": 15,
+  "tiempo_segundos": 0.00123,
+  "verificacion": [
+    {"chequeo": "valid moves", "ok": true, "detalle": "every step is a legal action"},
+    {"chequeo": "no obstacles", "ok": true, "detalle": "no cell is blocked"},
+    {"chequeo": "cost matches", "ok": true, "detalle": "reported 9, replayed 9.0"},
+    {"chequeo": "goal reached", "ok": true, "detalle": "final cell [5,2], goal [5,2]"},
+    {"chequeo": "no invalid states", "ok": true, "detalle": "all replayed states are valid"}
+  ]
+}
+\end{minted}
+
+\subsection{Modo \code{adversarial}}
+\begin{minted}{json}
+{
+  "algoritmo": "ALPHA_BETA",
+  "profundidad": 4,
+  "orden_acciones": "default",
+  "accion": "Move(unit_id='A1', dest=Position(row=0, col=0))",
+  "valor": 0.0,
+  "nodos_generados": 431,
+  "nodos_evaluados": 299,
+  "nodos_podados": 757,
+  "profundidad_alcanzada": 4,
+  "valores_raiz": [
+    {"accion": "Move(unit_id='A1', dest=Position(row=0, col=0))", "valor": 0.0},
+    {"accion": "Move(unit_id='A2', dest=Position(row=0, col=1))", "valor": -2.5}
+  ],
+  "tiempo_segundos": 0.0045,
+  "verificacion": [
+    {"chequeo": "Minimax legal actions", "ok": true, "detalle": "all considered actions are legal"}
+  ]
+}
+\end{minted}
+
+\subsection{Modo \code{partida}}
+\begin{minted}{json}
+{
+  "modo": "partida",
+  "mapa": [20, 20],
+  "turno": "A",
+  "portador": null,
+  "recurso": [2, 2],
+  "unidades": {
+    "A1": {"bando": "A", "celda": [0, 1]},
+    "A2": {"bando": "A", "celda": [1, 0]},
+    "B1": {"bando": "B", "celda": [3, 2]},
+    "B2": {"bando": "B", "celda": [2, 3]}
+  },
+  "bases": {"A": [0, 0], "B": [19, 19]},
+  "limite_turnos": 100
+}
+\end{minted}

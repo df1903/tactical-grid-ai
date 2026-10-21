@@ -1,0 +1,61 @@
+% ciclo_turno.tikz - Diagrama: Ciclo de Turno (Mermaid stateDiagram-v2 → TikZ)
+% Compilar: lualatex --shell-escape ciclo_turno.tikz
+
+\documentclass[tikz,border=10pt]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{shapes, arrows, positioning, calc, automata, arrows.meta}
+
+% Colores UCALDAS
+\definecolor{ucaldasAzul}{HTML}{003366}
+\definecolor{ucaldasDorado}{HTML}{C8A84D}
+\definecolor{ucaldasAzulClaro}{HTML}{0056A0}
+
+\begin{document}
+\begin{tikzpicture}[
+    node distance=1.8cm and 1.5cm,
+    >=Stealth,
+    font=\small,
+    state/.style={
+        rectangle, draw=ucaldasAzul, thick, fill=ucaldasAzul!8,
+        rounded corners, minimum width=3.1cm, minimum height=0.9cm,
+        align=center, font=\small
+    },
+    startstop/.style={
+        ellipse, draw=ucaldasDorado!80!black, thick, fill=ucaldasDorado!8,
+        minimum width=2.3cm, minimum height=0.9cm,
+        align=center, font=\small
+    },
+    arrow/.style={->, thick, ucaldasAzul},
+    labelEdge/.style={font=\scriptsize, text=ucaldasAzul, fill=white, inner sep=1pt, auto}
+]
+
+% Nodos
+\node[startstop] (inicio) {Inicio Juego};
+\node[state, below=of inicio] (sel) {Seleccionar unidad\\(bando actual)};
+\node[state, below=of sel] (ejec) {Ejecutar acción\\(unidad elegida)};
+\node[state, below=of ejec] (verif) {Verificar acción válida};
+\node[state, below=of verif] (recurso) {¿Recurso en\\base propia?};
+\node[state, below=of recurso] (cambio) {Cambiar turno\\(otro bando)};
+\node[startstop, right=of recurso] (victoria) {Victoria};
+\node[startstop, below=of victoria] (fin) {Fin};
+
+% Flechas
+\draw[arrow] (inicio) -- node[labelEdge, right] {bando actual} (sel);
+\draw[arrow] (sel) -- node[labelEdge, right] {unidad elegida} (ejec);
+\draw[arrow] (ejec) -- node[labelEdge, right] {acción} (verif);
+\draw[arrow] (verif) -- (recurso);
+\draw[arrow] (recurso) -- node[labelEdge, right] {Sí} (victoria);
+\draw[arrow] (recurso) -- node[labelEdge, left] {No} (cambio);
+\draw[arrow] (cambio) -- ++(-2.8,0) |- node[labelEdge, left] {otro bando} (sel.west);
+\draw[arrow] (victoria) -- (fin);
+
+% Leyenda
+\node[below=0.7cm of fin, font=\scriptsize, text width=8cm, align=center, text=ucaldasAzul] {
+    \textbf{Ciclo de Turno (RF-06)} \\
+    Turnos alternados: A $\leftrightarrow$ B. \\
+    1 unidad $\times$ 1 acción por turno. \\
+    Pickup al llegar $\to$ Delivery gana $\to$ Interceptación.
+};
+
+\end{tikzpicture}
+\end{document}

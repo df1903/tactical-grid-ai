@@ -1,0 +1,56 @@
+% portada.tex - Portada común para ambos documentos
+% Uso: \input{portada} en el documento principal
+
+\begin{titlepage}
+    \thispagestyle{empty}
+    \centering
+    \vspace*{1cm}
+    
+    % Logo UCALDAS
+    \includegraphics[width=0.28\textwidth]{images/logo_ucaldas.png}%
+    \par\vspace{0.8cm}
+    
+    % Universidad
+    {\Large \textbf{UNIVERSIDAD DE CALDAS}\par}
+    \vspace{0.3cm}
+    {\large Facultad de Inteligencia Artificial e Ingenierías\par}
+    {\large Departamento de Ingeniería de Sistemas y Computación\par}
+    \vspace{0.6cm}
+    
+    % Línea decorativa
+    {\color{ucaldasDorado}\rule{0.6\textwidth}{2pt}\par}
+    \vspace{0.6cm}
+    
+    % Título del documento
+    {\Huge \bfseries \color{ucaldasAzul} TacticalGrid\par}
+    \vspace{0.5cm}
+    \vspace{0.8cm}
+
+    % Título según documento
+    {\Large \bfseries \documenttitle\par}
+    \vspace{0.5cm}
+    {\large Sistemas Inteligentes I\par}
+    \vspace{1cm}
+    
+    % Autores
+    {\small
+    \begin{tabular}{c}
+        \textbf{Autores} \\
+        Jorge Iván Garcia Torres \\
+        Daniel Felipe Franco Rincón \\[0.15cm]
+        \textbf{Docente} \\
+        Jairo Iván Vélez Bedoya \\[0.15cm]
+        \textbf{Materia} \\
+        Sistemas Inteligentes I \\[0.15cm]
+        \textbf{Entrega} \\
+        Octubre de 2026 \\[0.15cm]
+        \url{https://github.com/df1903/tactical-grid-ai}
+    \end{tabular}\par}
+    \vspace{0.8cm}
+    
+    % Logotipo adicional pequeño
+    \vfill
+    {\small \color{ucaldasGris}
+    Manizales, Caldas -- Colombia \par
+    2026\par}
+\end{titlepage}

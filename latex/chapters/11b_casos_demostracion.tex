@@ -1,0 +1,266 @@
+% 11b_casos_demostracion.tex - Capítulo 11b: Casos Mínimos de Demostración (detalle)
+\chapter{Casos Mínimos de Demostración: Detalle Completo}
+\label{ch:casos-demo}
+
+Este capítulo presenta los 10 casos mínimos del enunciado (Sección 13) con sus tablas
+completas, mapas y comandos de reproducción. Cada caso incluye: \textbf{Setup}, \textbf{Expectativa},
+\textbf{Tabla esperado vs. obtenido}, \textbf{Comando de reproducción}.
+
+Todos los valores esperados fueron \textbf{derivados a mano del mapa antes de ejecutar el código}
+y son asertados por los tests automatizados.
+
+\screenshotfigure{gui-principal}{0.95}{Vista principal de la interfaz gráfica con el escenario cargado.}
+
+\screenshotfigure{gui-controles}{0.80}{Controles de algoritmo y parámetros de ejecución.}
+
+\screenshotfigure{gui-resultados}{0.85}{Resultados de una ejecución mostrados en la interfaz gráfica.}
+
+\screenshotfigure{gui-jugadas}{0.80}{Traza e historial de acciones de una partida.}
+
+\screenshotfigure{gui-automatico}{0.85}{Interfaz durante una partida automática IA contra IA.}
+
+\section{Caso 1: BFS frente a DFS}
+\label{sec:caso1-detalle}
+
+\textbf{Archivo:} \code{scenarios/caso\_01\_bfs\_vs\_dfs.json}
+\textbf{Mapa:} 20$\times$20, todo \code{camino} (costo 1).
+\textbf{Unidades:} A1 en (2,2), meta (2,6).
+
+\textbf{Expectativa:} Ambos encuentran solución pero exploran el espacio de manera distinta.
+BFS retorna el camino recto (4 movs, coste 4). DFS expande ``abajo'' primero y llega por un
+camino mucho más largo (42 movs, coste 42).
+
+\begin{table}[H]
+\centering
+\caption{Caso 1 -- BFS vs DFS}
+\begin{tabular}{lccccccc}
+\toprule
+Algoritmo & Éxito & Costo & Movs & Generados & Expandidos & Max Frontera & Match \\
+\midrule
+BFS & Sí & 4 & 4 & 39 & 29 & 11 & Sí \\
+DFS & Sí & 42 & 42 & 152 & 94 & 58 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Comando:} \code{uv run python -m tactical\_grid scenarios/caso\_01\_bfs\_vs\_dfs.json --algorithm BFS,DFS --verify}
+
+\section{Caso 2: Ruta Corta vs. Económica}
+\label{sec:caso2-detalle}
+
+\textbf{Archivo:} \code{scenarios/caso\_02\_bfs\_vs\_ucs.json}
+\textbf{Mapa:} 20$\times$20, banda de pantano (coste 7) en columnas 8--10, filas 0--9.
+A1 en (5,5), meta (5,12).
+
+\textbf{Expectativa:} BFS cruza la banda: 7 movs, coste $4\times1 + 3\times7 = 25$.
+UCS rodea por fila 10: 17 movs, coste 17.
+
+\begin{table}[H]
+\centering
+\caption{Caso 2 -- BFS vs UCS}
+\begin{tabular}{lccccccc}
+\toprule
+Algoritmo & Éxito & Costo & Movs & Generados & Expandidos & Max Frontera & Match \\
+\midrule
+BFS & Sí & 25 & 7 & 126 & 104 & 23 & Sí \\
+UCS & Sí & 17 & 17 & 269 & 239 & 33 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Conclusión:} La ruta con menos movimientos \textbf{no} es la más barata.
+
+\section{Caso 3: Obstáculo y Heurística}
+\label{sec:caso3-detalle}
+
+\textbf{Archivo:} \code{scenarios/caso\_03\_obstaculo\_heuristica.json}
+\textbf{Mapa:} Muro vertical en columna 8 (filas 0--15). A1 (5,5), meta (5,12).
+Distancia real = 29 (rodear por fila 16).
+
+\textbf{Expectativa:} Manhattan (h1) es engañado por el muro; obstacle-aware (h2) no.
+Expansiones: h2 $<$ h1 $<$ UCS.
+
+\begin{table}[H]
+\centering
+\caption{Caso 3 -- UCS, A* h1, A* h2}
+\begin{tabular}{lcccccc}
+\toprule
+Algoritmo & Costo & Movs & Generados & Expandidos & Max Frontera & Match \\
+\midrule
+UCS & 29 & 29 & 307 & 295 & 17 & Sí \\
+A* h1 & 29 & 29 & 194 & 166 & 28 & Sí \\
+A* h2 & 29 & 29 & 122 & 84 & 38 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Conclusión:} h2 ve el muro y no explora el lado equivocado; h1 explora ambos lados.
+
+\section{Caso 4: Comparación de Heurísticas}
+\label{sec:caso4-detalle}
+
+\textbf{Archivo:} \code{scenarios/caso\_04\_comparacion\_heuristicas.json}
+\textbf{Mapa:} Muro en columna 9 (filas 3--16). Hueco arriba (filas 0--2) = pantano (coste 3).
+Hueco abajo = camino (coste 1). Óptimo = 22 movs, coste 24 (por abajo).
+
+\textbf{Expectativa:} h2 expande menos que h1 (ve el muro), pero no ve el pantano.
+
+\begin{table}[H]
+\centering
+\caption{Caso 4 -- UCS, A* h1, A* h2}
+\begin{tabular}{lcccccc}
+\toprule
+Algoritmo & Costo & Movs & Generados & Expandidos & Max Frontera & Match \\
+\midrule
+UCS & 24 & 22 & 346 & 332 & 20 & Sí \\
+A* h1 & 24 & 22 & 230 & 186 & 44 & Sí \\
+A* h2 & 24 & 22 & 164 & 115 & 49 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Conclusión:} h2 ayuda (expande menos que h1) pero no ve el pantano $\to$ sigue
+explorando el atajo costoso.
+
+\section{Caso 5: Beam Search}
+\label{sec:caso5-detalle}
+
+\textbf{Archivo:} \code{scenarios/caso\_05\_beam\_k.json}
+\textbf{Mapa:} 7$\times$9, hierba (coste 2) y bosque (coste 4). Óptimo: coste 28, 14 movs (UCS).
+
+\textbf{Expectativa:} $k=1$ poda la única rama buena $\to$ falla. $k=2$ sobrevive pero mantiene
+ruta subóptima (30, 16 movs). $k=4,8$ recuperan óptimo.
+
+\begin{table}[H]
+\centering
+\caption{Caso 5 -- Beam Search k=1,2,4,8}
+\begin{tabular}{cccccccc}
+\toprule
+k & Éxito & Costo & Movs & Generados & Expandidos & Max Frontera & Match \\
+\midrule
+1 & No & -- & -- & 9 & 5 & 3 & Sí \\
+2 & Sí & 30 & 16 & 43 & 29 & 6 & Sí \\
+4 & Sí & 28 & 14 & 50 & 41 & 6 & Sí \\
+8 & Sí & 28 & 14 & 46 & 44 & 6 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Conclusión:} Restringir alternativas \textbf{puede descartar un camino que después
+habría sido conveniente} (RF-24). $k=1$ falla; $k=2$ sobrevive pero subóptimo; $k\ge4$
+recupera óptimo.
+
+\section{Caso 6: Estado Compuesto}
+\label{sec:caso6-detalle}
+
+\textbf{Archivo:} \code{scenarios/caso\_07\_decision\_adversarial.json} (mapa 5$\times$7).
+A1 en (1,0), base A en (0,0).
+
+\textbf{Expectativa:} La misma posición física (1,0) representa estados distintos según
+información adicional del juego:
+
+\begin{table}[H]
+\centering
+\caption{Caso 6 -- Estado compuesto}
+\begin{tabular}{lllll}
+\toprule
+Estado & Pos A1 & Carrier & Turn & Efecto Move A1 $\to$ (0,0) \\
+\midrule
+Libre (inicial) & (1,0) & nadie & A & entra base, no gana \\
+Portando & (1,0) & A1 & A & \textbf{gana A} \\
+Turno rival & (1,0) & nadie & B & A1 sin acciones legales \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Test \code{tests/test\_case\_6.py}: \code{len(set(states)) == 3}, \code{winner} correcto,
+acciones legales coherentes. Un dict indexado por estado mantiene 3 entradas; por posición
+solo 1.
+
+\section{Caso 7: Decisión Adversarial}
+\label{sec:caso7-detalle}
+
+\textbf{Archivo:} \code{scenarios/caso\_07\_decision\_adversarial.json}
+Mapa 5$\times$7, coste 1, recurso (0,1), A1 (1,0), A2 (0,2), B1 (1,2), B2 (2,4), A mueve.
+Pesos default: 10/3/1/0.5.
+
+\textbf{Expectativa:} La mejor decisión no es ir directo al recurso.
+
+\begin{table}[H]
+\centering
+\caption{Caso 7 -- Minimax profundidades 1--3}
+\begin{tabular}{lccc}
+\toprule
+Profundidad & Acción esperada & Valor esperado & Match \\
+\midrule
+1 & A2$\to$(0,1) & 3 & Sí \\
+2 & A2$\to$(0,1) & 0 & Sí \\
+3 & A1$\to$(1,1) & 3 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Análisis:} Prof 1/2 agarran directo (valor 3/0). Prof 3 descubre que mover A1$\to$(1,1)
+primero bloquea a B1 y permite que A2 agarre seguro: $U = 3 - 1 + 0.5\times2 = 3$.
+
+\section{Caso 8: Minimax vs Alfa-Beta}
+\label{sec:caso8-detalle}
+
+\begin{table}[H]
+\centering
+\caption{Caso 8 -- Profundidad 4, orden default}
+\begin{tabular}{lcccccc}
+\toprule
+Algoritmo & Acción & Valor & Generados & Evaluados & Podados & Match \\
+\midrule
+Minimax & A1$\to$(0,0) & 0 & 4,826 & 4,296 & 0 & Sí \\
+Alpha-beta & A1$\to$(0,0) & 0 & 431 & 299 & 757 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Conclusión:} Misma decisión, mismo valor; $\alpha$-$\beta$ genera \textbf{11$\times$ menos
+nodos} y poda 757 ramas.
+
+\section{Caso 9: Orden de Acciones}
+\label{sec:caso9-detalle}
+
+\begin{table}[H]
+\centering
+\caption{Caso 9 -- Profundidad 3, default vs reversed}
+\begin{tabular}{lcccccc}
+\toprule
+Orden & Acción & Valor & Generados & Evaluados & Podados & Match \\
+\midrule
+default & A1$\to$(1,1) & 3 & 142 & 110 & 106 & Sí \\
+reversed & A1$\to$(1,1) & 3 & 191 & 148 & 145 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Misma decisión (RF-31), \textbf{poda distinta} (RF-32). En profundidad 4, orden \code{reversed}
+cambia el tie-break entre valores iguales (0) y produce acción diferente con mismo valor.
+
+\section{Caso 10: Profundidad}
+\label{sec:caso10-detalle}
+
+\begin{table}[H]
+\centering
+\caption{Caso 10 -- Alfa-beta default, profundidades 1--5}
+\begin{tabular}{lcccc}
+\toprule
+Profundidad & Acción & Valor & Evaluados & Match \\
+\midrule
+1 & A2$\to$(0,1) & 3 & 7 & Sí \\
+2 & A2$\to$(0,1) & 0 & 24 & Sí \\
+3 & A1$\to$(1,1) & 3 & 110 & Sí \\
+4 & A1$\to$(0,0) & 0 & 299 & Sí \\
+5 & A1$\to$(1,1) & 3 & 1,583 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+(Minimax evaluados: 7 / 64 / 467 / 4,296 / 30,994)
+
+\textbf{Efecto horizonte:} Profundidades impares terminan en turno de A (guarda, valor 3).
+Pares terminan en turno de B (aplana a 0, tie-break por orden).

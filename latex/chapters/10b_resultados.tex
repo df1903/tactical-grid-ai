@@ -1,0 +1,201 @@
+% 10b_resultados.tex - Capítulo 10b: Tablas completas de resultados (Casos 1-10)
+\chapter{Resultados Completos: Tablas Esperado vs. Obtenido}
+\label{ch:resultados}
+
+Este capítulo presenta las tablas completas de los 10 casos mínimos de demostración con
+valores esperados (derivados a mano) vs. obtenidos (ejecución real con \code{--verify}).
+Todos los \textbf{Match = yes}.
+
+\section{Caso 1: BFS vs DFS}
+\label{sec:tabla-caso1}
+
+\begin{table}[H]
+\centering
+\caption{Caso 1 -- BFS vs DFS (mapa 20$\times$20, todo coste 1, A1 (2,2) $\to$ (2,6))}
+\begin{tabular}{lccccccc}
+\toprule
+Algoritmo & Éxito & Costo & Movs & Generados & Expandidos & Max Frontera & Match \\
+\midrule
+BFS & Sí & 4 & 4 & 39 & 29 & 11 & Sí \\
+DFS & Sí & 42 & 42 & 152 & 94 & 58 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:caso1-full}
+
+
+\section{Caso 2: BFS vs UCS}
+\label{sec:tabla-caso2}
+
+\begin{table}[H]
+\centering
+\caption{Caso 2 -- BFS vs UCS (banda pantano coste 7, A1 (5,5) $\to$ (5,12))}
+\begin{tabular}{lccccccc}
+\toprule
+Algoritmo & Éxito & Costo & Movs & Generados & Expandidos & Max Frontera & Match \\
+\midrule
+BFS & Sí & 25 & 7 & 126 & 104 & 23 & Sí \\
+UCS & Sí & 17 & 17 & 269 & 239 & 33 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:caso2-full}
+
+
+\section{Caso 3: Obstáculo y Heurística}
+\label{sec:tabla-caso3}
+
+\begin{table}[H]
+\centering
+\caption{Caso 3 -- Muro vertical, A* h1 vs h2 (A1 (5,5) $\to$ (5,12), muro col 8)}
+\begin{tabular}{lcccccc}
+\toprule
+Algoritmo & Costo & Movs & Generados & Expandidos & Max Frontera & Match \\
+\midrule
+UCS & 29 & 29 & 307 & 295 & 17 & Sí \\
+A* h1 & 29 & 29 & 194 & 166 & 28 & Sí \\
+A* h2 & 29 & 29 & 122 & 84 & 38 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:caso3-full}
+
+
+\section{Caso 4: Comparación de Heurísticas}
+\label{sec:tabla-caso4}
+
+\begin{table}[H]
+\centering
+\caption{Caso 4 -- Muro con hueco pantano vs. libre (A1 (9,5) $\to$ (9,13))}
+\begin{tabular}{lcccccc}
+\toprule
+Algoritmo & Costo & Movs & Generados & Expandidos & Max Frontera & Match \\
+\midrule
+UCS & 24 & 22 & 346 & 332 & 20 & Sí \\
+A* h1 & 24 & 22 & 230 & 186 & 44 & Sí \\
+A* h2 & 24 & 22 & 164 & 115 & 49 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:caso4-full}
+
+
+\section{Caso 5: Beam Search k=1,2,4,8}
+\label{sec:tabla-caso5}
+
+\begin{table}[H]
+\centering
+\caption{Caso 5 -- Beam Search k=1,2,4,8 (7$\times$9, óptimo costo 28, 14 movs)}
+\begin{tabular}{cccccccc}
+\toprule
+k & Éxito & Costo & Movs & Generados & Expandidos & Max Frontera & Match \\
+\midrule
+1 & No & -- & -- & 9 & 5 & 3 & Sí \\
+2 & Sí & 30 & 16 & 43 & 29 & 6 & Sí \\
+4 & Sí & 28 & 14 & 50 & 41 & 6 & Sí \\
+8 & Sí & 28 & 14 & 46 & 44 & 6 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:caso5-full}
+
+
+\section{Caso 6: Estado Compuesto}
+\label{sec:tabla-caso6}
+
+\begin{table}[H]
+\centering
+\caption{Caso 6 -- Misma posición (1,0), estados distintos}
+\begin{tabular}{lllll}
+\toprule
+Estado & Pos A1 & Carrier & Turn & Efecto Move A1 $\to$ (0,0) \\
+\midrule
+Libre & (1,0) & nadie & A & entra base, no gana \\
+Portando & (1,0) & A1 & A & \textbf{gana A} \\
+Turno rival & (1,0) & nadie & B & sin acciones legales \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:caso6-full}
+
+
+Verificación: \code{len(set(states)) == 3} (3 objetos distintos), \code{winner} correcto,
+acciones legales coherentes. Test: \code{tests/test\_case\_6.py}.
+
+\section{Caso 7: Decisión Adversarial}
+\label{sec:tabla-caso7}
+
+\begin{table}[H]
+\centering
+\caption{Caso 7 -- Minimax profundidades 1--3 (mapa 5$\times$7, recurso (0,1))}
+\begin{tabular}{lccc}
+\toprule
+Profundidad & Acción esperada & Valor esperado & Match \\
+\midrule
+1 & A2$\to$(0,1) & 3 & Sí \\
+2 & A2$\to$(0,1) & 0 & Sí \\
+3 & A1$\to$(1,1) & 3 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:caso7-full}
+
+
+\section{Caso 8: Minimax vs Alfa-Beta}
+\label{sec:tabla-caso8}
+
+\begin{table}[H]
+\centering
+\caption{Caso 8 -- Profundidad 4, orden default}
+\begin{tabular}{lcccccc}
+\toprule
+Algoritmo & Acción & Valor & Generados & Evaluados & Podados & Match \\
+\midrule
+Minimax & A1$\to$(0,0) & 0 & 4,826 & 4,296 & 0 & Sí \\
+Alpha-beta & A1$\to$(0,0) & 0 & 431 & 299 & 757 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:caso8-full}
+
+
+\section{Caso 9: Orden de Acciones}
+\label{sec:tabla-caso9}
+
+\begin{table}[H]
+\centering
+\caption{Caso 9 -- Profundidad 3, orden default vs reversed}
+\begin{tabular}{lcccccc}
+\toprule
+Orden & Acción & Valor & Generados & Evaluados & Podados & Match \\
+\midrule
+default & A1$\to$(1,1) & 3 & 142 & 110 & 106 & Sí \\
+reversed & A1$\to$(1,1) & 3 & 191 & 148 & 145 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:caso9-full}
+
+
+\section{Caso 10: Profundidad}
+\label{sec:tabla-caso10}
+
+\begin{table}[H]
+\centering
+\caption{Caso 10 -- Alfa-beta default order, profundidades 1--5}
+\begin{tabular}{lcccc}
+\toprule
+Profundidad & Acción & Valor & Evaluados & Match \\
+\midrule
+1 & A2$\to$(0,1) & 3 & 7 & Sí \\
+2 & A2$\to$(0,1) & 0 & 24 & Sí \\
+3 & A1$\to$(1,1) & 3 & 110 & Sí \\
+4 & A1$\to$(0,0) & 0 & 299 & Sí \\
+5 & A1$\to$(1,1) & 3 & 1,583 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:caso10-full}
+
+
+(Con Minimax: evaluados = 7 / 64 / 467 / 4,296 / 30,994)

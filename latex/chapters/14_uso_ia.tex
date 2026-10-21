@@ -1,0 +1,73 @@
+% 14_uso_ia.tex - Capítulo 14: Uso de IA Generativa
+\chapter{Reporte de Uso de IA Generativa}
+\label{ch:ia}
+
+Este capítulo presenta de forma transparente el apoyo recibido de una herramienta de
+inteligencia artificial en la redacción, organización, programación y revisión del trabajo.
+La herramienta fue un apoyo para el equipo y no reemplazó el análisis, las decisiones,
+la implementación ni la validación final del proyecto.
+
+\section{Herramienta}
+\label{sec:herramienta-ia}
+
+\textbf{Herramienta de apoyo:} \textbf{Claude Code} (modelo \textbf{Claude Sonnet 5.5}),
+utilizada por el equipo como apoyo para consultas técnicas, redacción, organización y
+revisión del material. La herramienta no fue el desarrollador principal ni tomó decisiones
+autónomas sobre el proyecto.
+
+\section{Propósito y Áreas de Uso}
+\label{sec:proposito-ia}
+
+\begin{longtable}{p{3cm}p{3cm}p{8cm}}
+\toprule
+\textbf{Área} & \textbf{Qué hizo la IA} & \textbf{Qué hizo el equipo} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Área} & \textbf{Qué hizo la IA} & \textbf{Qué hizo el equipo} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{3}{r}{\textit{Continúa}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+Contexto y proceso & Sugirió una organización de archivos y fases de trabajo & El equipo evaluó, adaptó y registró las decisiones en \texttt{decisions.md} \\
+Decisiones & Presentó alternativas técnicas para discusión & El equipo eligió las reglas, el alcance y las convenciones del sistema \\
+\code{domain/}, \code{scenario/} & Apoyó la redacción de borradores de código a partir de las reglas definidas & El equipo definió las reglas, revisó la implementación y exigió validaciones adicionales \\
+BFS, DFS, UCS, A*, Beam, verifier & Apoyó la elaboración de código de referencia y pruebas & El equipo definió las convenciones y derivó los valores esperados antes de ejecutar \\
+Heurísticas & Apoyó la exploración de alternativas y la redacción de ambas heurísticas & El equipo verificó admisibilidad, consistencia y dominancia h2$\ge$h1 \\
+Utilidad, Minimax, $\alpha$-$\beta$ & Apoyó borradores de código y fórmulas para discusión & El equipo aprobó, corrigió y validó la utilidad y los algoritmos \\
+CLI, runner, sweeps, export & Apoyó ejemplos y revisión de interfaces & El equipo decidió las opciones y los formatos CSV/JSON \\
+GUI & Apoyó borradores de \code{gui/session.py} y \code{gui/app.py} & El equipo definió las funciones, revisó el comportamiento y validó la interfaz \\
+Escenarios y experimentos & Apoyó la generación de mapas y la organización de resultados & El equipo escogió los casos y calculó los valores esperados \\
+Documentación & Apoyó la redacción, corrección de estilo y organización de este informe y del manual & El equipo revisó, corrigió y asumió la revisión final del contenido \\
+\bottomrule
+\caption{Uso de IA por área}
+\label{tab:uso-ia}
+\end{longtable}
+
+\section{Intervenciones Humanas y Correcciones}
+\label{sec:intervenciones-humanas}
+
+Las siguientes correcciones humanas se realizaron sobre los borradores de la IA:
+
+\begin{enumerate}
+\item \textbf{Signo del término rival (utilidad):} La decisión textual daba un único término
+  negativo rival; la implementación hace que el signo dependa de quién porta el recurso
+  (un rival cerca del \textit{portador de MAX} baja $U$; cerca del portador de MIN no suma).
+\item \textbf{Rivales como obstáculos en búsqueda 1-agente:} El primer modelo trataba rivales
+  como obstáculos fijos, lo que dejaba el Apéndice A sin solución (B1 sobre la meta). El
+  equipo cambió a: \textbf{quitar rivales}, compañeros quietos como obstáculos (Sección 6.1).
+\item \textbf{Inconsistencia de documentación:} Se revisaron los textos que describían el
+  origen de las propuestas para distinguir claramente entre sugerencias de la herramienta
+  y decisiones adoptadas por el equipo.
+\item \textbf{Validación de casos 1--10:} Valores esperados derivados \textbf{a mano del mapa
+  antes de ejecutar}; tests asercionan esos valores. La IA no inventó los resultados.
+\item \textbf{Revisión humana:} El equipo revisó y validó los resultados, el código y la
+  documentación generados con apoyo de herramientas de IA.
+\end{enumerate}
+
+La IA se utilizó como apoyo técnico y editorial; las decisiones de diseño, la
+implementación, la verificación y la responsabilidad final del trabajo corresponden al
+equipo.

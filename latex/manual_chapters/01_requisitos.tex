@@ -1,0 +1,52 @@
+% 01_requisitos.tex - Manual Capítulo 1: Requisitos e Instalación
+\chapter{Requisitos e Instalación}
+\label{man:requisitos}
+
+\section{Requisitos Previos}
+\label{sec:requisitos-previos}
+
+\begin{itemize}
+\item \textbf{Sistema operativo:} Windows 10/11, Linux, macOS
+\item \textbf{\texttt{uv}:} Gestor de paquetes Python que provisiona Python 3.14 automáticamente.
+  Instalación: \url{https://docs.astral.sh/uv/getting-started/installation/}
+  \begin{minted}{bash}
+  # Windows (PowerShell)
+  powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+  
+  # Linux/macOS
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  \end{minted}
+\item \textbf{\texttt{tkinter}:} Viene incluido con Python en Windows. En Linux: \code{sudo apt install python3-tk}.
+\end{itemize}
+
+\section{Instalación Paso a Paso}
+\label{sec:instalacion-paso}
+
+\begin{minted}{bash}
+# 1. Clonar repositorio
+git clone https://github.com/df1903/tactical-grid-ai
+cd tactical-grid-ai
+
+# 2. Instalar dependencias (uv crea venv y provisiona Python 3.14)
+uv sync
+
+# 3. Verificar instalación (opcional)
+uv run pytest                 # 281 tests deben pasar
+uv run ruff check .           # lint
+uv run ruff format --check .  # formato
+uv run mypy src               # tipos strict
+\end{minted}
+
+\section{Verificación Rápida}
+\label{sec:verificacion-rapida}
+
+\begin{minted}{bash}
+# Ejecutar la GUI con el mapa de prueba 20x20
+uv run python -m tactical_grid.gui scenarios/prueba_20x20.json
+
+# Una búsqueda desde CLI
+uv run python -m tactical_grid scenarios/apendice_a.json --algorithm A_STAR --verify
+\end{minted}
+
+Si la ventana se abre y muestra el grid con colores, unidades, bases, recurso y leyenda,
+la instalación es correcta.

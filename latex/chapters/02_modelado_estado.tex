@@ -1,0 +1,149 @@
+% 02_modelado_estado.tex - Capítulo 2: Modelado del Problema y Representación de Estados
+\chapter{Modelado del Problema y Representación de Estados}
+\label{ch:modelado}
+
+Este capítulo describe el modelado del problema como espacio de estados (Unidad 2 del curso) y
+la representación del estado compuesto que soporta tanto las búsquedas de un agente (F2, F3)
+como la búsqueda adversarial (F4). Cumple con \rf{10}--\rf{13} y el caso 6.
+
+\section{Principios de Diseño}
+\label{sec:principios-diseno}
+
+El modelado sigue tres principios fundamentales:
+
+\begin{enumerate}
+\item \textbf{Inmutabilidad:} \code{GameState} y \code{Board} son \code{@dataclass(frozen=True)}.
+    La inmutabilidad garantiza que los estados puedan usarse como claves en \code{dict}/\code{set}
+    (visited, frontier, parents) sin riesgo de mutación accidental.
+\item \textbf{Separación estática/dinámica:} \code{Board} contiene todo lo que \textbf{nunca
+    cambia} (grid, catálogo de terrenos, bases, bando de cada unidad, límite de turnos).
+    \code{GameState} contiene solo lo que \textbf{cambia} (posiciones, carrier, resource, turn,
+    turn\_number).
+\item \textbf{Estado compuesto completo (RF-10, RF-11):} Un estado no es solo una posición;
+    dos estados con la misma posición física son distintos si difieren en \code{carrier},
+    \code{resource}, \code{turn}, \code{turn\_number} o las posiciones de otras unidades.
+    El     \textbf{caso 6} demuestra esto explícitamente (ver \tableref{tab:caso6}).
+\end{enumerate}
+
+\section{Partes Estáticas: \code{Board}}
+\label{sec:board}
+
+\code{Board} es la parte estática del escenario; se construye una sola vez al cargar el JSON y
+nunca muta. Contiene:
+
+\begin{itemize}
+\item \code{rows}, \code{cols}: dimensiones del grid
+\item \code{grid}: tupla de tuplas con nombres de terreno por celda
+\item \code{terrains}: \code{Mapping[str, Terrain]} -- catálogo \code{nombre $\to$ Terrain(cost, passable)}
+\item \code{bases}: \code{Mapping[Side, Position]} -- base de cada bando
+\item \code{unit\_sides}: \code{Mapping[str, Side]} -- bando de cada unidad (clave: id)
+\item \code{turn\_limit}: límite de turnos para empate (default 100, configurable en JSON)
+\end{itemize}
+
+Métodos clave:
+\begin{minted}{python}
+def in_bounds(self, pos: Position) -> bool
+def terrain_at(self, pos: Position) -> Terrain
+def is_passable(self, pos: Position) -> bool
+def cost_at(self, pos: Position) -> float
+\end{minted}
+
+\section{Parte Dinámica: \code{GameState}}
+\label{sec:gamestate}
+
+\code{GameState} es el estado compuesto inmutable (frozen dataclass). Contiene:
+
+\begin{minted}{python}
+@dataclass(frozen=True)
+class GameState:
+    positions: tuple[tuple[str, Position], ...]  # ordenado por unit_id
+    carrier: str | None          # id de la unidad que lleva el recurso
+    resource: Position | None    # celda del recurso si nadie lo lleva
+    turn: Side                   # Side.A o Side.B
+    turn_number: int = 0         # para límite de turnos / empate
+\end{minted}
+
+Métodos auxiliares:
+\begin{minted}{python}
+def position_of(self, unit_id: str) -> Position
+def unit_at(self, pos: Position) -> str | None
+\end{minted}
+
+\section{Posición y Vecindad}
+\label{sec:position}
+
+\code{Position} es una tupla inmutable \code{(row, col)} con métodos:
+
+\begin{minted}{python}
+def neighbors(self) -> tuple[Position, ...]:  # 4 dirs: arriba, abajo, izq, der
+def is_adjacent(self, other: Position) -> bool  # distancia Manhattan == 1
+\end{minted}
+
+La vecindad es de \textbf{4 direcciones} (arriba, abajo, izquierda, derecha) por decisión
+del equipo (decisión 2026-10-07). Con 4 direcciones, la heurística Manhattan es admisible.
+
+\section{Caso 6: Estado Compuesto Demostrado}
+\label{sec:caso6}
+
+El \textbf{caso 6} demuestra \rf{11}: ``dos estados con una unidad en la misma casilla pueden
+ser distintos''. En el mapa del caso 7 (5$\times$7, coste 1), la unidad A1 en (1,0) junto a su
+base (0,0):
+
+\begin{table}[H]
+\centering
+\caption{Caso 6: mismo posición, estados distintos}
+\begin{tabular}{lllll}
+\toprule
+\textbf{Estado} & \textbf{Pos A1} & \textbf{Carrier} & \textbf{Turn} & \textbf{Efecto de Move A1 $\to$ (0,0)} \\
+\midrule
+Libre (inicial) & (1,0) & nadie & A & entra a la base, no hay ganador \\
+Portando & (1,0) & A1 & A & entra a la base $\to$ \textbf{gana A} \\
+Turno rival & (1,0) & nadie & B & A1 no tiene acciones legales \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:caso6}
+
+Los tres estados tienen \code{positions} idénticas pero son objetos distintos
+(\code{len(set(states)) == 3}). Un diccionario indexado por estado mantiene tres entradas;
+indexado por posición solo mantendría una. Test: \texttt{tests/test\_case\_6.py}.
+
+\section{Identificación Unívoca (RF-12)}
+\label{sec:identificacion-univoca}
+
+La Tabla~\ref{tab:identificacion} resume dónde se encuentra cada elemento requerido por \rf{12}.
+
+\begin{table}[H]
+\centering
+\caption{Identificación unívoca de elementos del problema (RF-12)}
+\begin{tabular}{ll}
+\toprule
+\textbf{Elemento} & \textbf{Dónde se define} \\
+\midrule
+Estado inicial & \code{Scenario.initial\_state} (construido por \code{scenario/loader.py}) \\
+Acciones válidas & \code{domain.rules.legal\_actions(board, state)} \\
+Estados sucesores & \code{domain.rules.successors(board, state)} $\to$ \code{(action, next\_state, cost)} \\
+Condición de meta & Búsqueda: \code{problem.is\_goal(state)}; Juego: \code{winner(board, state)} \\
+Costo de acción & \code{domain.rules.apply(board, state, action)} $\to$ \code{(next\_state, cost)} \\
+\bottomrule
+\end{tabular}
+\label{tab:identificacion}
+\end{table}
+
+\section{Justificación de Suficiencia (RF-13)}
+\label{sec:justificacion-suficiencia}
+
+El estado contiene \textbf{exactamente} la información necesaria para decidir:
+
+\begin{enumerate}
+\item \textbf{Dónde está cada unidad} (\code{positions}) $\to$ legalidad de movimientos, ocupación
+\item \textbf{De qué bando es cada unidad} (\code{unit\_sides} en \code{Board}) $\to$ turno, legalidad
+\item \textbf{Quién lleva el recurso} (\code{carrier}) $\to$ pickup, delivery, interceptación
+\item \textbf{Dónde está el recurso si nadie lo lleva} (\code{resource}) $\to$ pickup
+\item \textbf{De quién es el turno} (\code{turn}) $\to$ qué unidades pueden moverse
+\item \textbf{Número de turno} (\code{turn\_number}) $\to$ empate por límite
+\end{enumerate}
+
+Nada más influye en las reglas (no hay vida, munición, información oculta). Por tanto, dos
+estados con iguales valores en estos seis campos tienen idéntico conjunto de acciones legales,
+mismos sucesores, mismos costos y mismo resultado final. \rf{13} satisfecho.

@@ -1,0 +1,101 @@
+% main.tex - Informe Técnico TacticalGrid
+% Compilar con: latexmk -lualatex -shell-escape main.tex
+
+\input{preambulo}
+
+% Título para portada
+\def\documenttitle{Informe Técnico}
+
+\begin{document}
+
+% Portada
+\input{portada}
+\clearpage
+
+% Resumen
+\chapter*{Resumen}
+\addcontentsline{toc}{chapter}{Resumen}
+\input{chapters/00_resumen}
+\clearpage
+
+% Tabla de contenidos
+\tableofcontents
+\clearpage
+
+% Lista de figuras y tablas
+\listoffigures
+\clearpage
+\listoftables
+\clearpage
+
+% Glosario / Abreviaturas
+\chapter*{Glosario y Abreviaturas}
+\addcontentsline{toc}{chapter}{Glosario y Abreviaturas}
+\input{chapters/glosario}
+\clearpage
+
+% Cuerpo principal - numeración arábiga
+\pagenumbering{arabic}
+
+% CAPÍTULOS DEL INFORME TÉCNICO
+\input{chapters/01_introduccion}
+\input{chapters/02_modelado_estado}
+\input{chapters/03_reglas_juego}
+\input{chapters/04_costos}
+\input{chapters/05_arquitectura}
+\input{chapters/06_algoritmos_busqueda}
+\input{chapters/07_heuristicas}
+\input{chapters/08_busqueda_adversarial}
+\input{chapters/09_funcion_utilidad}
+\input{chapters/10_experimentacion}
+\input{chapters/10b_resultados}
+\input{chapters/11_verificacion_testing}
+\input{chapters/11b_casos_demostracion}
+\input{chapters/12_formato_json}
+\input{chapters/13_limitaciones}
+\input{chapters/14_uso_ia}
+\input{chapters/15_reproducibilidad}
+\input{chapters/16_conclusiones}
+
+% Bibliografía
+\clearpage
+\printbibliography[heading=bibintoc,title={Referencias Bibliográficas}]
+
+% Apéndices
+\appendix
+\chapter{Diagramas Mermaid $\to$ TikZ}
+\label{ap:diagramas}
+Los diagramas del sistema se presentan como gráficos vectoriales, ajustados
+proporcionalmente al área útil de la página para evitar recortes.
+
+\diagramfigure{arquitectura}{0.96}{Arquitectura de componentes y flujo de datos.}
+\diagramfigure{ciclo_turno}{0.78}{Ciclo de turno y condiciones de victoria.}
+\diagramfigure{flujo_apply}{0.86}{Flujo de aplicación de una acción.}
+\diagramfigure{flujo_apply_intercept}{0.86}{Flujo de aplicación con interceptación.}
+\diagramfigure{journey_progreso}{0.96}{Cronograma de progreso del proyecto.}
+
+\chapter{Código Fuente Completo (Listings)}
+\label{ap:codigo}
+\section{Módulo \code{domain/rules.py}}
+\inputminted{python}{../src/tactical_grid/domain/rules.py}
+
+\section{Módulo \code{algorithms/informed.py}}
+\inputminted{python}{../src/tactical_grid/algorithms/informed.py}
+
+\section{Módulo \code{algorithms/adversarial.py}}
+\inputminted{python}{../src/tactical_grid/algorithms/adversarial.py}
+
+\section{Módulo \code{algorithms/utility.py}}
+\inputminted{python}{../src/tactical_grid/algorithms/utility.py}
+
+\section{Módulo \code{scenario/loader.py}}
+\inputminted{python}{../src/tactical_grid/scenario/loader.py}
+
+\section{Módulo \code{experiments/verifier.py}}
+\inputminted{python}{../src/tactical_grid/experiments/verifier.py}
+
+\chapter{Resultados Completos (CSV/JSON)}
+\label{ap:resultados}
+Los archivos CSV y JSON completos de todos los experimentos se encuentran en \texttt{docs/results/}.
+
+\end{document}

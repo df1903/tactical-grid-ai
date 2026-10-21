@@ -1,0 +1,19 @@
+% 00_resumen.tex - Resumen ejecutivo
+% Incluido antes de la tabla de contenidos
+
+\noindent \tacticalgrid\ es un entorno de experimentación para algoritmos de inteligencia artificial
+construido sobre un juego táctico 2D por turnos. Dos bandos (A y B) compiten por un recurso
+ubicado en zona neutral: una unidad debe recogerlo y llevarlo a su propia base antes que el
+adversario. El juego no es un producto comercial; su propósito es servir de bancada de pruebas
+para siete algoritmos fundamentales de IA: \textbf{BFS, DFS, UCS, \astar, Beam Search, Minimax y
+Alpha-Beta}.
+
+El proyecto implementa \textbf{todos los requisitos obligatorios} del enunciado: modelo de estado
+compuesto inmutable, carga atómica de escenarios JSON con 9+ validaciones, siete algoritmos con
+sus métricas (RF-15, RF-19, RF-22, RF-30), dos heurísticas admisibles (Manhattan escalada y
+obstacle-aware BFS), función de utilidad con pesos configurables en JSON, verificación de
+soluciones (6 checks RF-42), CLI con sweeps combinatorios y exportación CSV/JSON, GUI tkinter
+con modo automático IA vs IA, y 10 casos de demostración con resultados esperado vs. obtenido.
+
+\textbf{Estado:} Documento técnico final del proyecto. 281 tests pasan,
+\texttt{ruff} + \texttt{mypy --strict} en verde. Código en \url{https://github.com/df1903/tactical-grid-ai}.

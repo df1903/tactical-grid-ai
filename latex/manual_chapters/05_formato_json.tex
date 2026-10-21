@@ -1,0 +1,193 @@
+% 05_formato_json.tex - Manual Capítulo 5: Formato JSON de Escenarios
+\chapter{Formato de Archivo de Escenario (JSON)}
+\label{man:json}
+
+\section{Estructura Básica}
+\label{sec:json-estructura}
+
+El formato es el del Apéndice A del enunciado. Claves en español (leídas solo en \code{scenario/});
+el código interno usa nombres en inglés.
+
+\screenshotfigure{json-escenario}{0.90}{Estructura del escenario JSON cargado y validado por la aplicación.}
+
+\screenshotfigure{json-validacion}{0.85}{Mensaje de validación del escenario mostrando errores o confirmación correcta.}
+
+\begin{minted}{json}
+{
+  "version": "1.0",
+  "mapa": { "filas": 20, "columnas": 20 },
+  "tipos_terreno": {
+    "camino":  {"costo": 1, "transitable": true},
+    "pasto":   {"costo": 2, "transitable": true},
+    "bosque":  {"costo": 4, "transitable": true},
+    "pantano": {"costo": 7, "transitable": true},
+    "muro":    {"transitable": false}
+  },
+  "terreno": [
+    ["camino", "camino", "pasto", "pasto"],
+    ["camino", "muro",   "bosque", "pasto"],
+    ...
+  ],
+  "bases": { "A": {"fila": 0, "columna": 0}, "B": {"fila": 19, "columna": 19} },
+  "recurso": {"fila": 10, "columna": 10},
+  "unidades": [
+    {"id": "A1", "bando": "A", "tipo": "estandar", "fila": 5, "columna": 5},
+    {"id": "B1", "bando": "B", "tipo": "estandar", "fila": 15, "columna": 15}
+  ],
+  "turno": "A",
+  "juego": {
+    "portador_recurso": null,
+    "profundidad_maxima_minimax": 4,
+    "limite_turnos": 100,
+    "variante": "base",
+    "turnos_recuperacion": 1,
+    "inmunidad_robo": 1,
+    "utilidad": {
+      "entrega": 10,
+      "recurso_cargado": 3,
+      "distancia_objetivo": 1,
+      "distancia_rival": 0.5
+    }
+  },
+  "prueba": {
+    "modo": "busqueda",
+    "algoritmo": "A_STAR",
+    "heuristica": "H2",
+    "unidad_inicio": "A1",
+    "objetivo": {"fila": 15, "columna": 15},
+    "k": 4,
+    "orden_acciones": "default"
+  }
+}
+\end{minted}
+
+\section{Campos Obligatorios}
+\label{sec:campos-obligatorios}
+
+\begin{longtable}{p{3cm}p{3cm}p{8cm}}
+\toprule
+\textbf{Campo} & \textbf{Tipo} & \textbf{Descripción} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Campo} & \textbf{Tipo} & \textbf{Descripción} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{3}{r}{\textit{Continúa}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\code{version} & string & Versión del formato (\code{"1.0"}) \\
+\code{mapa.filas} & int $>0$ & Filas del grid \\
+\code{mapa.columnas} & int $>0$ & Columnas del grid \\
+\code{tipos\_terreno} & object & Catálogo: \code{nombre $\to$ \{costo, transitable\}} \\
+\code{terreno} & string[][] & Matriz \code{filas $\times$ columnas} \\
+\code{bases.A} & \code{\{fila, columna\}} & Posición base A \\
+\code{bases.B} & \code{\{fila, columna\}} & Posición base B \\
+\code{recurso} & \code{\{fila, columna\}} & Posición recurso (si nadie lo porta) \\
+\code{unidades} & array & Lista: \code{id, bando, tipo, fila, columna} \\
+\code{turno} & \code{"A"} | \code{"B"} & Bando que debe actuar \\
+\code{juego.portador\_recurso} & string | \code{null} & id unidad que porta, o \code{null} \\
+\bottomrule
+\caption{Campos obligatorios del JSON}
+\label{tab:json-obligatorios}
+\end{longtable}
+
+\section{Campos Opcionales del Equipo (RNF-02)}
+\label{sec:campos-opcionales}
+
+\begin{table}[H]
+\centering
+\caption{Campos opcionales del equipo (no alteran obligatorios)}
+\begin{tabular}{lll}
+\toprule
+\textbf{Campo} & \textbf{Default} & \textbf{Descripción} \\
+\midrule
+\code{juego.limite\_turnos} & 100 & Límite de turnos; empate al alcanzar \\
+\code{juego.profundidad\_maxima\_minimax} & 4 & Profundidad para Minimax/$\alpha$-$\beta$ \\
+\code{juego.variante} & \code{base} & \code{base} o \code{dinamica} \\
+\code{juego.turnos\_recuperacion} & 1 & Turnos propios de recuperación en variante dinámica \\
+\code{juego.inmunidad\_robo} & 1 & Turnos del rival con inmunidad tras perder el recurso \\
+\code{utilidad} & 10/3/1/0.5 & Pesos: \code{entrega}, \code{recurso\_cargado}, \code{distancia\_objetivo}, \code{distancia\_rival} \\
+\code{prueba.algoritmo} & none & Algoritmo: \code{BFS}, \code{DFS}, \code{UCS}, \code{A\_STAR}, \code{BEAM}, \code{MINIMAX}, \code{ALPHA\_BETA} \\
+\code{prueba.heuristica} & \code{H1} & \code{H1} (Manhattan) o \code{H2} (Obstacle-aware) \\
+\code{prueba.k} & none & Ancho de haz (Beam) \\
+\code{prueba.orden\_acciones} & \code{default} & \code{default} o \code{reversed} \\
+\code{prueba.unidad\_inicio} & none & id unidad de inicio (búsqueda) \\
+\code{prueba.objetivo} & none & \code{\{fila, columna\}} meta de búsqueda \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:json-opcionales}
+
+\section{Variante dinámica}
+\label{sec:json-variante-dinamica}
+
+La variante dinámica se activa con \code{"variante": "dinamica"} dentro de \code{juego} o
+con el argumento CLI \code{--variant dinamica}. El costo del terreno determina los turnos
+de recuperación de una unidad y el placaje puede robar el recurso respetando la inmunidad
+configurada. Si no se especifica la variante, se usa \code{base}.
+
+
+\section{Reglas de Validación (RF-34, RF-35)}
+\label{sec:validacion}
+
+\begin{enumerate}
+\item \textbf{Atómica:} Se valida todo antes de construir; cualquier error $\to$
+  \code{ScenarioError} con la lista completa; no se construye ningún escenario parcial.
+\item \textbf{9 validaciones mínimas (RF-35) + 1 extra:}
+  \begin{enumerate}
+  \item Filas/columnas positivas y consistentes con matriz
+  \item Terrenos usados existen en \code{tipos\_terreno}
+  \item Transitables tienen costo positivo
+  \item Bases, recurso, unidades dentro del mapa
+  \item Ninguna unidad en celda no transitable
+  \item IDs de unidad únicos
+  \item Cada unidad en bando \code{A}/\code{a} o \code{B}/\code{b}
+  \item Turno es \code{A}/\code{a} o \code{B}/\code{b}
+  \item \code{portador\_recurso} es id existente o \code{null}
+  \item \textbf{Extra:} Ninguna unidad comparte celda con otra
+  \end{enumerate}
+\item \textbf{Normalización:} Bandos \code{A}/\code{a} $\to$ \code{A}, \code{B}/\code{b} $\to$ \code{B};
+  costos a \code{float}; terrenos no transitables sin \code{costo} tolerados.
+\end{enumerate}
+
+\section{Escenarios Incluidos}
+\label{sec:escenarios-incluidos}
+
+\begin{table}[H]
+\centering
+\caption{Escenarios en \code{scenarios/}}
+\begin{tabular}{ll}
+\toprule
+\textbf{Archivo} & \textbf{Uso} \\
+\midrule
+\code{apendice\_a.json} & Ejemplo oficial 4$\times$4 \\
+\code{caso\_01\_bfs\_vs\_dfs.json} & Caso 1 \\
+\code{caso\_02\_bfs\_vs\_ucs.json} & Caso 2 \\
+\code{caso\_03\_obstaculo\_heuristica.json} & Caso 3 \\
+\code{caso\_04\_comparacion\_heuristicas.json} & Caso 4 \\
+\code{caso\_05\_beam\_k.json} & Caso 5 \\
+\code{caso\_07\_decision\_adversarial.json} & Casos 6--10 (5$\times$7) \\
+\code{prueba\_15x15.json} & Rendimiento 15$\times$15 (3 unidades/bando) \\
+\code{prueba\_20x20.json} & 20$\times$20 (3 unidades/bando) \\
+\code{escenario\_03x03.json} .. \code{escenario\_30x30.json} & Escalabilidad \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Crear un Escenario Nuevo}
+\label{sec:nuevo-escenario}
+
+\begin{enumerate}
+\item Copia \code{apendice\_a.json} a \code{scenarios/mi\_escenario.json}
+\item Modifica \code{mapa.filas}, \code{mapa.columnas}, \code{terreno}, \code{bases},
+  \code{recurso}, \code{unidades}, \code{turno}
+\item Ajusta \code{tipos\_terreno} y \code{juego} según necesites
+\item Ejecuta: \code{uv run python -m tactical\_grid scenarios/mi\_escenario.json --verify}
+\item Si hay errores, el mensaje lista TODOS los problemas; corrige y repite
+\end{enumerate}
+
+\textbf{No se requiere tocar código:} Cualquier JSON válido carga sin modificar el programa
+(RF-36, RF-37, RNF-03, RNF-04).

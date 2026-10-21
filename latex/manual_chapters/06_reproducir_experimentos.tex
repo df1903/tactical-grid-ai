@@ -1,0 +1,285 @@
+% 06_reproducir_experimentos.tex - Manual Capítulo 6: Reproducir Experimentos
+\chapter{Reproducir los Experimentos Reportados}
+\label{man:reproducir}
+
+Todos los resultados del informe técnico (\texttt{docs/results/}) se pueden regenerar
+ejecutando los comandos exactos que se listan a continuación. Los valores de conteo
+(generados, expandidos, frontera, costo, longitud) son \textbf{determinísticos} e idénticos
+en cada ejecución; solo \code{tiempo\_segundos} varía (tiempo de ejecución).
+
+\section{Preparación}
+\label{sec:prep-reproducir}
+
+\begin{minted}{bash}
+cd tactical-grid-ai
+uv sync                    # instala dependencias
+uv run pytest              # verifica que 281 tests pasan
+R=docs/results
+U="uv run python -m tactical_grid"
+mkdir -p $R
+\end{minted}
+
+\section{Casos 1--2: Búsqueda No Informada y Costos (F2)}
+\label{sec:rep-f2}
+
+\begin{minted}{bash}
+# Caso 1: BFS vs DFS
+$U scenarios/caso_01_bfs_vs_dfs.json --algorithm BFS,DFS,UCS --verify \
+  --csv $R/caso_01_bfs_vs_dfs.csv --json $R/caso_01_bfs_vs_dfs.json
+
+# Caso 2: BFS vs UCS (ruta corta vs económica)
+$U scenarios/caso_02_bfs_vs_ucs.json --algorithm BFS,DFS,UCS --verify \
+  --csv $R/caso_02_bfs_vs_ucs.csv --json $R/caso_02_bfs_vs_ucs.json
+\end{minted}
+
+\textbf{Valores esperados (derivados a mano, asertados en tests):}
+
+\begin{table}[H]
+\centering
+\caption{Caso 1: BFS vs DFS}
+\begin{tabular}{lccccccc}
+\toprule
+Alg & Costo & Movs & Gen & Exp & MaxF & Match \\
+\midrule
+BFS & 4 & 4 & 39 & 29 & 11 & Sí \\
+DFS & 42 & 42 & 152 & 94 & 58 & Sí \\
+UCS & 4 & 4 & 39 & 29 & 11 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso 2: BFS vs UCS}
+\begin{tabular}{lccccccc}
+\toprule
+Alg & Costo & Movs & Gen & Exp & MaxF & Match \\
+\midrule
+BFS & 25 & 7 & 126 & 104 & 23 & Sí \\
+DFS & 153 & 87 & 396 & 287 & 171 & Sí \\
+UCS & 17 & 17 & 269 & 239 & 33 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Casos 3--5: Búsqueda Informada y Beam (F3)}
+\label{sec:rep-f3}
+
+\begin{minted}{bash}
+# Caso 3: Obstáculo + heurística
+$U scenarios/caso_03_obstaculo_heuristica.json \
+  --algorithm UCS,A_STAR --heuristic H1,H2 --verify \
+  --csv $R/caso_03_obstaculo_heuristica.csv --json $R/caso_03_obstaculo_heuristica.json
+
+# Caso 4: Comparación heurísticas
+$U scenarios/caso_04_comparacion_heuristicas.json \
+  --algorithm UCS,A_STAR --heuristic H1,H2 --verify \
+  --csv $R/caso_04_comparacion_heuristicas.csv --json $R/caso_04_comparacion_heuristicas.json
+
+# Caso 5: Beam k=1,2,4,8
+$U scenarios/caso_05_beam_k.json \
+  --algorithm UCS,BEAM --heuristic H1 --k 1,2,4,8 --verify \
+  --csv $R/caso_05_beam_k.csv --json $R/caso_05_beam_k.json
+\end{minted}
+
+\textbf{Valores esperados:}
+
+\begin{table}[H]
+\centering
+\caption{Caso 3: UCS, A* h1, A* h2}
+\begin{tabular}{lcccccc}
+\toprule
+Alg & Costo & Movs & Gen & Exp & MaxF & Match \\
+\midrule
+UCS & 29 & 29 & 307 & 295 & 17 & Sí \\
+A* h1 & 29 & 29 & 194 & 166 & 28 & Sí \\
+A* h2 & 29 & 29 & 122 & 84 & 38 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso 4: UCS, A* h1, A* h2}
+\begin{tabular}{lcccccc}
+\toprule
+Alg & Costo & Movs & Gen & Exp & MaxF & Match \\
+\midrule
+UCS & 24 & 22 & 346 & 332 & 20 & Sí \\
+A* h1 & 24 & 22 & 230 & 186 & 44 & Sí \\
+A* h2 & 24 & 22 & 164 & 115 & 49 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso 5: Beam k=1,2,4,8}
+\begin{tabular}{cccccccc}
+\toprule
+k & Éxito & Costo & Movs & Gen & Exp & MaxF & Match \\
+\midrule
+1 & No & -- & -- & 9 & 5 & 3 & Sí \\
+2 & Sí & 30 & 16 & 43 & 29 & 6 & Sí \\
+4 & Sí & 28 & 14 & 50 & 41 & 6 & Sí \\
+8 & Sí & 28 & 14 & 46 & 44 & 6 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Casos 6--10: Adversarial (F4)}
+\label{sec:rep-f4}
+
+\begin{minted}{bash}
+# Caso 6: Estado compuesto (test unitario)
+uv run pytest tests/test_case_6.py -v
+
+# Caso 7: Minimax profundidades 1-3
+$U scenarios/caso_07_decision_adversarial.json \
+  --algorithm MINIMAX --depth 1,2,3 --verify \
+  --csv $R/casos_07_10_adversarial.csv --json $R/casos_07_10_adversarial.json
+
+# Caso 8: Minimax frente a alfa-beta, profundidad 4
+$U scenarios/caso_07_decision_adversarial.json \
+  --algorithm MINIMAX,ALPHA_BETA --depth 4 --verify \
+  --csv $R/casos_07_10_adversarial.csv --json $R/casos_07_10_adversarial.json
+
+# Caso 9: Orden de acciones (profundidad 3)
+$U scenarios/caso_07_decision_adversarial.json \
+  --algorithm ALPHA_BETA --depth 3 --order default,reversed --verify \
+  --csv $R/casos_07_10_adversarial.csv --json $R/casos_07_10_adversarial.json
+
+# Caso 10: Profundidades 1-5 (alfa-beta)
+$U scenarios/caso_07_decision_adversarial.json \
+  --algorithm ALPHA_BETA --depth 1,2,3,4,5 --verify \
+  --csv $R/casos_07_10_adversarial.csv --json $R/casos_07_10_adversarial.json
+\end{minted}
+
+\textbf{Valores esperados (casos 7-10):}
+
+\begin{table}[H]
+\centering
+\caption{Caso 7: Minimax profundidades 1-3}
+\begin{tabular}{lccc}
+\toprule
+Prof & Acción & Valor & Match \\
+\midrule
+1 & A2$\to$(0,1) & 3 & Sí \\
+2 & A2$\to$(0,1) & 0 & Sí \\
+3 & A1$\to$(1,1) & 3 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso 8: Minimax vs Alfa-beta (prof 4)}
+\begin{tabular}{lcccccc}
+\toprule
+Alg & Acción & Valor & Gen & Eval & Podados & Match \\
+\midrule
+Minimax & A1$\to$(0,0) & 0 & 4826 & 4296 & 0 & Sí \\
+Alpha-beta & A1$\to$(0,0) & 0 & 431 & 299 & 757 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso 9: Orden default vs reversed (prof 3)}
+\begin{tabular}{lcccccc}
+\toprule
+Orden & Acción & Valor & Gen & Eval & Podados & Match \\
+\midrule
+default & A1$\to$(1,1) & 3 & 142 & 110 & 106 & Sí \\
+reversed & A1$\to$(1,1) & 3 & 191 & 148 & 145 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Caso 10: Alfa-beta profundidades 1-5}
+\begin{tabular}{lcccc}
+\toprule
+Prof & Acción & Valor & Eval & Match \\
+\midrule
+1 & A2$\to$(0,1) & 3 & 7 & Sí \\
+2 & A2$\to$(0,1) & 0 & 24 & Sí \\
+3 & A1$\to$(1,1) & 3 & 110 & Sí \\
+4 & A1$\to$(0,0) & 0 & 299 & Sí \\
+5 & A1$\to$(1,1) & 3 & 1583 & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+(Minimax evals: 7 / 64 / 467 / 4296 / 30994)
+
+\section{Rendimiento (G13)}
+\label{sec:rep-rendimiento}
+
+\begin{minted}{bash}
+# 15x15 mapa (3 unidades/bando)
+$U scenarios/prueba_15x15.json --algorithm ALPHA_BETA --depth 5,6,7 \
+  --csv $R/rendimiento_15x15.csv
+
+$U scenarios/prueba_15x15.json --algorithm MINIMAX --depth 4,5,6 \
+  --csv $R/rendimiento_15x15_minimax.csv
+
+# 20x20 mapa
+$U scenarios/prueba_20x20.json --algorithm ALPHA_BETA --depth 2,3,4,5,6 \
+  --csv $R/rendimiento_20x20.csv
+\end{minted}
+
+Valores esperados (ver la sección ``Rendimiento (G13)'' del informe técnico).
+
+
+\section{Sweep Completo (Todos los Casos 1-10 + Apéndice A)}
+\label{sec:rep-sweep}
+
+\begin{minted}{bash}
+R=docs/results; U="uv run python -m tactical_grid"
+$U scenarios/apendice_a.json --algorithm BFS,DFS,UCS,A_STAR,BEAM \
+  --heuristic H1,H2 --k 1,2,4,8 --verify \
+  --csv $R/apendice_a.csv --json $R/apendice_a.json
+\end{minted}
+
+\section{Caso 11: Variante dinámica}
+\label{sec:rep-dinamica}
+
+\begin{minted}{bash}
+# Comparar Minimax dinámico y Alfa-beta dinámico
+$U scenarios/caso_11_dinamico.json \
+  --variant dinamica --algorithm MINIMAX,ALPHA_BETA --depth 1,2,3,4 --verify \
+  --csv $R/caso_11_dinamico.csv --json $R/caso_11_dinamico.json
+
+# Ejecutar una partida completa con la variante dinámica
+$U scenarios/caso_11_dinamico.json \
+  --mode partida --play auto --variant dinamica --algorithm ALPHA_BETA --depth 3
+\end{minted}
+
+En la variante dinámica se reportan además los efectos de recuperación e inmunidad del
+portador. Las métricas de tiempo pueden cambiar entre ejecuciones; las acciones y conteos
+son deterministas para el mismo escenario y parámetros.
+
+\section{Verificación de que Todo Pasa}
+\label{sec:verificar-todo}
+
+\begin{minted}{bash}
+# Tests completos
+uv run pytest                    # 281 tests, 0 skips
+uv run ruff check .              # lint
+uv run ruff format --check .     # formato
+uv run mypy src                  # tipos strict
+
+# Verificar archivos de resultados generados
+ls -la docs/results/
+# Debe existir: caso_01_bfs_vs_dfs.csv/json, caso_02_bfs_vs_ucs.csv/json, ...
+# caso_03_obstaculo_heuristica.csv/json, caso_04_comparacion_heuristicas.csv/json
+# caso_05_beam_k.csv/json, casos_07_10_adversarial.csv/json
+# caso_11_dinamico.csv/json
+# rendimiento_15x15.csv, rendimiento_20x20.csv, apendice_a.csv/json
+\end{minted}
+
+Todos los valores de conteo (generados, expandidos, frontera, costo, longitud) deben
+coincidir \textbf{exactamente} con las tablas de este manual y del informe técnico
+(\texttt{cases.md}). Solo \code{tiempo\_segundos} varía entre ejecuciones.

@@ -1,0 +1,124 @@
+% manual.tex - Manual de Usuario TacticalGrid
+% Compilar con: latexmk -lualatex -shell-escape manual.tex
+
+\input{preambulo}
+
+% Título para portada
+\def\documenttitle{Manual de Usuario}
+
+\begin{document}
+
+% Portada
+\pagenumbering{roman}
+\input{portada}
+\clearpage
+
+% Tabla de contenidos
+\tableofcontents
+\clearpage
+
+% Lista de figuras y tablas
+\listoffigures
+\clearpage
+\listoftables
+\clearpage
+
+% Cuerpo principal
+\pagenumbering{arabic}
+
+% CAPÍTULOS DEL MANUAL
+\input{manual_chapters/01_requisitos}
+\input{manual_chapters/02_inicio_rapido}
+\input{manual_chapters/03_interfaz_grafica}
+\input{manual_chapters/04_linea_comandos}
+\input{manual_chapters/05_formato_json}
+\input{manual_chapters/06_reproducir_experimentos}
+\input{manual_chapters/07_tests_calidad}
+\input{manual_chapters/08_solucion_problemas}
+
+% Bibliografía (compartida)
+\clearpage
+\printbibliography[heading=bibintoc,title={Referencias}]
+
+% Apéndices del manual
+\appendix
+\chapter{Referencia Rápida de Comandos}
+\label{ap:comandos}
+\begin{table}[H]
+\centering
+\caption{Resumen de opciones CLI}
+\begin{tabular}{ll}
+\toprule
+Opción & Descripción \\
+\midrule
+\code{--mode} & \code{busqueda}, \code{adversarial}, \code{partida} \\
+\code{--algorithm} & \code{BFS}, \code{DFS}, \code{UCS}, \code{A\_STAR}, \code{BEAM}, \code{MINIMAX}, \code{ALPHA\_BETA} \\
+\code{--heuristic} & \code{H1} (Manhattan), \code{H2} (Obstacle-aware) \\
+\code{--k} & Ancho de haz (Beam) \\
+\code{--depth} & Profundidad Minimax/$\alpha$-$\beta$ \\
+\code{--order} & \code{default} o \code{reversed} \\
+\code{--unit} & Unidad de inicio (búsqueda) \\
+\code{--goal row,col} & Meta de búsqueda \\
+\code{--verify} & Ejecutar checks RF-42 \\
+\code{--csv PATH} & Exportar métricas CSV \\
+\code{--json PATH} & Exportar reportes completos JSON \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\chapter{Referencia Rápida de JSON}
+\label{ap:json}
+\begin{longtable}{p{3cm}p{3cm}p{8cm}}
+\toprule
+Campo & Obligatorio & Descripción \\
+\midrule
+\endfirsthead
+\toprule
+Campo & Obligatorio & Descripción \\
+\midrule
+\endhead
+\code{version} & Sí & Versión del formato \\
+\code{mapa.filas} & Sí & Filas del grid \\
+\code{mapa.columnas} & Sí & Columnas del grid \\
+\code{tipos\_terreno} & Sí & Catálogo: costo, transitable \\
+\code{terreno} & Sí & Matriz de terrenos \\
+\code{bases.A/B} & Sí & Posiciones bases \\
+\code{recurso} & Sí & Posición recurso \\
+\code{unidades} & Sí & id, bando, tipo, fila, columna \\
+\code{turno} & Sí & \code{A} o \code{B} \\
+\code{juego.portador\_recurso} & No & id unidad o \code{null} \\
+\code{juego.limite\_turnos} & No & Límite de turnos (default 100) \\
+\code{juego.profundidad\_maxima\_minimax} & No & Profundidad para Minimax \\
+\code{utilidad} & No & Pesos: entrega, recurso\_cargado, distancia\_objetivo, distancia\_rival \\
+\code{prueba} & No & Configuración de prueba (modo, algoritmo, heurística, k, depth, order, unidad\_inicio, objetivo) \\
+\bottomrule
+\caption{Campos del formato JSON de escenario}
+\label{tab:json-campos}
+\end{longtable}
+
+\chapter{Referencia Rápida de Algoritmos}
+\label{ap:algoritmos}
+\begin{table}[H]
+\centering
+\caption{Resumen de algoritmos implementados}
+\begin{tabular}{lccc}
+\toprule
+Algoritmo & Tipo & Complejidad & Óptimo \\
+\midrule
+BFS & No informada & $\mathcal{O}(V)$ & Solo en movimientos \\
+DFS & No informada & $\mathcal{O}(V)$ & No \\
+UCS & Coste uniforme & $\mathcal{O}(V \log V)$ & Sí (costo) \\
+A* (h1/h2) & Informada & $\mathcal{O}(V \log V)$ & Sí (con h admisible) \\
+Beam (k) & Memoria limitada & $\mathcal{O}(L \cdot k \cdot b \log(kb))$ & \textbf{No} (incompleto) \\
+Minimax & Adversarial & $\mathcal{O}(B^D)$ & Sí (horizonte) \\
+Alpha-beta & Adversarial & $\mathcal{O}(B^{D/2})$ mejor & Sí \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\chapter{Diagramas de Referencia}
+\diagramfigure{arquitectura}{0.96}{Arquitectura general del sistema.}
+\diagramfigure{ciclo_turno}{0.78}{Ciclo de turno de la partida.}
+\diagramfigure{flujo_apply}{0.86}{Flujo de aplicación de acciones.}
+
+\end{document}

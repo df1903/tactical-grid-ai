@@ -1,0 +1,87 @@
+% 01_introduccion.tex - Capítulo 1: Introducción
+\chapter{Introducción}
+\label{ch:introduccion}
+
+\section{Contexto y Motivación}
+\label{sec:contexto}
+
+\tacticalgrid\ nace como proyecto integrador del curso \textbf{Sistemas Inteligentes I} (Universidad
+de Caldas, 2026-2). El trabajo plantea la
+construcción de un juego táctico 2D por turnos que sirva como \textit{entorno de experimentación}
+para siete algoritmos clásicos de inteligencia artificial:
+
+\begin{enumerate}
+\item \textbf{BFS} (Breadth-First Search) -- búsqueda en anchura
+\item \textbf{DFS} (Depth-First Search) -- búsqueda en profundidad
+\item \textbf{UCS} (Uniform-Cost Search) -- costo uniforme
+\item \textbf{A\textsuperscript{*}} -- A* con al menos dos heurísticas admisibles
+\item \textbf{Beam Search} -- búsqueda con memoria limitada ($k = 1,2,4,8$)
+\item \textbf{Minimax} -- decisión adversarial con profundidad limitada
+\item \textbf{Alpha-Beta} -- Minimax con poda alfa-beta
+\end{enumerate}
+
+La premisa central del enunciado es clara: \textit{``El juego es el entorno de experimentación.
+El proyecto es el sistema inteligente que decide dentro de él.''} No se busca un videojuego
+comercial; la interfaz solo debe permitir \textbf{observar y experimentar con la inteligencia}
+del sistema.
+
+\section{Pregunta Central}
+\label{sec:pregunta-central}
+
+El enunciado plantea la pregunta guía del proyecto:
+
+\begin{quote}
+\textit{¿Cómo cambia la forma de decidir de un sistema inteligente cuando pasa de encontrar una
+ruta, a optimizar su costo, utilizar conocimiento heurístico y finalmente actuar frente a un
+adversario que también toma decisiones?}
+\end{quote}
+
+Esta pregunta estructura las cuatro etapas del proyecto:
+
+\begin{enumerate}
+\item \textbf{Encontrar una ruta} $\to$ BFS, DFS
+\item \textbf{Optimizar el costo} $\to$ UCS
+\item \textbf{Usar conocimiento heurístico} $\to$ A*, Beam Search
+\item \textbf{Decidir frente a adversario} $\to$ Minimax, Alpha-Beta
+\end{enumerate}
+
+\section{Equipo y Entrega}
+\label{sec:equipo}
+
+\begin{table}[H]
+\centering
+\caption{Información del proyecto}
+\begin{tabular}{ll}
+\toprule
+\textbf{Integrantes} & Jorge Iván Garcia Torres, Daniel Felipe Franco Rincón \\
+\textbf{Materia} & Sistemas Inteligentes I -- Ingeniería de Sistemas y Computación \\
+\textbf{Universidad} & Universidad de Caldas (UCALDAS) \\
+\textbf{Entrega} & Octubre de 2026 \\
+\textbf{Repositorio} & \url{https://github.com/df1903/tactical-grid-ai} \\
+\textbf{Stack} & Python 3.14, \texttt{uv}, \texttt{pytest}, \texttt{ruff}, \texttt{mypy --strict} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Estructura del Documento}
+\label{sec:estructura-doc}
+
+Este informe técnico sigue la estructura del enunciado y cubre:
+
+\begin{enumerate}
+\item \textbf{Modelado y estado} (Cap. \ref{ch:modelado}) -- Estado compuesto, reglas, RF-10 a RF-13
+\item \textbf{Reglas y costos} (Cap. \ref{ch:reglas}, \ref{ch:costos}) -- Reglas deterministas, RF-09
+\item \textbf{Arquitectura} (Cap. \ref{ch:arquitectura}) -- 5 componentes desacoplados (RNF-05)
+\item \textbf{Algoritmos de búsqueda} (Cap. \ref{ch:busqueda} -- \ref{ch:heuristicas}) -- BFS, DFS, UCS, A*, Beam
+\item \textbf{Búsqueda adversarial} (Cap. \ref{ch:adversarial}) -- Minimax, $\alpha$-$\beta$, utilidad
+\item \textbf{Experimentación} (Cap. \ref{ch:experimentos}) -- Metodología, casos 1-10, rendimiento
+\item \textbf{Verificación y testing} (Cap. \ref{ch:verificacion}) -- 6 checks RF-42, 281 tests
+\item \textbf{Formato JSON} (Cap. \ref{ch:json}) -- 9+ validaciones, campos opcionales
+\item \textbf{Limitaciones} (Cap. \ref{ch:limitaciones}) -- 8 ítems documentados
+\item \textbf{Uso de IA} (Cap. \ref{ch:ia}) -- Reporte de uso de IA generativa
+\item \textbf{Reproducibilidad} (Cap. \ref{ch:reproducibilidad}) -- Instalación, tag Git, comandos
+\end{enumerate}
+
+Todos los resultados numéricos (casos 1-10, rendimiento) se derivaron \textbf{a mano antes de
+ejecutar el código} y son verificados por tests automatizados (\texttt{tests/test\_cases\_f*.py}).
+Los archivos CSV/JSON brutos están en \texttt{docs/results/}.

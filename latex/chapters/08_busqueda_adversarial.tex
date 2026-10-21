@@ -1,0 +1,207 @@
+% 08_busqueda_adversarial.tex - Capítulo 8: Búsqueda Adversarial (F4)
+\chapter{Búsqueda Adversarial: Minimax y Alfa-Beta}
+\label{ch:adversarial}
+
+Este capítulo cubre la transición de ``encontrar una ruta'' a ``decidir frente a un adversario''
+(RF-25 a RF-33). Se implementan Minimax y alfa-beta con profundidad configurable, utilidad
+propia y 7 métricas RF-30.
+
+\section{Cambio de Paradigma: De Búsqueda a Decisión}
+\label{sec:cambio-paradigma}
+
+En búsquedas F2/F3 (un agente): ``¿Cuál es mi mejor camino?'' $\to$ \code{PathProblem},
+adversario ignorado.
+
+En búsqueda adversarial F4: ``¿Cuál es mi mejor acción considerando las respuestas del
+adversario?'' $\to$ \code{GameState} completo, \textbf{ambos bandos razonan}.
+
+\section{Profundidad y Ply (G11, Decisión 2026-10-17)}
+\label{sec:profundidad-ply}
+
+\begin{itemize}
+\item \textbf{1 unidad de profundidad = 1 acción de 1 bando} (1 ply)
+\item Los bandos alternan por ply: MAX (lado que mueve en la raíz) $\to$ MIN $\to$ MAX $\to$ MIN...
+\item \code{Wait} siempre es legal y cuenta como ply (consume el turno)
+\item Profundidad configurable vía JSON: \code{juego.profundidad\_maxima\_minimax} o CLI \code{--depth}
+\item Profundidad mínima = 1
+\end{itemize}
+
+\section{Función de Utilidad (RF-27, RF-33)}
+\label{sec:utilidad}
+
+Definida en \code{algorithms/utility.py}. Perspectiva: \textbf{MAX = bando que mueve en la raíz};
+MAX maximiza, MIN minimiza. Pesos leídos del JSON (\code{utilidad}), defaults 10/3/1/0.5.
+
+\begin{minted}{python}
+U = w_entrega  * (+1 si MAX entregó, -1 si MIN entregó)
+  + w_carga    * (+1 si MAX porta, -1 si MIN porta)
+  - w_dist     * (distancia al objetivo actual)
+  + w_rival    * (distancia del rival más cercano al portador, SOLO si MAX porta)
+\end{minted}
+
+\textbf{Objetivo dinámico (distancia):}
+\begin{itemize}
+\item MAX porta $\to$ objetivo = base propia de MAX
+\item MIN porta $\to$ objetivo = posición del portador (perseguir al rival)
+\item Nadie porta $\to$ objetivo = celda del recurso
+\end{itemize}
+Distancia = Manhattan desde la unidad MAX más cercana (desde el portador si MAX porta).
+
+\textbf{Término rival:} Solo cuando MAX porta. Un rival cercano al portador de MAX \textbf{baja}
+$U$ (riesgo de interceptación). Si MIN porta, no se suma (la persecución ya cubre ese riesgo).
+
+\textbf{Pesos (desde JSON \code{utilidad}, defaults 10/3/1/0.5):}
+\begin{table}[H]
+\centering
+\caption{Pesos de utilidad (RNF-03: configurables en JSON)}
+\begin{tabular}{lll}
+\toprule
+\textbf{Peso} & \textbf{Default} & \textbf{Significado} \\
+\midrule
+\code{entrega} & 10 & Victoria/derrota domina todo \\
+\code{recurso\_cargado} & 3 & Porta recurso > estar cerca \\
+\code{distancia\_objetivo} & 1 & Cada paso de Manhattan = -1 \\
+\code{distancia\_rival} & 0.5 & Rival cerca = riesgo (solo si MAX porta) \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:pesos-utilidad}
+
+
+\textbf{Terminal gana:} \code{winner()} devuelve $\pm$ \code{w\_entrega} ($\pm$10) y corta la
+recursión. Victoria/derrota domina sobre cualquier combinación de distancias.
+
+\section{Minimax y Alfa-Beta: Recursión Compartida}
+\label{sec:minimax-alfabeta}
+
+Ambos algoritmos comparten \textbf{una sola función recursiva} \code{value\_of};
+alfa-beta solo añade el corte \code{alpha >= beta}.
+
+\begin{minted}{python}
+def value_of(node, level, alpha, beta):
+    if level == depth or is_terminal(board, node):
+        evaluated += 1
+        return utility(node)
+    maximizing = node.turn is max_side
+    best = -inf if maximizing else inf
+    for action in ordered(node):  # orden configurable: default/reversed
+        child, _ = apply(board, node, action)
+        generated += 1
+        score = value_of(child, level + 1, alpha, beta)
+        if maximizing:
+            best = max(best, score)
+            alpha = max(alpha, best)
+        else:
+            best = min(best, score)
+            beta = min(beta, best)
+        if prune and alpha >= beta:
+            pruned += len(actions) - index - 1  # hermanos omitidos
+            break
+    return best
+\end{minted}
+
+\section{Métricas RF-30 (Implementadas en \code{AdversarialResult})}
+\label{sec:metricas-adversarial}
+
+\begin{table}[H]
+\centering
+\caption{Métricas adversariales (RF-30)}
+\begin{tabular}{ll}
+\toprule
+\textbf{Métrica} & \textbf{Qué registra} \\
+\midrule
+\code{generated} & Hijos producidos (alfa-beta genera perezosamente: solo hasta corte) \\
+\code{evaluated} & Estados donde se calculó utilidad (hojas + terminales) \\
+\code{pruned} & Hermanos omitidos por \code{alpha >= beta} \\
+\code{depth\_reached} & Nivel máximo alcanzado en la recursión \\
+\code{time\_seconds} & \code{time.perf\_counter()}; tiempo de ejecución \\
+\code{action} & Acción elegida (primera en orden con score estrictamente mayor) \\
+\code{value} & Valor Minimax de la raíz \\
+\code{root\_values} & Tupla \code{(acción, valor)} por acción raíz; en $\alpha$-$\beta$ los posteriores a la mejor pueden ser \textbf{cotas} \\
+\code{considered} & (si \code{record=True}) Tupla \code{(GameState, Action)} de cada acción considerada (check 6) \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:metricas-adversarial}
+
+
+\section{RF-31: Misma Decisión con Mismo Orden}
+\label{sec:rf31}
+
+En la raíz, empate en score $\to$ se mantiene la \textbf{primera acción en el orden dado}.
+Tanto Minimax como $\alpha$-$\beta$ iteran las acciones raíz en el mismo orden
+(\code{default} o \code{reversed}) y actualizan \code{chosen} solo si \code{score > best\_value}
+(estrictamente mayor). Por tanto:
+
+\begin{itemize}
+\item Misma profundidad, misma utilidad, mismo orden $\to$ \textbf{misma decisión}
+\item Valores de acciones posteriores a la mejor en $\alpha$-$\beta$ pueden ser \textbf{cotas}
+  (no valores exactos), porque el corte impide explorar completamente
+\end{itemize}
+
+\section{RF-32: Orden de Acciones y Poda}
+\label{sec:rf32}
+
+Orden de acciones configurable: \code{default} (arriba/abajo/izq/der por unidad) o
+\code{reversed}. Cambiar el orden:
+
+\begin{itemize}
+\item \textbf{No cambia la decisión} (RF-31) si la utilidad y profundidad son iguales
+\item \textbf{Sí cambia \code{pruned} y \code{generated}} (RF-32)
+\item En caso 9 (profundidad 3): \code{default} genera 142, \code{reversed} genera 191
+\item En caso 9 (profundidad 4): orden \code{reversed} cambia el tie-break entre valores
+  iguales (0), produciendo acción diferente con mismo valor
+\end{itemize}
+
+\section{Check 6 del Verificador (RF-42)}
+\label{sec:check6}
+
+\code{verify\_adversarial(board, state, result)} re-ejecuta con \code{record=True} y valida:
+
+\begin{enumerate}
+\item Cada acción en \code{result.considered} es legal según \code{legal\_actions}
+\item La acción elegida (\code{result.action}) es legal
+\item No se generan estados inválidos durante la exploración
+\end{enumerate}
+
+Esto completa los 6 checks de RF-42 (5 para búsquedas + 1 para adversarial).
+
+\section{Casos 7--10: Resultados}
+\label{sec:casos7-10}
+
+Escenario: \code{caso\_07\_decision\_adversarial.json} (5$\times$7, coste 1, 2 unidades/bando,
+recurso (0,1), A mueve primero, pesos 10/3/1/0.5).
+
+\begin{table}[H]
+\centering
+\caption{Casos 7--10: Resultados Minimax vs Alfa-Beta}
+\begin{tabular}{lccccccc}
+\toprule
+Alg & Prof & Orden & Acción & Valor & Gen & Eval & Podados \\
+\midrule
+MM & 1 & def & A2$\to$(0,1) & 3 & 7 & 7 & 0 \\
+MM & 2 & def & A2$\to$(0,1) & 0 & 71 & 64 & 0 \\
+MM & 3 & def & A1$\to$(1,1) & 3 & 538 & 467 & 0 \\
+MM & 4 & def & A1$\to$(0,0) & 0 & 4,826 & 4,296 & 0 \\
+AB & 1 & def & A2$\to$(0,1) & 3 & 7 & 7 & 0 \\
+AB & 2 & def & A2$\to$(0,1) & 0 & 31 & 24 & 40 \\
+AB & 3 & def & A1$\to$(1,1) & 3 & 142 & 110 & 106 \\
+AB & 4 & def & A1$\to$(0,0) & 0 & 431 & 299 & 757 \\
+AB & 3 & rev & A1$\to$(1,1) & 3 & 191 & 148 & 145 \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:casos7-10}
+
+
+\begin{itemize}
+\item \textbf{Caso 7:} La mejor decisión no es ir directo al recurso (profundidad 1 y 2 agarran;
+  profundidad 3 protege moviendo A1$\to$(1,1) para bloquear a B1).
+\item \textbf{Caso 8:} En profundidad 4, $\alpha$-$\beta$ genera \textbf{11$\times$ menos nodos}
+  que Minimax (431 vs 4,826).
+\item \textbf{Caso 9:} Mismo valor (3), misma decisión, pero orden \code{reversed} poda más
+  (191 vs 142 generados en d=3). En d=4, orden \code{reversed} cambia tie-break (acción
+  diferente, mismo valor 0).
+\item \textbf{Caso 10:} Profundidades impares terminan en turno de A (valor 3, guarda);
+  pares terminan en turno de B (valor 0, aplana). Efecto horizonte documentado en \S\ref{sec:limitaciones-conocidas}.
+\end{itemize}

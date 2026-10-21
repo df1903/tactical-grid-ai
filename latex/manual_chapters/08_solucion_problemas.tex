@@ -1,0 +1,118 @@
+% 08_solucion_problemas.tex - Manual Capítulo 8: Solución de Problemas
+\chapter{Solución de Problemas Comunes}
+\label{man:troubleshooting}
+
+\section{Problemas de Instalación y Ejecución}
+\label{sec:problemas-instalacion}
+
+\begin{longtable}{p{3cm}p{3cm}p{8cm}}
+\toprule
+\textbf{Problema} & \textbf{Causa} & \textbf{Solución} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Problema} & \textbf{Causa} & \textbf{Solución} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{3}{r}{\textit{Continúa}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\code{uv: command not found} & \texttt{uv} no instalado o no en PATH & Instalar \texttt{uv}: \url{https://docs.astral.sh/uv/getting-started/installation/} \\
+\code{uv sync} falla & Dependencias conflictivas o archivo de bloqueo corrupto & En PowerShell: \code{Remove-Item uv.lock}; después, ejecutar \code{uv sync}. En Linux/macOS: \code{rm uv.lock \&\& uv sync}. \\
+\code{ModuleNotFoundError: tactical\_grid} & Paquete no instalado en entorno & Ejecutar \code{uv sync} en la raíz del repo \\
+\code{pytest} no encuentra tests & Directorio incorrecto & Ejecutar desde la raíz del repo (\code{tactical-grid-ai/}) \\
+Ventana GUI no abre & \texttt{tkinter} no disponible & \code{uv run python -c "import tkinter"} para verificar; en Linux: \code{sudo apt install python3-tk} \\
+Tests de GUI fallan (skip) & Sin display (headless/CI) & Normal: tests de GUI se saltan sin display; no es error \\
+\bottomrule
+\end{longtable}
+\label{tab:troubleshooting-instalacion}
+
+\section{Errores de Escenario (Exit Code 2)}
+\label{sec:errores-escenario}
+
+\begin{longtable}{p{3cm}p{3cm}p{8cm}}
+\toprule
+\textbf{Mensaje} & \textbf{Causa} & \textbf{Solución} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Mensaje} & \textbf{Causa} & \textbf{Solución} \\
+\midrule
+\endhead
+\midrule
+\multicolumn{3}{r}{\textit{Continúa}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\code{invalid scenario: validation 1: ...} & JSON inválido: dimensiones, matriz, terrenos & Revisar \code{mapa.filas/columnas}, \code{terreno} consistente, nombres en \code{tipos\_terreno} \\
+\code{validation 2: terrain 'X' needs positive 'costo'} & Terreno transitable sin costo o costo $\le$ 0 & Añadir \code{"costo": N} positivo en \code{tipos\_terreno} \\
+\code{validation 3: cell (r,c) uses unknown terrain} & Nombre en \code{terreno} no existe en \code{tipos\_terreno} & Corregir nombre o añadir al catálogo \\
+\code{validation 4: base A ... outside the map} & Base/recurso/unidad fuera de límites & Corregir coordenadas (0-indexed, $<$ filas/columnas) \\
+\code{validation 5: unit X on non-passable cell} & Unidad sobre muro/obstáculo & Mover unidad a celda transitable \\
+\code{validation 6: unit id 'X' is repeated} & IDs duplicados en \code{unidades} & Usar IDs únicos \\
+\code{validation 7/8: bando must be 'a' or 'b'} & Bando/turno no es A/a/B/b & Usar \code{A} o \code{B} (case-insensitive) \\
+\code{validation 9: portador\_recurso X not existing} & \code{portador\_recurso} no coincide con ningún \code{id} & Corregir id o poner \code{null} \\
+\code{unit X shares cell with unit Y} & Dos unidades en misma celda & Mover una a celda libre \\
+\bottomrule
+\end{longtable}
+\label{tab:troubleshooting-json}
+
+La validación es \textbf{atómica}: lista TODOS los errores de una vez; corrige todos y reintenta.
+
+\section{Problemas de Algoritmos y Resultados}
+\label{sec:problemas-algoritmos}
+
+\begin{longtable}{p{3cm}p{3cm}p{8cm}}
+\toprule
+\textbf{Problema} & \textbf{Causa} & \textbf{Solución} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Problema} & \textbf{Causa} & \textbf{Solución} \\
+\midrule
+\endhead
+\midrule
+\code{El algoritmo no encontró camino} & Meta inalcanzable (muros, base rival) o Beam $k$ muy pequeño & Verificar que la meta es alcanzable; aumentar \code{--k} en Beam; usar UCS/A* \\
+BFS/DFS encuentra camino pero UCS no & Costos no positivos (violación RF-03) & Verificar \code{tipos\_terreno}: transitables deben tener costo $>0$ \\
+A* con h1 expande mucho / no óptimo & Heurística no admisible o inconsistente & Usar h2 (obstacle-aware); verificar \code{min\_step\_cost} \\
+Beam $k=1$ falla habiendo solución & Beam es incompleto; $k=1$ poda la única rama buena & Aumentar \code{--k} (4 u 8); usar A* si se requiere completitud \\
+Minimax/$\alpha$-$\beta$ muy lento & Profundidad alta, mapa grande, muchas unidades & Bajar \code{--depth}; usar $\alpha$-$\beta$ en vez de Minimax; mapa $\le$ 15$\times$15 \\
+Resultados no coinciden con esperados & JSON distinto al caso de prueba / semilla distinta & Verificar que se usa el mismo JSON; métricas son determinísticas (solo tiempo varía) \\
+\code{--verify} falla check 3 (cost matches) & Costo reportado $\neq$ replay & Verificar que \code{apply} y \code{cost\_at} usan mismo catálogo; sin costos hardcodeados \\
+\bottomrule
+\end{longtable}
+\label{tab:troubleshooting-algoritmos}
+
+\section{Rendimiento y Memoria}
+\label{sec:rendimiento-memoria}
+
+\begin{itemize}
+\item \textbf{Minimax puro} $>$ profundidad 5 en 15$\times$15 $\to$ $>$ 5 s (supera meta). Usar $\alpha$-$\beta$.
+\item \textbf{$\alpha$-$\beta$ profundidad 7} en 15$\times$15 $\approx$ 0.86 s (dentro de meta 5 s).
+\item \textbf{Beam $k=1$} puede fallar aunque exista solución (incompleto por diseño).
+\item \textbf{Memoria:} BFS/DFS/UCS/A* usan $O(V)$ espacio ($V$ = estados alcanzables $\le$ filas $\times$ columnas).
+\item \textbf{Sweeps grandes:} Producto cartesiano de listas $\to$ muchas corridas. Ejecutar por lotes o aumentar timeout.
+\end{itemize}
+
+\section{Obtener Ayuda}
+\label{sec:ayuda}
+
+\begin{enumerate}
+\item Revisar \texttt{README.md} y este manual.
+\item Ejecutar \code{uv run pytest} para verificar integridad.
+\item Revisar \texttt{docs/technical-report.md} para detalles de algoritmos y decisiones.
+\item Revisar \texttt{.context/decisions.md} para decisiones registradas.
+\item Si es bug del código: abrir issue en \url{https://github.com/df1903/tactical-grid-ai/issues}.
+\item Para dudas de la materia: consultar al profesor de Sistemas Inteligentes I.
+\end{enumerate}
+
+\section{Declaración de apoyo de IA}
+\label{sec:manual-apoyo-ia}
+
+El equipo utilizó Claude Code (Claude Sonnet 5.5) como apoyo para consultas técnicas,
+redacción, organización y revisión de este manual. La herramienta no fue el desarrollador
+principal: el equipo definió el alcance, tomó las decisiones, verificó los resultados y
+revisó el contenido final. Los integrantes del equipo son responsables de explicar y
+defender toda la información presentada en este documento.

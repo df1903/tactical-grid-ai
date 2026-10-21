@@ -1,0 +1,99 @@
+% 04_costos.tex - Capítulo 4: Costos
+\chapter{Costos y Función de Costo}
+\label{ch:costos}
+
+\section{Definición de Costos (RF-03, RF-04)}
+\label{sec:definicion-costos}
+
+Los costos \textbf{nunca están hardcodeados} en el código (\rf{03}, \rf{37}, \rf{04}). Provienen
+exclusivamente del catálogo \code{tipos\_terreno} del JSON cargado:
+
+\begin{itemize}
+\item \code{tipos\_terreno} es un mapeo \code{nombre $\to$ \{costo, transitable\}}
+\item Solo terrenos \code{transitable: true} tienen \code{costo} (positivo, \code{float})
+\item Terrenos no transitables (\code{transitable: false}) tienen \code{costo: null}
+\item Acepta enteros o decimales (G12)
+\end{itemize}
+
+\section{Semántica del Costo}
+\label{sec:semantica-costo}
+
+\begin{itemize}
+\item El costo se paga \textbf{al entrar} a la celda destino (decisión 2026-10-07).
+\item La celda inicial \textbf{no cuesta}.
+\item \code{Wait} cuesta \code{0.0} (decisión 2026-10-14).
+\item No hay otras acciones con costo (solo \code{Move} y \code{Wait}).
+\end{itemize}
+
+Esto implica que $g(n)$ es la suma de los costos de las celdas \textbf{destino} de cada movimiento
+en el camino. La celda inicial nunca contribuye a $g(n)$.
+
+\section{Escala de Heurísticas (Sección 18.4 del Enunciado)}
+\label{sec:escala-heuristicas}
+
+Dado que los costos vienen del JSON y un mapa externo podría traer costos $< 1$, la heurística
+Manhattan ``pura'' (1 por paso) dejaría de ser admisible si $\min(\text{costos}) < 1$.
+
+La solución adoptada: \textbf{escalar por el costo transitable mínimo del escenario cargado}:
+
+\begin{minted}{python}
+def min_step_cost(board: Board) -> float:
+    costs = [t.cost for t in board.terrains.values() if t.passable and t.cost is not None]
+    return min(costs)
+\end{minted}
+
+Ambas heurísticas ($h_1$ Manhattan, $h_2$ obstacle-aware) multiplican su estimación en
+pasos por \code{min\_step\_cost()}. Esto garantiza admisibilidad para \textbf{cualquier}
+JSON válido, como se muestra en la definición anterior.
+
+\section{Caso 2: Ruta Corta vs. Ruta Económica (RF-04)}
+\label{sec:caso2}
+
+El enunciado exige que existan mapas donde una ruta con menos movimientos cueste más que una
+ruta más larga. \textbf{Caso 2} (\code{caso\_02\_bfs\_vs\_ucs.json}) lo demuestra:
+
+\begin{itemize}
+\item Banda de pantano (costo 7) bloquea el camino directo
+\item BFS cruza el pantano: 7 movimientos, costo $4\times1 + 3\times7 = 25$
+\item UCS rodea por terreno barato: 17 movimientos, costo 17
+\end{itemize}
+
+\begin{table}[H]
+\centering
+\caption{Caso 2: BFS vs UCS -- ruta corta vs. ruta económica}
+\begin{tabular}{lccccc}
+\toprule
+Algoritmo & Costo & Movimientos & Generados & Expandidos & Max Frontera \\
+\midrule
+BFS & 25 & 7 & 126 & 104 & 23 \\
+UCS & 17 & 17 & 269 & 239 & 33 \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:caso2}
+
+
+\section{Costo en Búsqueda de Un Agente (F2)}
+\label{sec:costo-unagente}
+
+En la abstracción de un agente (RF-14), el problema de búsqueda usa \code{PathProblem} donde
+\code{expand} devuelve \code{[(GameState, cost)]} llamando a \code{domain.rules.successors} y
+filtrando solo \code{Move} de la unidad inicio. El costo devuelto es \code{board.cost\_at(dest)}.
+
+\section{Resumen de Reglas de Costo}
+\begin{table}[H]
+\centering
+\caption{Resumen de reglas de costo}
+\begin{tabular}{ll}
+\toprule
+\textbf{Regla} & \textbf{Valor} \\
+\midrule
+Costo de Move & \code{board.cost\_at(dest)} (terreno destino) \\
+Costo de Wait & 0.0 \\
+Celda inicial & No cuesta \\
+Costos vienen de & \code{tipos\_terreno} del JSON (RF-03) \\
+No hay costos hardcodeados & (RNF-03, RNF-04) \\
+\bottomrule
+\end{tabular}
+\end{table}
+\label{tab:resumen-costos}
